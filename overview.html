@@ -1,0 +1,379 @@
+<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "surface-variant": "#353534",
+                    "error-container": "#93000a",
+                    "tertiary-container": "#ff767b",
+                    "surface-container-lowest": "#0e0e0e",
+                    "surface-container-low": "#1c1b1b",
+                    "secondary-container": "#474746",
+                    "on-tertiary-container": "#730a1b",
+                    "on-primary": "#003914",
+                    "on-error": "#690005",
+                    "inverse-surface": "#e5e2e1",
+                    "on-secondary-container": "#b7b4b4",
+                    "on-tertiary": "#680114",
+                    "error": "#ffb4ab",
+                    "primary": "#53e076",
+                    "secondary-fixed": "#e5e2e1",
+                    "inverse-primary": "#006e2d",
+                    "on-tertiary-fixed-variant": "#881d28",
+                    "outline": "#869585",
+                    "on-secondary-fixed-variant": "#474746",
+                    "tertiary-fixed-dim": "#ffb3b3",
+                    "primary-fixed": "#72fe8f",
+                    "on-surface": "#e5e2e1",
+                    "on-primary-fixed-variant": "#005320",
+                    "on-surface-variant": "#bccbb9",
+                    "inverse-on-surface": "#313030",
+                    "surface-container-high": "#2a2a2a",
+                    "surface": "#131313",
+                    "on-primary-container": "#004118",
+                    "surface-tint": "#53e076",
+                    "tertiary": "#ffb3b3",
+                    "primary-fixed-dim": "#53e076",
+                    "surface-bright": "#393939",
+                    "surface-container": "#201f1f",
+                    "on-secondary-fixed": "#1c1b1b",
+                    "on-background": "#e5e2e1",
+                    "secondary": "#c8c6c5",
+                    "on-secondary": "#313030",
+                    "surface-dim": "#131313",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "on-primary-fixed": "#002108",
+                    "on-error-container": "#ffdad6",
+                    "surface-container-highest": "#353534",
+                    "primary-container": "#1db954",
+                    "background": "#121212",
+                    "outline-variant": "#3d4a3d",
+                    "tertiary-fixed": "#ffdad9",
+                    "on-tertiary-fixed": "#400009"
+                },
+                "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+                },
+                "spacing": {
+                    "container-padding-desktop": "32px",
+                    "section-gap": "48px",
+                    "gutter": "24px",
+                    "container-padding-mobile": "16px",
+                    "base": "8px"
+                },
+                "fontFamily": {
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "display-lg-mobile": ["Plus Jakarta Sans"],
+                    "label-bold": ["Plus Jakarta Sans"],
+                    "body-sm": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"]
+                },
+                "fontSize": {
+                    "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "500"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "label-bold": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+                }
+            },
+        },
+    }
+}catch(_e){}</script><meta charset="utf-8"></head><body class="bg-background text-on-background">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-lg shadow-sm">
+<nav class="flex justify-between items-center px-container-padding-desktop py-4 w-full max-w-full mx-auto">
+<div class="flex items-center gap-8">
+<div class="text-headline-md font-headline-md text-primary dark:text-primary tracking-tighter flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">fast_rewind</span>
+                Rewind
+            </div>
+<div class="hidden md:flex items-center gap-6">
+<a class="font-body-lg text-body-lg text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors duration-200" href="#">Overview</a>
+<a class="font-body-lg text-body-lg text-primary dark:text-primary border-b-2 border-primary pb-1 transition-colors duration-200" href="#">Analytics</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors duration-200" href="#">Artists</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors duration-200" href="#">Library</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="bg-surface-container rounded-full pl-10 pr-4 py-2 text-body-sm font-body-sm focus:outline-none focus:ring-1 focus:ring-primary w-64 transition-all" placeholder="Search insights..." type="text">
+</div>
+<button class="active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary">notifications</span>
+</button>
+<button class="active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A close-up high-resolution portrait of a stylish user with a modern aesthetic, soft rim lighting highlighting their features against a dark, moody studio background. The style is cinematic and premium, consistent with a high-end music analytics dashboard interface, using deep shadows and subtle green ambient glows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdc-VwAPlptMYg1R-WMAI8hFkkxEEZoTC4nwZaYz81F2NFITmm0DjPGIso0GsK5xqjHy0UlgXcJ1D2gWb6x4QQ0Zu5Jn1Aaw368QyBCDgMfBIcDmnalxAx4zwK6SGJG0LRVcwVMFJlUd8XV3NFRJLAn7Tw_-vf63-PDYLs_84ArnjCgK-EK9HdWoPs4MZ6cDEzNVB03kqxWq4HVesK4syA8q5Rt-nnZxulcepAonRSOAmKBvoXuOVCubWs5az9WaaHAqlHoP1IXc4">
+</div>
+</div>
+</nav>
+</header>
+<main class="pt-24 pb-section-gap px-container-padding-desktop max-w-[1440px] mx-auto space-y-section-gap">
+<!-- Hero Section -->
+<section>
+<div class="mb-gutter">
+<h1 class="font-display-lg text-display-lg text-on-surface tracking-tight">Analytics Overview</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant opacity-70">Deep diving into your sonic identity and listening behavior.</p>
+</div>
+<!-- Top Metric Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Total Time -->
+<div class="glass-card metric-gradient p-6 rounded-lg flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="font-label-bold text-label-bold text-primary uppercase tracking-widest">Total Time</span>
+<span class="material-symbols-outlined text-primary">schedule</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-on-surface">1,240 Hours</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1 flex items-center gap-1">
+<span class="text-primary material-symbols-outlined text-[14px]">trending_up</span>
+<span class="">12% from last month</span>
+</div>
+</div>
+</div>
+<!-- Top Artist -->
+<div class="glass-card p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden group">
+<div class="flex justify-between items-start z-10">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Top Artist</span>
+<span class="material-symbols-outlined text-on-surface-variant">person</span>
+</div>
+<div class="z-10">
+<div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors">Taylor Swift</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">42,850 total streams</div>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">music_note</span>
+</div>
+</div>
+<!-- Top Album -->
+<div class="glass-card p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden group">
+<div class="flex justify-between items-start z-10">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Top Album</span>
+<span class="material-symbols-outlined text-on-surface-variant">album</span>
+</div>
+<div class="z-10">
+<div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors">Midnights</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Released Oct 2022</div>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">album</span>
+</div>
+</div>
+<!-- Top Track -->
+<div class="glass-card p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden group">
+<div class="flex justify-between items-start z-10">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Top Track</span>
+<span class="material-symbols-outlined text-on-surface-variant">equalizer</span>
+</div>
+<div class="z-10">
+<div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors">Anti-Hero</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">324 repeats this week</div>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Middle Section: Heatmap -->
+<section class="gap-4 flex-col">
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Listening Activity</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Your frequency of interaction over the past 365 days.</p>
+</div>
+<div class="flex items-center gap-2 bg-surface-container p-1 rounded-full border border-outline-variant">
+<button class="px-4 py-1 rounded-full text-body-sm font-label-bold bg-primary text-on-primary">2023</button>
+<button class="px-4 py-1 rounded-full text-body-sm font-label-bold text-on-surface-variant hover:text-on-surface">2022</button>
+</div>
+</div>
+<div class="glass-card rounded-lg overflow-hidden relative"><div class="relative group cursor-crosshair overflow-hidden">
+<img alt="Compact Music Listening History Heatmap" class="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.01]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBTrnb3cbc0oNJuGA6WWWiHnv-YzCZmS5deTaMbngP7BaYEKC-Pe3GQBEeY2e2e5RBqcOYc5u3QFoN9hzlfmJvrhk_lyIVLaX1V1cToVK8N08K-W6FjjmSsEduUiuLnyj5qjyGxgCIfsMK4cnIhtVdDV8v_t8jdoeT2WwdcKfXB4Ye8xjCIUUcdmUhzOff9C282y262ReY3bkFZB_bEPcnNJyNGnNQTXr2IJMz4CWjsZJBzcCdrRQ24NYSWZB1lewvgDnuPbKivOA">
+<!-- Interactive Grid Overlay (Simulated) -->
+<div class="absolute inset-0 grid grid-cols-[repeat(52,1fr)] grid-rows-7 gap-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+<!-- This overlay provides a subtle visual grid alignment on hover to make it feel 'interactive' -->
+<div class="bg-primary/5 border border-primary/10"></div>
+<!-- ... repeated grid cells would go here, but for performance we use a CSS pattern or simple overlay ... -->
+</div>
+<!-- Subtle Glow Effect -->
+<div class="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none"></div>
+<div class="absolute inset-0 opacity-0 group-hover:opacity-20 bg-[radial-gradient(circle_at_var(--mouse-x,50%)_var(--mouse-y,50%),#53e076_0%,transparent_50%)] transition-opacity duration-300 pointer-events-none"></div>
+</div></div>
+</section>
+<!-- Bottom Metric Section -->
+<section>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Total Songs -->
+<div class="glass-card p-6 rounded-lg flex flex-col gap-4 border-l-4 border-l-primary/30">
+<div class="flex justify-between items-start">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Total Songs</span>
+<span class="material-symbols-outlined text-primary">library_music</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-on-surface">4,320</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Unique tracks identified</div>
+</div>
+</div>
+<!-- Most Active Day -->
+<div class="glass-card p-6 rounded-lg flex flex-col gap-4 border-l-4 border-l-primary/30">
+<div class="flex justify-between items-start">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Most Active Day</span>
+<span class="material-symbols-outlined text-primary">calendar_today</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-on-surface">Friday</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Average 6.5h listening</div>
+</div>
+</div>
+<!-- Most Hated Artist -->
+<div class="glass-card p-6 rounded-lg flex flex-col gap-4 border-l-4 border-l-error/30">
+<div class="flex justify-between items-start">
+<span class="font-label-bold text-label-bold text-error uppercase tracking-widest">Most Hated Artist</span>
+<span class="material-symbols-outlined text-error">thumb_down</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-on-surface">Nickelback</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Skipped 98% of the time</div>
+</div>
+</div>
+<!-- Most Hated Track -->
+<div class="glass-card p-6 rounded-lg flex flex-col gap-4 border-l-4 border-l-error/30">
+<div class="flex justify-between items-start">
+<span class="font-label-bold text-label-bold text-error uppercase tracking-widest">Most Hated Track</span>
+<span class="material-symbols-outlined text-error">do_not_disturb_on</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-on-surface truncate">Baby Shark</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Added to blocklist</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Fun Data Visual Section (Extra) -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<div class="lg:col-span-2 glass-card rounded-lg p-gutter overflow-hidden relative min-h-[400px]">
+<div class="relative z-10">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-base">Sonic Spectrum</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-gutter">Visualizing the frequency ranges you favor most across your top genres.</p>
+<div class="flex items-end gap-2 h-48 mb-8">
+<div class="flex-1 bg-primary/20 hover:bg-primary transition-colors rounded-t-sm" style="height: 40%"></div>
+<div class="flex-1 bg-primary/30 hover:bg-primary transition-colors rounded-t-sm" style="height: 60%"></div>
+<div class="flex-1 bg-primary/50 hover:bg-primary transition-colors rounded-t-sm" style="height: 85%"></div>
+<div class="flex-1 bg-primary hover:bg-primary transition-colors rounded-t-sm" style="height: 100%"></div>
+<div class="flex-1 bg-primary/70 hover:bg-primary transition-colors rounded-t-sm" style="height: 75%"></div>
+<div class="flex-1 bg-primary/40 hover:bg-primary transition-colors rounded-t-sm" style="height: 55%"></div>
+<div class="flex-1 bg-primary/20 hover:bg-primary transition-colors rounded-t-sm" style="height: 30%"></div>
+<div class="flex-1 bg-primary/10 hover:bg-primary transition-colors rounded-t-sm" style="height: 20%"></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container p-4 rounded-lg">
+<div class="text-on-surface-variant font-label-bold uppercase text-[10px] mb-1">Dominant Frequency</div>
+<div class="text-on-surface font-body-lg">Low-End / Sub Bass</div>
+</div>
+<div class="bg-surface-container p-4 rounded-lg">
+<div class="text-on-surface-variant font-label-bold uppercase text-[10px] mb-1">Energy Rating</div>
+<div class="text-on-surface font-body-lg">Highly Dynamic</div>
+</div>
+</div>
+</div>
+<!-- Artistic background decoration -->
+<div class="absolute -bottom-20 -right-20 w-80 h-80 bg-primary/5 rounded-full blur-[100px]"></div>
+</div>
+<div class="glass-card rounded-lg p-gutter flex flex-col">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-gutter">Personality Profile</h3>
+<div class="flex-1 flex flex-col justify-center gap-6">
+<div class="space-y-2">
+<div class="flex justify-between font-label-bold text-label-bold uppercase text-on-surface-variant">
+<span class="">Eclecticism</span>
+<span class="text-primary">88%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 88%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between font-label-bold text-label-bold uppercase text-on-surface-variant">
+<span class="">Mainstream Factor</span>
+<span class="text-primary">32%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 32%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between font-label-bold text-label-bold uppercase text-on-surface-variant">
+<span class="">Lyrical Depth</span>
+<span class="text-primary">94%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 94%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between font-label-bold text-label-bold uppercase text-on-surface-variant">
+<span class="">Atmospheric Preference</span>
+<span class="text-primary">76%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 76%"></div>
+</div>
+</div>
+</div>
+<button class="mt-8 bg-primary text-on-primary font-label-bold py-3 rounded-full hover:scale-[1.02] active:scale-95 transition-all">
+                Share Insight Card
+            </button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-section-gap bg-surface-container-lowest dark:bg-surface-container-lowest border-t border-white/5">
+<div class="flex flex-col md:flex-row justify-between items-center px-container-padding-desktop gap-8 md:gap-0">
+<div class="flex flex-col gap-2">
+<div class="text-label-bold font-label-bold text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">auto_graph</span>
+                Rewind Analytics
+            </div>
+<p class="font-body-sm text-body-sm text-on-surface-variant opacity-60">© 2024 Rewind Analytics. All rights reserved.</p>
+</div>
+<div class="flex items-center gap-8">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all duration-300" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all duration-300" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all duration-300" href="#">Support</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all duration-300" href="#">API Documentation</a>
+</div>
+<div class="flex items-center gap-4">
+<a class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]">public</span>
+</a>
+<a class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]">hub</span>
+</a>
+<a class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+</a>
+</div>
+</div>
+</footer>
+<!-- Micro-interactions Script -->
+<script class="">
+    document.querySelectorAll('.glass-card').forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+        });
+    });
+</script>
+</body></html>
