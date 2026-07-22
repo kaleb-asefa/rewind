@@ -101,18 +101,21 @@
         .heatmap-wrap {
             font-size: 11px;
             line-height: 1;
+            width: 100%;
         }
         .heatmap-grid {
             display: grid;
-            grid-template-rows: repeat(7, var(--cell-size));
+            grid-template-rows: repeat(7, minmax(0, 1fr));
+            grid-template-columns: repeat(var(--weeks-count, 53), minmax(0, 1fr));
             grid-auto-flow: column;
-            grid-auto-columns: var(--cell-size);
-            gap: var(--cell-gap);
+            gap: var(--cell-gap, 3px);
+            width: 100%;
+            flex: 1;
         }
         .heatmap-cell {
-            width: var(--cell-size);
-            height: var(--cell-size);
-            border-radius: 2px;
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 3px;
             background: var(--heatmap-empty);
             cursor: pointer;
             outline: none;
@@ -122,8 +125,8 @@
         .heatmap-cell:focus-visible {
             outline: 1px solid rgba(255, 255, 255, 0.55);
             outline-offset: 1px;
-            transform: scale(1.15);
-            z-index: 1;
+            transform: scale(1.2);
+            z-index: 10;
             position: relative;
         }
         .heatmap-cell[data-level="1"] { background: rgba(30, 215, 96, 0.22); }
@@ -137,13 +140,13 @@
         }
         .heatmap-months {
             display: grid;
-            grid-auto-flow: column;
-            grid-auto-columns: var(--cell-size);
-            gap: var(--cell-gap);
-            height: 14px;
+            grid-template-columns: repeat(var(--weeks-count, 53), minmax(0, 1fr));
+            gap: var(--cell-gap, 3px);
+            height: 16px;
             margin-left: calc(28px + 8px);
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             position: relative;
+            width: calc(100% - 36px);
         }
         .heatmap-month {
             grid-row: 1;
@@ -155,11 +158,13 @@
         .heatmap-body {
             display: flex;
             gap: 8px;
+            width: 100%;
+            align-items: stretch;
         }
         .heatmap-days {
             display: grid;
-            grid-template-rows: repeat(7, var(--cell-size));
-            gap: var(--cell-gap);
+            grid-template-rows: repeat(7, minmax(0, 1fr));
+            gap: var(--cell-gap, 3px);
             width: 28px;
             flex-shrink: 0;
         }
@@ -169,9 +174,9 @@
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            height: var(--cell-size);
         }
         .heatmap-scroll {
+            width: 100%;
             overflow-x: auto;
             overflow-y: hidden;
             padding-bottom: 4px;
@@ -321,8 +326,9 @@
 </div>
 </div>
 <div class="glass-card rounded-lg p-4 md:p-5">
-<div class="heatmap-wrap" style="--cell-size: 10px; --cell-gap: 2px; --heatmap-empty: #1f1f1f;">
+<div class="heatmap-wrap" style="--cell-gap: 3px; --heatmap-empty: #1f1f1f;">
 <div class="heatmap-scroll">
+<div class="min-w-[650px] w-full">
 <div class="heatmap-months" id="heatmap-months" aria-hidden="true"></div>
 <div class="heatmap-body">
 <div class="heatmap-days" aria-hidden="true">
@@ -335,6 +341,7 @@
 <span class="heatmap-day"></span>
 </div>
 <div class="heatmap-grid" id="heatmap-grid" role="img" aria-label="Listening activity heatmap for the past year"></div>
+</div>
 </div>
 </div>
 <div class="flex flex-wrap items-center justify-between gap-3 mt-4 pt-3 border-t border-white/5">
@@ -596,7 +603,8 @@
         function renderMonths(days) {
             monthsEl.innerHTML = '';
             const weeks = Math.ceil(days.length / 7);
-            monthsEl.style.gridTemplateColumns = `repeat(${weeks}, var(--cell-size))`;
+            monthsEl.style.setProperty('--weeks-count', weeks);
+            monthsEl.style.gridTemplateColumns = `repeat(${weeks}, minmax(0, 1fr))`;
 
             let lastMonth = -1;
             for (let w = 0; w < weeks; w++) {
@@ -616,7 +624,9 @@
 
         function renderGrid(days) {
             grid.innerHTML = '';
-            grid.style.gridTemplateColumns = `repeat(${Math.ceil(days.length / 7)}, var(--cell-size))`;
+            const weeks = Math.ceil(days.length / 7);
+            grid.style.setProperty('--weeks-count', weeks);
+            grid.style.gridTemplateColumns = `repeat(${weeks}, minmax(0, 1fr))`;
 
             let activeDays = 0;
             let totalStreams = 0;
