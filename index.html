@@ -95,7 +95,13 @@
                             "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
                             "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
                             "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
-                            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+                            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                            "display-lg-mobile": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+                        },
+                        "boxShadow": {
+                            "spotify-card": "rgba(0,0,0,0.3) 0px 8px 8px",
+                            "spotify-dialog": "rgba(0,0,0,0.5) 0px 8px 24px",
+                            "spotify-green": "0 8px 24px rgba(30, 215, 96, 0.25)"
                         }
                     },
                 },
@@ -104,107 +110,112 @@
     </script>
 <style>
         :root {
-            --color-tertiary: 94 94 94;
-            --color-tertiary-fixed: 228 226 226;
-            --color-on-primary-fixed: 0 33 8;
-            --color-on-tertiary-container: 56 56 56;
-            --color-surface: 248 249 250;
-            --color-error-container: 255 218 214;
-            --color-on-secondary-fixed-variant: 76 69 69;
-            --color-inverse-on-surface: 240 241 242;
-            --color-outline: 109 123 108;
-            --color-background: 248 249 250;
-            --color-surface-container-low: 243 244 245;
-            --color-error: 186 26 26;
-            --color-surface-dim: 217 218 219;
-            --color-outline-variant: 188 203 185;
-            --color-on-tertiary-fixed-variant: 71 71 71;
-            --color-on-surface: 25 28 29;
-            --color-on-secondary-fixed: 32 26 26;
-            --color-tertiary-fixed-dim: 200 198 198;
-            --color-surface-bright: 248 249 250;
-            --color-primary-container: 29 185 84;
-            --color-secondary-container: 232 221 221;
-            --color-on-secondary-container: 105 97 97;
+            --color-background: 255 255 255;
+            --color-surface: 250 250 250;
+            --color-surface-dim: 238 238 238;
+            --color-surface-bright: 255 255 255;
             --color-surface-container-lowest: 255 255 255;
-            --color-secondary-fixed: 235 224 223;
-            --color-primary: 0 110 45;
-            --color-on-background: 25 28 29;
-            --color-on-secondary: 255 255 255;
-            --color-primary-fixed-dim: 83 224 118;
-            --color-inverse-primary: 83 224 118;
-            --color-surface-tint: 0 110 45;
-            --color-surface-variant: 225 227 228;
-            --color-on-error-container: 147 0 10;
-            --color-surface-container-high: 231 232 233;
-            --color-secondary-fixed-dim: 207 196 196;
-            --color-on-error: 255 255 255;
-            --color-inverse-surface: 46 49 50;
-            --color-on-surface-variant: 61 74 61;
+            --color-surface-container-low: 245 245 245;
+            --color-surface-container: 238 238 238;
+            --color-surface-container-high: 229 229 229;
+            --color-surface-container-highest: 221 221 221;
+            --color-surface-variant: 238 238 238;
+            --color-on-background: 18 18 18;
+            --color-on-surface: 18 18 18;
+            --color-on-surface-variant: 106 106 106;
+            --color-outline: 124 124 124;
+            --color-outline-variant: 221 221 221;
+            --color-primary: 29 185 84;
             --color-on-primary: 255 255 255;
-            --color-tertiary-container: 162 161 161;
-            --color-surface-container-highest: 225 227 228;
-            --color-surface-container: 237 238 239;
-            --color-primary-fixed: 114 254 143;
-            --color-on-primary-fixed-variant: 0 83 32;
-            --color-on-tertiary-fixed: 27 28 28;
+            --color-primary-container: 30 215 96;
+            --color-on-primary-container: 18 18 18;
+            --color-secondary: 106 106 106;
+            --color-on-secondary: 255 255 255;
+            --color-secondary-container: 238 238 238;
+            --color-on-secondary-container: 18 18 18;
+            --color-tertiary: 106 106 106;
             --color-on-tertiary: 255 255 255;
-            --color-secondary: 100 93 92;
-            --color-on-primary-container: 0 65 24;
-            --glass-bg: rgba(255, 255, 255, 0.4);
-            --glass-border: rgba(255, 255, 255, 0.5);
+            --color-tertiary-container: 221 221 221;
+            --color-on-tertiary-container: 18 18 18;
+            --color-error: 243 114 127;
+            --color-on-error: 255 255 255;
+            --color-error-container: 255 218 220;
+            --color-on-error-container: 120 20 30;
+            --color-inverse-surface: 18 18 18;
+            --color-inverse-on-surface: 255 255 255;
+            --color-inverse-primary: 30 215 96;
+            --color-surface-tint: 29 185 84;
+            --color-primary-fixed: 30 215 96;
+            --color-on-primary-fixed: 18 18 18;
+            --color-primary-fixed-dim: 29 185 84;
+            --color-on-primary-fixed-variant: 18 18 18;
+            --color-secondary-fixed: 238 238 238;
+            --color-on-secondary-fixed: 18 18 18;
+            --color-secondary-fixed-dim: 221 221 221;
+            --color-on-secondary-fixed-variant: 106 106 106;
+            --color-tertiary-fixed: 238 238 238;
+            --color-on-tertiary-fixed: 18 18 18;
+            --color-tertiary-fixed-dim: 221 221 221;
+            --color-on-tertiary-fixed-variant: 106 106 106;
+            --glass-bg: rgba(255, 255, 255, 0.72);
+            --glass-border: rgba(0, 0, 0, 0.06);
             --scrubber-knob: 255 255 255;
+            --hero-glow: rgba(29, 185, 84, 0.12);
+            --vinyl-opacity: 0.15;
         }
         .dark {
-            --color-tertiary: 196 199 197;
-            --color-tertiary-fixed: 68 72 70;
-            --color-on-primary-fixed: 0 33 8;
-            --color-on-tertiary-container: 212 215 213;
-            --color-surface: 16 20 20;
-            --color-error-container: 147 0 10;
-            --color-on-secondary-fixed-variant: 207 196 196;
-            --color-inverse-on-surface: 46 49 50;
-            --color-outline: 137 147 136;
-            --color-background: 16 20 20;
-            --color-surface-container-low: 22 27 24;
-            --color-error: 255 180 171;
-            --color-surface-dim: 16 20 20;
-            --color-outline-variant: 66 73 66;
-            --color-on-surface: 225 227 228;
-            --color-on-secondary-fixed: 32 26 26;
-            --color-tertiary-fixed-dim: 68 72 70;
-            --color-surface-bright: 54 58 59;
-            --color-primary-container: 0 83 32;
-            --color-secondary-container: 76 69 69;
-            --color-on-secondary-container: 235 224 223;
-            --color-surface-container-lowest: 10 15 12;
-            --color-secondary-fixed: 76 69 69;
-            --color-primary: 83 224 118;
-            --color-on-background: 225 227 228;
-            --color-on-secondary: 52 46 45;
-            --color-primary-fixed-dim: 0 110 45;
-            --color-inverse-primary: 0 110 45;
-            --color-surface-tint: 83 224 118;
-            --color-surface-variant: 66 73 66;
-            --color-on-error-container: 255 218 214;
-            --color-surface-container-high: 36 42 38;
-            --color-secondary-fixed-dim: 76 69 69;
-            --color-on-error: 105 0 5;
-            --color-inverse-surface: 225 227 228;
-            --color-on-surface-variant: 188 203 185;
-            --color-on-primary: 0 57 21;
-            --color-tertiary-container: 94 94 94;
-            --color-surface-container-highest: 47 53 49;
-            --color-surface-container: 26 32 28;
-            --color-primary-fixed: 0 110 45;
-            --color-on-primary-fixed-variant: 114 254 143;
-            --color-on-tertiary-fixed: 212 215 213;
-            --color-on-tertiary: 52 52 52;
-            --color-secondary: 207 196 196;
-            --color-on-primary-container: 114 254 143;
-            --glass-bg: rgba(26, 32, 28, 0.65);
-            --glass-border: rgba(83, 224, 118, 0.15);
-            --scrubber-knob: 26 32 28;
+            --color-background: 18 18 18;
+            --color-surface: 18 18 18;
+            --color-surface-dim: 18 18 18;
+            --color-surface-bright: 31 31 31;
+            --color-surface-container-lowest: 18 18 18;
+            --color-surface-container-low: 24 24 24;
+            --color-surface-container: 31 31 31;
+            --color-surface-container-high: 37 37 37;
+            --color-surface-container-highest: 39 39 39;
+            --color-surface-variant: 37 37 37;
+            --color-on-background: 255 255 255;
+            --color-on-surface: 255 255 255;
+            --color-on-surface-variant: 179 179 179;
+            --color-outline: 77 77 77;
+            --color-outline-variant: 37 37 37;
+            --color-primary: 30 215 96;
+            --color-on-primary: 0 0 0;
+            --color-primary-container: 29 185 84;
+            --color-on-primary-container: 255 255 255;
+            --color-secondary: 179 179 179;
+            --color-on-secondary: 18 18 18;
+            --color-secondary-container: 31 31 31;
+            --color-on-secondary-container: 255 255 255;
+            --color-tertiary: 179 179 179;
+            --color-on-tertiary: 18 18 18;
+            --color-tertiary-container: 37 37 37;
+            --color-on-tertiary-container: 255 255 255;
+            --color-error: 243 114 127;
+            --color-on-error: 18 18 18;
+            --color-error-container: 80 20 30;
+            --color-on-error-container: 255 218 220;
+            --color-inverse-surface: 255 255 255;
+            --color-inverse-on-surface: 18 18 18;
+            --color-inverse-primary: 29 185 84;
+            --color-surface-tint: 30 215 96;
+            --color-primary-fixed: 30 215 96;
+            --color-on-primary-fixed: 0 0 0;
+            --color-primary-fixed-dim: 29 185 84;
+            --color-on-primary-fixed-variant: 255 255 255;
+            --color-secondary-fixed: 31 31 31;
+            --color-on-secondary-fixed: 255 255 255;
+            --color-secondary-fixed-dim: 37 37 37;
+            --color-on-secondary-fixed-variant: 179 179 179;
+            --color-tertiary-fixed: 31 31 31;
+            --color-on-tertiary-fixed: 255 255 255;
+            --color-tertiary-fixed-dim: 37 37 37;
+            --color-on-tertiary-fixed-variant: 179 179 179;
+            --glass-bg: rgba(24, 24, 24, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --scrubber-knob: 18 18 18;
+            --hero-glow: rgba(30, 215, 96, 0.08);
+            --vinyl-opacity: 0.25;
         }
         @keyframes rotate-slow {
             from { transform: rotate(0deg); }
@@ -218,6 +229,34 @@
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
             border: 1px solid var(--glass-border);
+            box-shadow: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+        }
+        .btn-pill {
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            font-weight: 700;
+        }
+        .btn-pill-lg {
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            font-weight: 700;
+        }
+        .spotify-card {
+            transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .spotify-card:hover {
+            box-shadow: rgba(0, 0, 0, 0.3) 0px 8px 8px;
+        }
+        .dark .spotify-card:hover {
+            background-color: rgb(var(--color-surface-container-high));
+        }
+        .theme-icon {
+            transition: transform 0.35s ease, opacity 0.2s ease;
+        }
+        #theme-toggle:active .theme-icon {
+            transform: rotate(30deg) scale(0.9);
         }
         html {
             color-scheme: light;
@@ -225,53 +264,56 @@
         html.dark {
             color-scheme: dark;
         }
+        body, header, section, footer, .glass-player, .spotify-card {
+            transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+        }
     </style>
 </head>
-<body class="bg-background text-on-surface selection:bg-primary-container selection:text-on-primary">
+<body class="bg-background text-on-surface selection:bg-primary selection:text-on-primary antialiased">
 <!-- TopNavBar -->
-<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop h-20 bg-surface/80 backdrop-blur-md border-b border-outline-variant/10">
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop h-16 md:h-20 bg-surface/90 backdrop-blur-md border-b border-outline-variant/20">
 <div class="flex items-center gap-2">
-<span class="font-display-lg text-title-md text-primary tracking-tighter">Rewind</span>
+<span class="font-display-lg text-title-md text-primary tracking-tight font-bold">Rewind</span>
 </div>
 <nav class="hidden md:flex gap-gutter items-center">
-<a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Pricing</a>
-<a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Community</a>
+<a class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors" href="#">Pricing</a>
+<a class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors" href="#">Community</a>
 </nav>
 <div class="flex items-center gap-3">
-<button id="theme-toggle" type="button" aria-label="Switch to dark mode" class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all" title="Toggle theme">
-<span id="theme-icon" class="material-symbols-outlined text-xl">dark_mode</span>
+<button id="theme-toggle" type="button" aria-label="Switch to dark mode" class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" title="Toggle theme">
+<span id="theme-icon" class="theme-icon material-symbols-outlined text-xl">dark_mode</span>
 </button>
-<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-label-caps text-[11px] scale-95 active:scale-90 transition-all uppercase tracking-wider hover:shadow-lg hover:shadow-primary/20">
+<button class="btn-pill bg-primary text-on-primary px-6 py-2.5 rounded-full hover:scale-105 active:scale-95 transition-all hover:shadow-spotify-green">
         Get Started
     </button>
 </div>
 </header>
 <main>
 <!-- Redesigned Hero Section: Music Player Aesthetic -->
-<section class="relative min-h-screen flex items-center justify-center overflow-hidden bg-surface-container-lowest">
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden bg-background pt-16">
 <!-- Abstract Background Elements -->
-<div class="absolute inset-0 z-0 flex items-center justify-center opacity-30 pointer-events-none">
+<div class="absolute inset-0 z-0 flex items-center justify-center pointer-events-none" style="opacity: var(--vinyl-opacity);">
 <div class="relative w-[800px] h-[800px] flex items-center justify-center">
 <!-- Outer Vinyl Ring -->
-<div class="absolute inset-0 border-[40px] border-surface-dim rounded-full animate-vinyl"></div>
+<div class="absolute inset-0 border-[40px] border-surface-container-high rounded-full animate-vinyl"></div>
 <!-- Middle Glow -->
-<div class="absolute w-[600px] h-[600px] bg-primary/10 rounded-full blur-[100px]"></div>
+<div class="absolute w-[600px] h-[600px] rounded-full blur-[100px]" style="background: var(--hero-glow);"></div>
 <!-- Waveform Lines (Simulated) -->
-<div class="flex items-end gap-1 h-32 opacity-20">
-<div class="w-1 bg-primary h-[20%]"></div>
-<div class="w-1 bg-primary h-[40%]"></div>
-<div class="w-1 bg-primary h-[80%]"></div>
-<div class="w-1 bg-primary h-[60%]"></div>
-<div class="w-1 bg-primary h-[90%]"></div>
-<div class="w-1 bg-primary h-[45%]"></div>
-<div class="w-1 bg-primary h-[70%]"></div>
+<div class="flex items-end gap-1 h-32 opacity-30">
+<div class="w-1 bg-primary h-[20%] rounded-full"></div>
+<div class="w-1 bg-primary h-[40%] rounded-full"></div>
+<div class="w-1 bg-primary h-[80%] rounded-full"></div>
+<div class="w-1 bg-primary h-[60%] rounded-full"></div>
+<div class="w-1 bg-primary h-[90%] rounded-full"></div>
+<div class="w-1 bg-primary h-[45%] rounded-full"></div>
+<div class="w-1 bg-primary h-[70%] rounded-full"></div>
 </div>
 </div>
 </div>
 <!-- Content Container (Glassmorphism Player) -->
-<div class="relative z-10 max-w-3xl w-full mx-container-padding-mobile glass-player p-8 md:p-16 rounded-[2rem] shadow-2xl flex flex-col items-center text-center">
+<div class="relative z-10 max-w-3xl w-full mx-container-padding-mobile glass-player p-8 md:p-16 rounded-2xl flex flex-col items-center text-center">
 <!-- Now Playing Label -->
-<div class="flex items-center gap-2 mb-8 bg-primary/10 px-4 py-1.5 rounded-full text-primary font-label-caps text-[10px] tracking-widest uppercase">
+<div class="flex items-center gap-2 mb-8 bg-primary/10 px-4 py-1.5 rounded-full text-primary font-label-caps text-[10px] tracking-[0.2em] uppercase">
 <span class="flex h-2 w-2 relative">
 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
 <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
@@ -279,22 +321,22 @@
                 Now Playing History
             </div>
 <!-- Headline -->
-<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg mb-4 text-on-surface leading-[1.1] tracking-tight">
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg mb-4 text-on-surface leading-[1.1] tracking-tight font-bold">
                 Your music history.<br/>
-<span class="text-primary italic">Unwrapped</span>, any day.
+<span class="text-primary not-italic">Unwrapped</span>, any day.
             </h1>
 <!-- Subtitle Echoing Player Subtext -->
 <p class="font-body-lg text-on-surface-variant mb-12 max-w-lg">
                 The ultimate audio analytics dashboard for your lifetime streaming journey.
             </p>
 <!-- Buttons: Prominent and Centered -->
-<div class="flex flex-col sm:flex-row gap-6 w-full justify-center">
-<button class="bg-primary text-on-primary px-10 py-5 rounded-full font-title-md hover:brightness-110 transition-all shadow-xl shadow-primary/30 flex items-center justify-center gap-3 group">
-<span class="material-symbols-outlined fill-1">play_circle</span>
+<div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
+<button class="btn-pill-lg bg-primary text-on-primary px-10 py-4 rounded-full hover:scale-105 active:scale-95 transition-all shadow-spotify-green flex items-center justify-center gap-3">
+<span class="material-symbols-outlined fill-1 text-xl">play_circle</span>
                     Start Your Rewind
                 </button>
-<button class="bg-surface-container-high/50 text-on-surface px-10 py-5 rounded-full font-title-md hover:bg-surface-container-high transition-all flex items-center justify-center gap-3">
-<span class="material-symbols-outlined">visibility</span>
+<button class="btn-pill-lg bg-surface-container-high text-on-surface px-10 py-4 rounded-full hover:bg-surface-container transition-all flex items-center justify-center gap-3 border border-outline-variant/30">
+<span class="material-symbols-outlined text-xl">visibility</span>
                     View Demo
                 </button>
 </div>
@@ -316,31 +358,31 @@
 <section class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop max-w-7xl mx-auto">
 <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
 <!-- Card 1: Quick Insights -->
-<div class="bg-surface-container-low p-12 rounded-xl group hover:bg-surface-container transition-all duration-500">
-<div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-<span class="material-symbols-outlined text-primary text-4xl">bolt</span>
+<div class="spotify-card bg-surface-container-low p-8 md:p-12 rounded-lg group">
+<div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-3xl">bolt</span>
 </div>
-<h3 class="font-headline-lg mb-4 text-on-surface">Quick Insights</h3>
+<h3 class="font-headline-lg mb-4 text-on-surface font-bold">Quick Insights</h3>
 <p class="font-body-lg text-on-surface-variant mb-8 leading-relaxed">
                     Connect your account for an instant snapshot of your top artists and tracks from the last 4 weeks, 6 months, or all time.
                 </p>
-<button class="w-full bg-primary text-on-primary py-4 rounded-full font-title-md flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary/30 transition-all">
+<button class="btn-pill-lg w-full bg-primary text-on-primary py-4 rounded-full flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] hover:shadow-spotify-green transition-all">
                     Login with Spotify
-                    <span class="material-symbols-outlined">arrow_forward</span>
+                    <span class="material-symbols-outlined text-xl">arrow_forward</span>
 </button>
 </div>
 <!-- Card 2: Deep Dive -->
-<div class="bg-surface-container-low p-12 rounded-xl group hover:bg-surface-container transition-all duration-500 border border-transparent hover:border-primary/20">
-<div class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-<span class="material-symbols-outlined text-on-surface text-4xl">analytics</span>
+<div class="spotify-card bg-surface-container-low p-8 md:p-12 rounded-lg group">
+<div class="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-on-surface text-3xl">analytics</span>
 </div>
-<h3 class="font-headline-lg mb-4 text-on-surface">Deep Dive</h3>
+<h3 class="font-headline-lg mb-4 text-on-surface font-bold">Deep Dive</h3>
 <p class="font-body-lg text-on-surface-variant mb-8 leading-relaxed">
                     Upload your full Spotify data export for years of extensive analytics, genre mood mapping, and long-term listening trends.
                 </p>
-<button class="w-full border-2 border-primary text-primary py-4 rounded-full font-title-md flex items-center justify-center gap-2 hover:bg-primary hover:text-on-primary transition-all">
+<button class="btn-pill-lg w-full border border-outline text-on-surface py-4 rounded-full flex items-center justify-center gap-2 hover:border-on-surface hover:scale-[1.02] active:scale-[0.98] transition-all">
                     Upload Data
-                    <span class="material-symbols-outlined">upload_file</span>
+                    <span class="material-symbols-outlined text-xl">upload_file</span>
 </button>
 </div>
 </div>
@@ -349,77 +391,77 @@
 <section class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop bg-surface-container-low relative overflow-hidden">
 <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
 <div class="lg:col-span-7">
-<h2 class="font-display-lg text-display-lg-mobile md:text-headline-lg mb-8 text-on-surface">Get your full history</h2>
-<div class="relative group aspect-video rounded-xl overflow-hidden shadow-2xl bg-surface-container-highest transition-all duration-700">
+<h2 class="font-display-lg text-display-lg-mobile md:text-headline-lg mb-8 text-on-surface font-bold">Get your full history</h2>
+<div class="relative group aspect-video rounded-lg overflow-hidden shadow-spotify-dialog bg-surface-container-highest transition-all duration-700">
 <div class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A high-tech dashboard preview" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDJUzvP9Wh3gvzRQHmv7xNQElNWJklY7LgkEXP4h3bnLH08xgdeaptqIg9BQkTKhAMGMdWxE4YjhxKZjJGAwMbD-wvTe-b-UGmriiAPVsjs0fOt3xSA-SSzhKvzCHaMQVJWPlYjBhUMdbpq7g3hVXEjO4EwaWA4auAdQ4cbF-WBw1NSq13Gm7gdNObaziasRASeji7hrcak4cuW4j4fw4VYZ3rysV0YOuruE_veQI2gWI1IWi5_tCOQlpgukhxeIrfb3y4ynnBVHYE');"></div>
-<div class="absolute inset-0 bg-black/20 flex items-center justify-center">
-<button class="w-20 h-20 bg-primary rounded-full flex items-center justify-center text-on-primary scale-100 group-hover:scale-110 transition-transform shadow-2xl">
-<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+<button class="w-16 h-16 md:w-20 md:h-20 bg-primary rounded-full flex items-center justify-center text-on-primary scale-100 group-hover:scale-110 transition-transform shadow-spotify-green">
+<span class="material-symbols-outlined text-3xl md:text-4xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
 </button>
 </div>
 </div>
 </div>
 <div class="lg:col-span-5">
-<div class="space-y-6">
-<div class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors border-l-4 border-transparent hover:border-primary">
-<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-title-md text-sm">1</div>
+<div class="space-y-2">
+<div class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors">
+<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">1</div>
 <div>
-<h4 class="font-title-md text-on-surface">Go to Spotify Privacy Settings</h4>
+<h4 class="font-title-md text-on-surface font-bold">Go to Spotify Privacy Settings</h4>
 <p class="font-body-sm text-on-surface-variant">Navigate to the account settings on the Spotify web player.</p>
 </div>
 </div>
-<div class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors border-l-4 border-transparent hover:border-primary">
-<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-title-md text-sm">2</div>
+<div class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors">
+<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">2</div>
 <div>
-<h4 class="font-title-md text-on-surface">Request your data</h4>
+<h4 class="font-title-md text-on-surface font-bold">Request your data</h4>
 <p class="font-body-sm text-on-surface-variant">Select "Extended streaming history" to get your full lifetime data.</p>
 </div>
 </div>
-<div class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors border-l-4 border-transparent hover:border-primary">
-<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-title-md text-sm">3</div>
+<div class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors">
+<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">3</div>
 <div>
-<h4 class="font-title-md text-on-surface">Wait for the email</h4>
+<h4 class="font-title-md text-on-surface font-bold">Wait for the email</h4>
 <p class="font-body-sm text-on-surface-variant">Spotify usually takes up to 30 days to process full data requests.</p>
 </div>
 </div>
-<div class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors border-l-4 border-transparent hover:border-primary">
-<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-title-md text-sm">4</div>
+<div class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors">
+<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">4</div>
 <div>
-<h4 class="font-title-md text-on-surface">Upload it here</h4>
+<h4 class="font-title-md text-on-surface font-bold">Upload it here</h4>
 <p class="font-body-sm text-on-surface-variant">Once you receive the .json files, drag them directly into Rewind.</p>
 </div>
 </div>
 </div>
-<button class="mt-8 text-primary font-title-md flex items-center gap-2 hover:gap-4 transition-all group">
+<button class="mt-8 text-primary font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-4 transition-all group">
                     Read Detailed Guide
-                    <span class="material-symbols-outlined transition-transform">arrow_right_alt</span>
+                    <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_right_alt</span>
 </button>
 </div>
 </div>
 </section>
 <!-- Dynamic Visual Section -->
 <section class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop">
-<div class="max-w-7xl mx-auto bg-surface-container-low rounded-2xl overflow-hidden p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 border border-outline-variant/10">
+<div class="max-w-7xl mx-auto bg-surface-container-low rounded-lg overflow-hidden p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 shadow-spotify-card">
 <div class="flex flex-col lg:flex-row items-center gap-12 w-full">
 <div class="lg:w-[40%] space-y-6">
 <div class="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary font-label-caps text-[10px] uppercase tracking-[0.2em]">Live Analytics</div>
-<h2 class="font-display-lg text-display-lg-mobile md:text-headline-lg text-on-surface leading-tight">See your data in a whole new light.</h2>
+<h2 class="font-display-lg text-display-lg-mobile md:text-headline-lg text-on-surface leading-tight font-bold">See your data in a whole new light.</h2>
 <p class="font-body-lg text-on-surface-variant">We don't just show you lists. We show you the story of your life through audio—tempo shifts, mood trends, and the songs that defined your biggest moments.</p>
 <div class="flex gap-8 py-4">
 <div class="text-center">
-<div class="font-display-lg text-primary">10k+</div>
-<div class="font-label-caps text-on-surface-variant text-[10px] uppercase">Users Logged</div>
+<div class="font-display-lg text-primary font-bold text-2xl">10k+</div>
+<div class="font-label-caps text-on-surface-variant text-[10px] uppercase tracking-wider">Users Logged</div>
 </div>
 <div class="text-center">
-<div class="font-display-lg text-primary">1M+</div>
-<div class="font-label-caps text-on-surface-variant text-[10px] uppercase">Songs Scanned</div>
+<div class="font-display-lg text-primary font-bold text-2xl">1M+</div>
+<div class="font-label-caps text-on-surface-variant text-[10px] uppercase tracking-wider">Songs Scanned</div>
 </div>
 </div>
 </div>
 <div class="lg:w-[60%] w-full">
 <div class="relative group">
-<div class="absolute -inset-1 bg-primary/10 rounded-[2rem] blur-xl opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-<img alt="Rewind Dashboard Preview" class="relative rounded-xl border border-outline-variant/20 shadow-2xl w-full h-auto transform transition-transform duration-500 group-hover:scale-[1.01]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8xX_HhDByLwuvIvMZGr2zDcaazrBn-lpFLVwhuMNu6tWwIj_Y6TcKDMn__AwQDFBkIB_IdNx9Z5bcWpYPeFY03qPABHJb3AVKX-ryiVuiCjF-tJ6RYJ-H4ByjzOjo6jUKSnkywbf2ZB1f1recd76tkiuP2Lc8Ci-TVzUUPXJZq3op5Nt-mwQMn6QYSkxhDVqpjo567iu2VBgYLn-rMemj0z-ZVa-HyoAXrO1Y4Kbhh25QVMhjMkuWXZPGOLCH6nTzEKOmgbl9GTU"/>
+<div class="absolute -inset-1 bg-primary/10 rounded-2xl blur-xl opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+<img alt="Rewind Dashboard Preview" class="relative rounded-lg shadow-spotify-dialog w-full h-auto transform transition-transform duration-500 group-hover:scale-[1.01]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8xX_HhDByLwuvIvMZGr2zDcaazrBn-lpFLVwhuMNu6tWwIj_Y6TcKDMn__AwQDFBkIB_IdNx9Z5bcWpYPeFY03qPABHJb3AVKX-ryiVuiCjF-tJ6RYJ-H4ByjzOjo6jUKSnkywbf2ZB1f1recd76tkiuP2Lc8Ci-TVzUUPXJZq3op5Nt-mwQMn6QYSkxhDVqpjo567iu2VBgYLn-rMemj0z-ZVa-HyoAXrO1Y4Kbhh25QVMhjMkuWXZPGOLCH6nTzEKOmgbl9GTU"/>
 </div>
 </div>
 </div>
@@ -427,35 +469,35 @@
 </section>
 </main>
 <!-- Community Leaderboard Section -->
-<section class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop bg-surface">
+<section class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop bg-background">
 <div class="max-w-7xl mx-auto text-center mb-12">
-<h2 class="font-display-lg text-display-lg-mobile md:text-headline-lg mb-4 text-on-surface">Community Leaderboard</h2>
+<h2 class="font-display-lg text-display-lg-mobile md:text-headline-lg mb-4 text-on-surface font-bold">Community Leaderboard</h2>
 <p class="font-body-lg text-on-surface-variant max-w-2xl mx-auto">Compare your listening habits and fan status with the global community. See where you rank among the world's top listeners.</p>
 </div>
 <div class="max-w-5xl mx-auto relative group">
-<div class="absolute -inset-4 bg-primary/5 rounded-[3rem] blur-3xl opacity-50"></div>
-<div class="relative bg-surface rounded-xl overflow-hidden border border-outline-variant/30 shadow-2xl transition-all duration-700">
+<div class="absolute -inset-4 bg-primary/5 rounded-3xl blur-3xl opacity-50"></div>
+<div class="relative bg-surface-container-low rounded-lg overflow-hidden shadow-spotify-dialog transition-all duration-700">
 <img alt="Community Leaderboard Preview" class="w-full h-auto transform transition-transform duration-700 group-hover:scale-[1.01]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5gpS3Kn-BqVUigBKTGDWnsrJLeBfnkbqJCUlff_jQOnw647lE_1BFaRbL9ZGG_-t-4QcH0nFurVPeO9vzsvQuqYN82Kkez6I1LfwE7LkrSQ-NqsJgWvsAoiYj9WIjQ1oaBMshNB2iC78e7Z7gk0yY47vpB6l2ucXRAPOoS5wZQ0Nugn_zV3xOahNtZrnf2FzBqlQBmvgWzaYunVOrvRT-wunn9UzfpjTFm-EaILHipJYsxh1rc4FkXJzZki6KSahubxoMp-gsNBA"/>
 </div>
 </div>
 </section>
 <!-- Footer -->
-<footer class="w-full py-16 px-container-padding-mobile md:px-container-padding-desktop bg-surface-container-low border-t border-outline-variant/10">
+<footer class="w-full py-16 px-container-padding-mobile md:px-container-padding-desktop bg-surface-container-low border-t border-outline-variant/20">
 <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
 <div class="flex flex-col items-center md:items-start gap-2">
-<span class="font-display-lg text-title-md text-primary">Rewind</span>
+<span class="font-display-lg text-title-md text-primary font-bold">Rewind</span>
 <p class="font-body-sm text-on-surface-variant">© 2024 Rewind. All rights reserved.</p>
 </div>
 <div class="flex gap-gutter">
-<a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy</a>
-<a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms</a>
-<a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Contact</a>
+<a class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy</a>
+<a class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors" href="#">Terms</a>
+<a class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors" href="#">Contact</a>
 </div>
 <div class="flex gap-4">
-<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center hover:bg-primary hover:text-on-primary transition-all" href="#">
+<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary transition-all" href="#">
 <svg class="w-5 h-5 fill-current" viewbox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg>
 </a>
-<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center hover:bg-primary hover:text-on-primary transition-all" href="#">
+<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary transition-all" href="#">
 <svg class="w-5 h-5 fill-current" viewbox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.058-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"></path></svg>
 </a>
 </div>
@@ -491,9 +533,13 @@
     window.addEventListener('scroll', () => {
         const header = document.querySelector('header');
         if (window.scrollY > 20) {
-            header.classList.add('bg-surface/95', 'shadow-sm');
+            header.classList.add('shadow-spotify-card');
+            header.classList.remove('bg-surface/90');
+            header.classList.add('bg-surface');
         } else {
-            header.classList.remove('bg-surface/95', 'shadow-sm');
+            header.classList.remove('shadow-spotify-card');
+            header.classList.add('bg-surface/90');
+            header.classList.remove('bg-surface');
         }
     });
 </script>
