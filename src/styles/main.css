@@ -1,0 +1,295 @@
+/* Spotify-Inspired Visual Design System Tokens & Base Styles */
+:root {
+    --color-background: 255 255 255;
+    --color-surface: 250 250 250;
+    --color-surface-dim: 238 238 238;
+    --color-surface-bright: 255 255 255;
+    --color-surface-container-lowest: 255 255 255;
+    --color-surface-container-low: 245 245 245;
+    --color-surface-container: 238 238 238;
+    --color-surface-container-high: 229 229 229;
+    --color-surface-container-highest: 221 221 221;
+    --color-surface-variant: 238 238 238;
+    --color-on-background: 18 18 18;
+    --color-on-surface: 18 18 18;
+    --color-on-surface-variant: 106 106 106;
+    --color-outline: 124 124 124;
+    --color-outline-variant: 221 221 221;
+    --color-primary: 29 185 84;
+    --color-on-primary: 255 255 255;
+    --color-primary-container: 30 215 96;
+    --color-on-primary-container: 18 18 18;
+    --color-secondary: 106 106 106;
+    --color-on-secondary: 255 255 255;
+    --color-secondary-container: 238 238 238;
+    --color-on-secondary-container: 18 18 18;
+    --color-tertiary: 106 106 106;
+    --color-on-tertiary: 255 255 255;
+    --color-tertiary-container: 221 221 221;
+    --color-on-tertiary-container: 18 18 18;
+    --color-error: 243 114 127;
+    --color-on-error: 255 255 255;
+    --color-error-container: 255 218 220;
+    --color-on-error-container: 120 20 30;
+    --color-inverse-surface: 18 18 18;
+    --color-inverse-on-surface: 255 255 255;
+    --color-inverse-primary: 30 215 96;
+    --color-surface-tint: 29 185 84;
+    --color-primary-fixed: 30 215 96;
+    --color-on-primary-fixed: 18 18 18;
+    --color-primary-fixed-dim: 29 185 84;
+    --color-on-primary-fixed-variant: 18 18 18;
+    --color-secondary-fixed: 238 238 238;
+    --color-on-secondary-fixed: 18 18 18;
+    --color-secondary-fixed-dim: 221 221 221;
+    --color-on-secondary-fixed-variant: 106 106 106;
+    --color-tertiary-fixed: 238 238 238;
+    --color-on-tertiary-fixed: 18 18 18;
+    --color-tertiary-fixed-dim: 221 221 221;
+    --color-on-tertiary-fixed-variant: 106 106 106;
+    --glass-bg: rgba(255, 255, 255, 0.72);
+    --glass-border: rgba(0, 0, 0, 0.06);
+    --scrubber-knob: 255 255 255;
+    --hero-glow: rgba(29, 185, 84, 0.12);
+    --vinyl-opacity: 0.15;
+    --heatmap-empty: #e5e5e5;
+}
+
+.dark {
+    --color-background: 18 18 18;
+    --color-surface: 18 18 18;
+    --color-surface-dim: 18 18 18;
+    --color-surface-bright: 31 31 31;
+    --color-surface-container-lowest: 18 18 18;
+    --color-surface-container-low: 24 24 24;
+    --color-surface-container: 31 31 31;
+    --color-surface-container-high: 37 37 37;
+    --color-surface-container-highest: 39 39 39;
+    --color-surface-variant: 37 37 37;
+    --color-on-background: 255 255 255;
+    --color-on-surface: 255 255 255;
+    --color-on-surface-variant: 179 179 179;
+    --color-outline: 77 77 77;
+    --color-outline-variant: 37 37 37;
+    --color-primary: 30 215 96;
+    --color-on-primary: 0 0 0;
+    --color-primary-container: 29 185 84;
+    --color-on-primary-container: 255 255 255;
+    --color-secondary: 179 179 179;
+    --color-on-secondary: 18 18 18;
+    --color-secondary-container: 31 31 31;
+    --color-on-secondary-container: 255 255 255;
+    --color-tertiary: 179 179 179;
+    --color-on-tertiary: 18 18 18;
+    --color-tertiary-container: 37 37 37;
+    --color-on-tertiary-container: 255 255 255;
+    --color-error: 243 114 127;
+    --color-on-error: 18 18 18;
+    --color-error-container: 80 20 30;
+    --color-on-error-container: 255 218 220;
+    --color-inverse-surface: 255 255 255;
+    --color-inverse-on-surface: 18 18 18;
+    --color-inverse-primary: 29 185 84;
+    --color-surface-tint: 30 215 96;
+    --color-primary-fixed: 30 215 96;
+    --color-on-primary-fixed: 0 0 0;
+    --color-primary-fixed-dim: 29 185 84;
+    --color-on-primary-fixed-variant: 255 255 255;
+    --color-secondary-fixed: 31 31 31;
+    --color-on-secondary-fixed: 255 255 255;
+    --color-secondary-fixed-dim: 37 37 37;
+    --color-on-secondary-fixed-variant: 179 179 179;
+    --color-tertiary-fixed: 31 31 31;
+    --color-on-tertiary-fixed: 255 255 255;
+    --color-tertiary-fixed-dim: 37 37 37;
+    --color-on-tertiary-fixed-variant: 179 179 179;
+    --glass-bg: rgba(24, 24, 24, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --scrubber-knob: 18 18 18;
+    --hero-glow: rgba(30, 215, 96, 0.08);
+    --vinyl-opacity: 0.25;
+    --heatmap-empty: #1f1f1f;
+}
+
+html {
+    color-scheme: light;
+}
+html.dark {
+    color-scheme: dark;
+}
+body, header, section, footer, .glass-player, .spotify-card {
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+@keyframes rotate-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.animate-vinyl {
+    animation: rotate-slow 20s linear infinite;
+}
+.glass-player {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--glass-border);
+    box-shadow: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+}
+.btn-pill {
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+.btn-pill-lg {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+.spotify-card {
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.spotify-card:hover {
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 8px 8px;
+}
+.dark .spotify-card:hover {
+    background-color: rgb(var(--color-surface-container-high));
+}
+.theme-icon {
+    transition: transform 0.35s ease, opacity 0.2s ease;
+}
+#theme-toggle:active .theme-icon {
+    transform: rotate(30deg) scale(0.9);
+}
+
+.glass-card {
+    background: #181818;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 8px 8px;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.glass-card:hover {
+    background: #1f1f1f;
+}
+.metric-gradient {
+    background: linear-gradient(135deg, #181818 0%, #1a2e1f 100%);
+    border-color: rgba(30, 215, 96, 0.12);
+}
+
+/* GitHub-Style Listening Activity Heatmap */
+.heatmap-wrap {
+    font-size: 11px;
+    line-height: 1;
+    width: 100%;
+}
+.heatmap-grid {
+    display: grid;
+    grid-template-rows: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--weeks-count, 53), minmax(0, 1fr));
+    grid-auto-flow: column;
+    gap: var(--cell-gap, 3px);
+    width: 100%;
+    flex: 1;
+}
+.heatmap-cell {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: var(--heatmap-empty);
+    cursor: pointer;
+    outline: none;
+    transition: outline 0.1s ease, transform 0.1s ease;
+}
+.heatmap-cell:hover,
+.heatmap-cell:focus-visible {
+    outline: 1px solid rgba(255, 255, 255, 0.55);
+    outline-offset: 1px;
+    transform: scale(1.2);
+    z-index: 10;
+    position: relative;
+}
+.heatmap-cell[data-level="1"] { background: rgba(30, 215, 96, 0.22); }
+.heatmap-cell[data-level="2"] { background: rgba(30, 215, 96, 0.45); }
+.heatmap-cell[data-level="3"] { background: rgba(30, 215, 96, 0.68); }
+.heatmap-cell[data-level="4"] { background: #1ed760; }
+.heatmap-cell[data-future="true"],
+.heatmap-cell[data-padding="true"] {
+    visibility: hidden;
+    pointer-events: none;
+}
+.heatmap-months {
+    display: grid;
+    grid-template-columns: repeat(var(--weeks-count, 53), minmax(0, 1fr));
+    gap: var(--cell-gap, 3px);
+    height: 16px;
+    margin-left: calc(28px + 8px);
+    margin-bottom: 6px;
+    position: relative;
+    width: calc(100% - 36px);
+}
+.heatmap-month {
+    grid-row: 1;
+    color: #b3b3b3;
+    font-size: 10px;
+    white-space: nowrap;
+    align-self: end;
+}
+.heatmap-body {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    align-items: stretch;
+}
+.heatmap-days {
+    display: grid;
+    grid-template-rows: repeat(7, minmax(0, 1fr));
+    gap: var(--cell-gap, 3px);
+    width: 28px;
+    flex-shrink: 0;
+}
+.heatmap-day {
+    color: #b3b3b3;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+.heatmap-scroll {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #353535 transparent;
+}
+.heatmap-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+.heatmap-scroll::-webkit-scrollbar-thumb {
+    background: #353535;
+    border-radius: 9999px;
+}
+#heatmap-tooltip {
+    position: fixed;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 8px));
+    transition: opacity 0.12s ease;
+    background: #252525;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+#heatmap-tooltip.visible {
+    opacity: 1;
+}
+#heatmap-tooltip .count {
+    color: #1ed760;
+    font-weight: 700;
+}
