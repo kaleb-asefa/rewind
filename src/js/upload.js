@@ -142,30 +142,54 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (uploadAllBtn) {
-        uploadAllBtn.addEventListener("click", () => {
-            if (selectedFiles.length === 0) return;
+        uploadAllBtn.addEventListener("click", async (e) => {
+            e.preventDefault();
 
-            uploadAllBtn.disabled = true;
-            uploadAllBtn.textContent = `Analyzing ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...`;
-            uploadAllBtn.classList.add("opacity-75");
+            if (selectedFiles.length === 0) {
+                window.location.href = "overview.html";
+                return;
+            }
+
+            uploadAllBtn.classList.add("pointer-events-none", "opacity-75");
+            uploadAllBtn.textContent = `Ingesting ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...`;
+            showStatus(`Uploading ${selectedFiles.length} file(s) to server...`, "info");
 
             const formData = new FormData();
             selectedFiles.forEach(file => {
                 formData.append("files", file);
             });
 
-            // Send upload request to backend via shared API utility
-            const fetchPromise = (window.fetchWithTimeout || fetch)(
-                window.fetchWithTimeout ? "/api/upload" : "http://127.0.0.1:8000/api/upload",
-                {
-                    method: "POST",
-                    body: formData,
-                },
-                15000 // Allow up to 15s for ingestion
-            );
+            try {
+                let response;
+                try {
+                    response = await fetch("http://127.0.0.1:8000/api/upload", {
+                        method: "POST",
+                        body: formData,
+                    });
+                } catch (err) {
+                    response = await fetch("http://localhost:8000/api/upload", {
+                        method: "POST",
+                        body: formData,
+                    });
+                }
 
-            // Immediately redirect to overview.html so user lands on dashboard with progressive skeletons active
-            window.location.href = "overview.html";
+                if (response.ok) {
+                    const resData = await response.json();
+                    uploadAllBtn.textContent = "Complete! Redirecting...";
+                    showStatus(`Success! Ingested ${resData.total_rows || 0} total rows across ${resData.files_processed || selectedFiles.length} file(s). Redirecting...`, "success");
+                    window.location.href = "overview.html";
+                } else {
+                    const errData = await response.json().catch(() => ({}));
+                    showStatus(errData.detail || "Upload failed. Please check files and try again.", "error");
+                    uploadAllBtn.classList.remove("pointer-events-none", "opacity-75");
+                    uploadAllBtn.textContent = "Analyze All Files";
+                }
+            } catch (err) {
+                console.error("Network error uploading files:", err);
+                showStatus("Upload failed. Please ensure the backend server is running on http://127.0.0.1:8000 and try again.", "error");
+                uploadAllBtn.classList.remove("pointer-events-none", "opacity-75");
+                uploadAllBtn.textContent = "Analyze All Files";
+            }
         });
     }
 });
