@@ -97,5 +97,22 @@ def test_top_artist_endpoint():
         assert data["total_minutes"] > 0
 
 
+def test_top_album_endpoint():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        res = client.get("/api/metrics/top-album")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+        assert data["album_name"] is not None
+        assert data["artist_name"] is not None
+        assert data["total_streams"] > 0
+        assert data["total_minutes"] > 0
+
+
+
 
 

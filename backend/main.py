@@ -180,3 +180,41 @@ def get_top_artist(
         "total_streams": row.total_streams,
         "total_minutes": round(row.total_ms / (1000 * 60), 2),
     }
+
+
+@app.get("/api/metrics/top-album")
+def get_top_album(
+    request: Request,
+    conn: Connection = Depends(get_db),
+):
+    history = table_registry.get_history_table(request.app.state.engine)
+    stmt = (
+        select(
+            history.c.album_name,
+            history.c.artist_name,
+            func.count().label("total_streams"),
+            func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
+        )
+        .where(history.c.album_name.isnot(None))
+        .group_by(history.c.album_name, history.c.artist_name)
+        .order_by(func.count().desc())
+        .limit(1)
+    )
+    row = conn.execute(stmt).first()
+
+    if not row:
+        return {
+            "status": "ok",
+            "album_name": None,
+            "artist_name": None,
+            "total_streams": 0,
+            "total_minutes": 0,
+        }
+
+    return {
+        "status": "ok",
+        "album_name": row.album_name,
+        "artist_name": row.artist_name,
+        "total_streams": row.total_streams,
+        "total_minutes": round(row.total_ms / (1000 * 60), 2),
+    }
