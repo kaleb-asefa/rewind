@@ -1,44 +1,71 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const skeleton = document.getElementById("top-artist-skeleton");
+    const content = document.getElementById("top-artist-content");
+    const errorContainer = document.getElementById("top-artist-error");
+    const errorMsg = document.getElementById("top-artist-error-msg");
+    const retryBtn = document.getElementById("top-artist-retry-btn");
     const nameEl = document.getElementById("top-artist-name");
     const streamsEl = document.getElementById("top-artist-streams");
 
     if (!nameEl) return;
 
+    function showSkeleton() {
+        if (skeleton) skeleton.classList.remove("hidden");
+        if (content) content.classList.add("hidden");
+        if (errorContainer) errorContainer.classList.add("hidden");
+    }
+
+    function showContent() {
+        if (skeleton) skeleton.classList.add("hidden");
+        if (errorContainer) errorContainer.classList.add("hidden");
+        if (content) content.classList.remove("hidden");
+    }
+
+    function showError(msg) {
+        if (skeleton) skeleton.classList.add("hidden");
+        if (content) content.classList.add("hidden");
+        if (errorContainer) {
+            errorContainer.classList.remove("hidden");
+            if (errorMsg) errorMsg.textContent = msg;
+        }
+    }
+
     async function fetchTopArtist() {
-        try {
-            nameEl.textContent = "Loading...";
-            if (streamsEl) streamsEl.textContent = "...";
+        showSkeleton();
+        const fetcher = window.fetchWithTimeout || (async (ep) => {
+            const res = await fetch(`http://127.0.0.1:8000${ep}`);
+            const data = await res.json();
+            return { ok: res.ok, data, error: "Error loading top artist" };
+        });
 
-            let response;
-            try {
-                response = await fetch("http://localhost:8000/api/metrics/top-artist");
-            } catch (e) {
-                response = await fetch("http://127.0.0.1:8000/api/metrics/top-artist");
-            }
+        const res = await fetcher("/api/metrics/top-artist", {}, 5000);
 
-            if (!response.ok) {
-                nameEl.textContent = "--";
-                if (streamsEl) streamsEl.textContent = "No data loaded yet";
-                return;
-            }
-
-            const data = await response.json();
-            if (data.status === "ok" && data.artist_name) {
-                nameEl.textContent = data.artist_name;
+        if (res.ok && res.data && res.data.status === "ok") {
+            if (res.data.artist_name) {
+                nameEl.textContent = res.data.artist_name;
                 if (streamsEl) {
-                    const streamsFormatted = Number(data.total_streams).toLocaleString();
+                    const streamsFormatted = Number(res.data.total_streams).toLocaleString();
                     streamsEl.textContent = `${streamsFormatted} total streams`;
                 }
             } else {
                 nameEl.textContent = "No Data";
-                if (streamsEl) streamsEl.textContent = "Upload data to view top artist";
+                if (streamsEl) streamsEl.textContent = "Upload data export to view top artist";
             }
-        } catch (err) {
-            console.error("Failed to fetch top artist metric:", err);
-            nameEl.textContent = "--";
-            if (streamsEl) streamsEl.textContent = "Error loading metric";
+            showContent();
+        } else {
+            const note = res.timedOut
+                ? "Server connection timed out (5s limit)."
+                : (res.error || "No listening history loaded yet.");
+            showError(note);
         }
     }
 
     fetchTopArtist();
+
+    if (retryBtn) {
+        retryBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            fetchTopArtist();
+        });
+    }
 });

@@ -87,6 +87,7 @@
 }catch(_e){}</script>    <!-- Custom Modular Stylesheet & Scripts -->
     <link href="src/styles/main.css" rel="stylesheet"/>
     <script src="src/js/theme.js"></script>
+    <script src="src/js/api.js" defer></script>
     <script src="src/js/spotlight.js" defer></script>
     <script src="src/js/heatmap.js" defer></script>
     <script src="src/js/total_time.js" defer></script>
@@ -142,51 +143,83 @@
 <span class="font-label-bold text-label-bold text-primary uppercase tracking-widest">Total Time</span>
 <span class="material-symbols-outlined text-primary">schedule</span>
 </div>
-<div>
+<div id="total-time-skeleton" class="animate-pulse space-y-2">
+<div class="h-7 bg-surface-variant/50 rounded w-2/3"></div>
+<div class="h-4 bg-surface-variant/30 rounded w-1/2"></div>
+</div>
+<div id="total-time-content" class="hidden">
 <div class="font-headline-md text-headline-md text-on-surface" id="total-time-value">--</div>
 <div class="font-body-sm text-body-sm text-on-surface-variant mt-1 flex items-center gap-1">
 <span class="text-primary material-symbols-outlined text-[14px]">touch_app</span>
 <span id="total-time-unit">Click to switch unit</span>
 </div>
 </div>
+<div id="total-time-error" class="hidden text-body-sm text-tertiary-container space-y-1">
+<p id="total-time-error-msg" class="text-[12px] opacity-90">Server not responding.</p>
+<button type="button" id="total-time-retry-btn" class="text-[11px] font-bold text-primary underline hover:text-white">Click to retry</button>
+</div>
 </div>
 <!-- Top Artist -->
-<div class="glass-card p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden group">
+<div class="glass-card p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden group" id="top-artist-card">
 <div class="flex justify-between items-start z-10">
 <span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Top Artist</span>
 <span class="material-symbols-outlined text-on-surface-variant">person</span>
 </div>
-<div class="z-10">
+<div id="top-artist-skeleton" class="animate-pulse space-y-2 z-10">
+<div class="h-7 bg-surface-variant/50 rounded w-3/4"></div>
+<div class="h-4 bg-surface-variant/30 rounded w-1/2"></div>
+</div>
+<div id="top-artist-content" class="hidden z-10">
 <div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors" id="top-artist-name">--</div>
 <div class="font-body-sm text-body-sm text-on-surface-variant mt-1" id="top-artist-streams">--</div>
+</div>
+<div id="top-artist-error" class="hidden z-10 text-body-sm text-tertiary-container space-y-1">
+<p id="top-artist-error-msg" class="text-[12px] opacity-90">Server not responding.</p>
+<button type="button" id="top-artist-retry-btn" class="text-[11px] font-bold text-primary underline hover:text-white">Click to retry</button>
 </div>
 <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
 <span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">music_note</span>
 </div>
 </div>
 <!-- Top Album -->
-<div class="glass-card p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden group">
+<div class="glass-card p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden group" id="top-album-card">
 <div class="flex justify-between items-start z-10">
 <span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Top Album</span>
 <span class="material-symbols-outlined text-on-surface-variant">album</span>
 </div>
-<div class="z-10">
+<div id="top-album-skeleton" class="animate-pulse space-y-2 z-10">
+<div class="h-7 bg-surface-variant/50 rounded w-3/4"></div>
+<div class="h-4 bg-surface-variant/30 rounded w-1/2"></div>
+</div>
+<div id="top-album-content" class="hidden z-10">
 <div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors" id="top-album-name">--</div>
 <div class="font-body-sm text-body-sm text-on-surface-variant mt-1" id="top-album-subtext">--</div>
+</div>
+<div id="top-album-error" class="hidden z-10 text-body-sm text-tertiary-container space-y-1">
+<p id="top-album-error-msg" class="text-[12px] opacity-90">Server not responding.</p>
+<button type="button" id="top-album-retry-btn" class="text-[11px] font-bold text-primary underline hover:text-white">Click to retry</button>
 </div>
 <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
 <span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">album</span>
 </div>
 </div>
 <!-- Top Track -->
-<div class="glass-card p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden group">
+<div class="glass-card p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden group" id="top-track-card">
 <div class="flex justify-between items-start z-10">
 <span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Top Track</span>
 <span class="material-symbols-outlined text-on-surface-variant">equalizer</span>
 </div>
-<div class="z-10">
+<div id="top-track-skeleton" class="animate-pulse space-y-2 z-10">
+<div class="h-7 bg-surface-variant/50 rounded w-3/4"></div>
+<div class="h-4 bg-surface-variant/30 rounded w-1/2"></div>
+</div>
+<div id="top-track-content" class="hidden z-10">
 <div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors" id="top-track-name">--</div>
 <div class="font-body-sm text-body-sm text-on-surface-variant mt-1" id="top-track-subtext">--</div>
+</div>
+<div id="top-track-error" class="hidden z-10 text-body-sm text-tertiary-container space-y-1">
+<p id="top-track-error-msg" class="text-[12px] opacity-90">Server not responding.</p>
+<button type="button" id="top-track-retry-btn" class="text-[11px] font-bold text-primary underline hover:text-white">Click to retry</button>
 </div>
 <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
 <span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">play_circle</span>

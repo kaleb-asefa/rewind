@@ -1,5 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
     const card = document.getElementById("total-time-card");
+    const skeleton = document.getElementById("total-time-skeleton");
+    const content = document.getElementById("total-time-content");
+    const errorContainer = document.getElementById("total-time-error");
+    const errorMsg = document.getElementById("total-time-error-msg");
+    const retryBtn = document.getElementById("total-time-retry-btn");
     const valEl = document.getElementById("total-time-value");
     const unitEl = document.getElementById("total-time-unit");
 
@@ -7,7 +12,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let totalMinutes = null;
     const units = ["minutes", "hours", "days"];
-    let currentUnitIndex = 0; // Starts at minutes
+    let currentUnitIndex = 0;
+
+    function showSkeleton() {
+        if (skeleton) skeleton.classList.remove("hidden");
+        if (content) content.classList.add("hidden");
+        if (errorContainer) errorContainer.classList.add("hidden");
+    }
+
+    function showContent() {
+        if (skeleton) skeleton.classList.add("hidden");
+        if (errorContainer) errorContainer.classList.add("hidden");
+        if (content) content.classList.remove("hidden");
+    }
+
+    function showError(msg) {
+        if (skeleton) skeleton.classList.add("hidden");
+        if (content) content.classList.add("hidden");
+        if (errorContainer) {
+            errorContainer.classList.remove("hidden");
+            if (errorMsg) errorMsg.textContent = msg;
+        }
+    }
 
     function updateDisplay() {
         if (totalMinutes === null) return;
@@ -38,35 +64,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function fetchTotalTime() {
-        try {
-            valEl.textContent = "Loading...";
-            let response;
-            try {
-                response = await fetch("http://localhost:8000/api/metrics/total-time");
-            } catch (e) {
-                response = await fetch("http://127.0.0.1:8000/api/metrics/total-time");
-            }
-            if (!response.ok) {
-                valEl.textContent = "--";
-                if (unitEl) unitEl.textContent = "No data loaded yet";
-                return;
-            }
-            const data = await response.json();
-            if (data.status === "ok") {
-                totalMinutes = data.total_minutes;
-                updateDisplay();
-            }
-        } catch (err) {
-            console.error("Failed to fetch total time metric:", err);
-            valEl.textContent = "--";
-            if (unitEl) unitEl.textContent = "Click to retry";
+        showSkeleton();
+        const fetcher = window.fetchWithTimeout || (async (ep) => {
+            const res = await fetch(`http://127.0.0.1:8000${ep}`);
+            const data = await res.json();
+            return { ok: res.ok, data, error: "Error loading total time" };
+        });
+
+        const res = await fetcher("/api/metrics/total-time", {}, 5000);
+
+        if (res.ok && res.data && res.data.status === "ok") {
+            totalMinutes = res.data.total_minutes;
+            updateDisplay();
+            showContent();
+        } else {
+            const note = res.timedOut
+                ? "Server connection timed out (5s limit)."
+                : (res.error || "No listening history loaded yet.");
+            showError(note);
         }
     }
 
-    // Initial fetch from backend API
     fetchTotalTime();
 
-    // On click, perform frontend unit conversion: Minutes -> Hours -> Days -> Minutes
+    if (retryBtn) {
+        retryBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            fetchTotalTime();
+        });
+    }
+
     card.addEventListener("click", () => {
         if (totalMinutes === null) return;
         currentUnitIndex = (currentUnitIndex + 1) % units.length;

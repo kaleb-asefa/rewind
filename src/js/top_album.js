@@ -1,45 +1,72 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const skeleton = document.getElementById("top-album-skeleton");
+    const content = document.getElementById("top-album-content");
+    const errorContainer = document.getElementById("top-album-error");
+    const errorMsg = document.getElementById("top-album-error-msg");
+    const retryBtn = document.getElementById("top-album-retry-btn");
     const albumNameEl = document.getElementById("top-album-name");
     const albumSubtextEl = document.getElementById("top-album-subtext");
 
     if (!albumNameEl) return;
 
+    function showSkeleton() {
+        if (skeleton) skeleton.classList.remove("hidden");
+        if (content) content.classList.add("hidden");
+        if (errorContainer) errorContainer.classList.add("hidden");
+    }
+
+    function showContent() {
+        if (skeleton) skeleton.classList.add("hidden");
+        if (errorContainer) errorContainer.classList.add("hidden");
+        if (content) content.classList.remove("hidden");
+    }
+
+    function showError(msg) {
+        if (skeleton) skeleton.classList.add("hidden");
+        if (content) content.classList.add("hidden");
+        if (errorContainer) {
+            errorContainer.classList.remove("hidden");
+            if (errorMsg) errorMsg.textContent = msg;
+        }
+    }
+
     async function fetchTopAlbum() {
-        try {
-            albumNameEl.textContent = "Loading...";
-            if (albumSubtextEl) albumSubtextEl.textContent = "...";
+        showSkeleton();
+        const fetcher = window.fetchWithTimeout || (async (ep) => {
+            const res = await fetch(`http://127.0.0.1:8000${ep}`);
+            const data = await res.json();
+            return { ok: res.ok, data, error: "Error loading top album" };
+        });
 
-            let response;
-            try {
-                response = await fetch("http://localhost:8000/api/metrics/top-album");
-            } catch (e) {
-                response = await fetch("http://127.0.0.1:8000/api/metrics/top-album");
-            }
+        const res = await fetcher("/api/metrics/top-album", {}, 5000);
 
-            if (!response.ok) {
-                albumNameEl.textContent = "--";
-                if (albumSubtextEl) albumSubtextEl.textContent = "No data loaded yet";
-                return;
-            }
-
-            const data = await response.json();
-            if (data.status === "ok" && data.album_name) {
-                albumNameEl.textContent = data.album_name;
+        if (res.ok && res.data && res.data.status === "ok") {
+            if (res.data.album_name) {
+                albumNameEl.textContent = res.data.album_name;
                 if (albumSubtextEl) {
-                    const streamsFormatted = Number(data.total_streams).toLocaleString();
-                    const artistInfo = data.artist_name ? `by ${data.artist_name}` : "";
+                    const streamsFormatted = Number(res.data.total_streams).toLocaleString();
+                    const artistInfo = res.data.artist_name ? `by ${res.data.artist_name}` : "";
                     albumSubtextEl.textContent = `${artistInfo} • ${streamsFormatted} streams`.trim();
                 }
             } else {
                 albumNameEl.textContent = "No Data";
-                if (albumSubtextEl) albumSubtextEl.textContent = "Upload data to view top album";
+                if (albumSubtextEl) albumSubtextEl.textContent = "Upload data export to view top album";
             }
-        } catch (err) {
-            console.error("Failed to fetch top album metric:", err);
-            albumNameEl.textContent = "--";
-            if (albumSubtextEl) albumSubtextEl.textContent = "Error loading metric";
+            showContent();
+        } else {
+            const note = res.timedOut
+                ? "Server connection timed out (5s limit)."
+                : (res.error || "No listening history loaded yet.");
+            showError(note);
         }
     }
 
     fetchTopAlbum();
+
+    if (retryBtn) {
+        retryBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            fetchTopAlbum();
+        });
+    }
 });

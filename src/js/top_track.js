@@ -1,45 +1,72 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const skeleton = document.getElementById("top-track-skeleton");
+    const content = document.getElementById("top-track-content");
+    const errorContainer = document.getElementById("top-track-error");
+    const errorMsg = document.getElementById("top-track-error-msg");
+    const retryBtn = document.getElementById("top-track-retry-btn");
     const trackNameEl = document.getElementById("top-track-name");
     const trackSubtextEl = document.getElementById("top-track-subtext");
 
     if (!trackNameEl) return;
 
+    function showSkeleton() {
+        if (skeleton) skeleton.classList.remove("hidden");
+        if (content) content.classList.add("hidden");
+        if (errorContainer) errorContainer.classList.add("hidden");
+    }
+
+    function showContent() {
+        if (skeleton) skeleton.classList.add("hidden");
+        if (errorContainer) errorContainer.classList.add("hidden");
+        if (content) content.classList.remove("hidden");
+    }
+
+    function showError(msg) {
+        if (skeleton) skeleton.classList.add("hidden");
+        if (content) content.classList.add("hidden");
+        if (errorContainer) {
+            errorContainer.classList.remove("hidden");
+            if (errorMsg) errorMsg.textContent = msg;
+        }
+    }
+
     async function fetchTopTrack() {
-        try {
-            trackNameEl.textContent = "Loading...";
-            if (trackSubtextEl) trackSubtextEl.textContent = "...";
+        showSkeleton();
+        const fetcher = window.fetchWithTimeout || (async (ep) => {
+            const res = await fetch(`http://127.0.0.1:8000${ep}`);
+            const data = await res.json();
+            return { ok: res.ok, data, error: "Error loading top track" };
+        });
 
-            let response;
-            try {
-                response = await fetch("http://localhost:8000/api/metrics/top-track");
-            } catch (e) {
-                response = await fetch("http://127.0.0.1:8000/api/metrics/top-track");
-            }
+        const res = await fetcher("/api/metrics/top-track", {}, 5000);
 
-            if (!response.ok) {
-                trackNameEl.textContent = "--";
-                if (trackSubtextEl) trackSubtextEl.textContent = "No data loaded yet";
-                return;
-            }
-
-            const data = await response.json();
-            if (data.status === "ok" && data.track_name) {
-                trackNameEl.textContent = data.track_name;
+        if (res.ok && res.data && res.data.status === "ok") {
+            if (res.data.track_name) {
+                trackNameEl.textContent = res.data.track_name;
                 if (trackSubtextEl) {
-                    const streamsFormatted = Number(data.total_streams).toLocaleString();
-                    const artistInfo = data.artist_name ? `by ${data.artist_name}` : "";
+                    const streamsFormatted = Number(res.data.total_streams).toLocaleString();
+                    const artistInfo = res.data.artist_name ? `by ${res.data.artist_name}` : "";
                     trackSubtextEl.textContent = `${artistInfo} • ${streamsFormatted} streams`.trim();
                 }
             } else {
                 trackNameEl.textContent = "No Data";
-                if (trackSubtextEl) trackSubtextEl.textContent = "Upload data to view top track";
+                if (trackSubtextEl) trackSubtextEl.textContent = "Upload data export to view top track";
             }
-        } catch (err) {
-            console.error("Failed to fetch top track metric:", err);
-            trackNameEl.textContent = "--";
-            if (trackSubtextEl) trackSubtextEl.textContent = "Error loading metric";
+            showContent();
+        } else {
+            const note = res.timedOut
+                ? "Server connection timed out (5s limit)."
+                : (res.error || "No listening history loaded yet.");
+            showError(note);
         }
     }
 
     fetchTopTrack();
+
+    if (retryBtn) {
+        retryBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            fetchTopTrack();
+        });
+    }
 });

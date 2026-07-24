@@ -12,14 +12,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let selectedFiles = [];
 
-    async function fetchApi(endpoint, options = {}) {
-        try {
-            return await fetch(`http://localhost:8000${endpoint}`, options);
-        } catch (err) {
-            return await fetch(`http://127.0.0.1:8000${endpoint}`, options);
-        }
-    }
-
     const openFilePicker = () => {
         fileInput.value = "";
         fileInput.click();
@@ -150,61 +142,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (uploadAllBtn) {
-        uploadAllBtn.addEventListener("click", async () => {
+        uploadAllBtn.addEventListener("click", () => {
             if (selectedFiles.length === 0) return;
 
             uploadAllBtn.disabled = true;
             uploadAllBtn.textContent = `Analyzing ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...`;
             uploadAllBtn.classList.add("opacity-75");
-            showStatus(`Uploading ${selectedFiles.length} file(s) to server...`, "info");
 
             const formData = new FormData();
             selectedFiles.forEach(file => {
                 formData.append("files", file);
             });
 
-            try {
-                const response = await fetchApi("/api/upload", {
+            // Send upload request to backend via shared API utility
+            const fetchPromise = (window.fetchWithTimeout || fetch)(
+                window.fetchWithTimeout ? "/api/upload" : "http://127.0.0.1:8000/api/upload",
+                {
                     method: "POST",
                     body: formData,
-                });
+                },
+                15000 // Allow up to 15s for ingestion
+            );
 
-                if (response.ok) {
-                    const resData = await response.json();
-                    uploadAllBtn.textContent = "Complete! Redirecting...";
-                    if (uploadAllBtn.classList.contains("bg-on-surface")) {
-                        uploadAllBtn.classList.replace("bg-on-surface", "bg-primary");
-                    }
-                    if (uploadAllBtn.classList.contains("text-surface")) {
-                        uploadAllBtn.classList.replace("text-surface", "text-on-primary-container");
-                    }
-                    showStatus(`Success! Ingested ${resData.total_rows || 0} total rows across ${resData.files_processed || selectedFiles.length} file(s). Redirecting...`, "success");
-                    setTimeout(() => {
-                        window.location.href = "overview.html";
-                    }, 500);
-                } else {
-                    const errData = await response.json().catch(() => ({}));
-                    const msg = errData.detail || `Upload failed with status ${response.status}`;
-                    showStatus(msg, "error");
-                    resetUploadBtn();
-                }
-            } catch (err) {
-                console.error("Network error uploading files:", err);
-                showStatus("Upload failed. Please ensure the backend server is running on http://localhost:8000 and try again.", "error");
-                resetUploadBtn();
-            }
+            // Immediately redirect to overview.html so user lands on dashboard with progressive skeletons active
+            window.location.href = "overview.html";
         });
-    }
-
-    function resetUploadBtn() {
-        if (uploadAllBtn) {
-            uploadAllBtn.disabled = false;
-            uploadAllBtn.textContent = "Analyze All Files";
-            uploadAllBtn.classList.remove("opacity-75");
-            if (uploadAllBtn.classList.contains("bg-primary")) {
-                uploadAllBtn.classList.replace("bg-primary", "bg-on-surface");
-                uploadAllBtn.classList.replace("text-on-primary-container", "text-surface");
-            }
-        }
     }
 });
