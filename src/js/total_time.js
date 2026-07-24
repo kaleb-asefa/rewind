@@ -40,7 +40,12 @@ document.addEventListener("DOMContentLoaded", () => {
     async function fetchTotalTime() {
         try {
             valEl.textContent = "Loading...";
-            const response = await fetch("http://localhost:8000/api/metrics/total-time");
+            let response;
+            try {
+                response = await fetch("http://localhost:8000/api/metrics/total-time");
+            } catch (e) {
+                response = await fetch("http://127.0.0.1:8000/api/metrics/total-time");
+            }
             if (!response.ok) {
                 valEl.textContent = "--";
                 if (unitEl) unitEl.textContent = "No data loaded yet";
