@@ -43,7 +43,10 @@ MAPPING = [
 
 
 @app.post("/api/upload")
-async def upload(file: UploadFile):
+async def upload(
+    file: UploadFile,
+    conn: Connection = Depends(get_db),
+):
     if not file.filename.endswith(".json"):
         raise HTTPException(status_code=400, detail="Only JSON files are supported.")
 
@@ -53,10 +56,11 @@ async def upload(file: UploadFile):
         temp_path = temp_file.name
 
     try:
-        con = duckdb.connect(DB_PATH)
+        # Retrieve the underlying DuckDB connection from the SQLAlchemy connection dependency
+        raw_con = conn.connection.driver_connection
 
         # Inspect columns available in uploaded JSON
-        describe_res = con.execute(
+        describe_res = raw_con.execute(
             "DESCRIBE SELECT * FROM read_json_auto(?, union_by_name=True)", [temp_path]
         ).fetchall()
         existing_cols = {row[0] for row in describe_res}
@@ -71,7 +75,7 @@ async def upload(file: UploadFile):
         select_clause = ",\n            ".join(select_exprs)
 
         table_exists = (
-            con.execute(
+            raw_con.execute(
                 "SELECT count(*) FROM information_schema.tables WHERE table_name = 'history'"
             ).fetchone()[0]
             > 0
@@ -92,11 +96,9 @@ async def upload(file: UploadFile):
             FROM read_json_auto(?, union_by_name=True)
             """
 
-        con.execute(query, [temp_path])
+        raw_con.execute(query, [temp_path])
 
-        rows_added = con.execute("SELECT count(*) FROM history").fetchone()[0]
-
-        con.close()
+        rows_added = raw_con.execute("SELECT count(*) FROM history").fetchone()[0]
 
         # Reset table registry cache so SQLAlchemy Core picks up updated schema
         table_registry.reset()
