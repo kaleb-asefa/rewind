@@ -65,6 +65,7 @@ These are common suggestions that are deliberately not being built yet. Do not i
 ## Project Structure
 
 - `index.html` — landing page
+- `upload.html` — data export upload page
 - `overview.html` — analytics dashboard
 - `design.md` — visual design system (source of truth for styling)
 - `BACKEND.md` — backend architecture and data-handling decisions

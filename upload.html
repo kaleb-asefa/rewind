@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Upload Data | Rewind</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "on-surface": "#e5e2e1",
+                "surface-variant": "#353534",
+                "secondary-fixed-dim": "#c8c6c5",
+                "on-tertiary-container": "#730a1b",
+                "error": "#ffb4ab",
+                "on-tertiary": "#680114",
+                "primary-fixed": "#72fe8f",
+                "on-error-container": "#ffdad6",
+                "on-primary-fixed-variant": "#005320",
+                "error-container": "#93000a",
+                "on-secondary-container": "#b7b4b4",
+                "surface-container-low": "#1c1b1b",
+                "on-background": "#e5e2e1",
+                "secondary-container": "#474746",
+                "on-surface-variant": "#bccbb9",
+                "secondary": "#c8c6c5",
+                "on-tertiary-fixed": "#400009",
+                "primary-container": "#1db954",
+                "inverse-surface": "#e5e2e1",
+                "surface-bright": "#393939",
+                "on-secondary-fixed-variant": "#474746",
+                "inverse-on-surface": "#313030",
+                "surface-container-highest": "#353534",
+                "surface": "#131313",
+                "on-secondary-fixed": "#1c1b1b",
+                "tertiary": "#ffb3b3",
+                "surface-tint": "#53e076",
+                "primary-fixed-dim": "#53e076",
+                "tertiary-fixed": "#ffdad9",
+                "surface-container": "#201f1f",
+                "on-error": "#690005",
+                "on-primary-container": "#004118",
+                "inverse-primary": "#006e2d",
+                "tertiary-container": "#ff767b",
+                "secondary-fixed": "#e5e2e1",
+                "surface-container-high": "#2a2a2a",
+                "on-primary-fixed": "#002108",
+                "on-primary": "#003914",
+                "outline-variant": "#3d4a3d",
+                "primary": "#53e076",
+                "outline": "#869585",
+                "surface-dim": "#131313",
+                "tertiary-fixed-dim": "#ffb3b3",
+                "surface-container-lowest": "#0e0e0e",
+                "background": "#131313",
+                "on-tertiary-fixed-variant": "#881d28",
+                "on-secondary": "#313030"
+            },
+            "borderRadius": {
+                "DEFAULT": "1rem",
+                "lg": "2rem",
+                "xl": "3rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "container-padding-mobile": "16px",
+                "section-gap": "48px",
+                "gutter": "24px",
+                "container-padding-desktop": "32px",
+                "base": "8px"
+            },
+            "fontFamily": {
+                "body-sm": ["Plus Jakarta Sans"],
+                "display-lg-mobile": ["Plus Jakarta Sans"],
+                "label-bold": ["Plus Jakarta Sans"],
+                "headline-md": ["Plus Jakarta Sans"],
+                "display-lg": ["Plus Jakarta Sans"],
+                "body-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                "label-bold": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .glass-card {
+            background: rgba(24, 24, 24, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .upload-zone:hover {
+            border-color: #53e076;
+            background: rgba(83, 224, 118, 0.05);
+        }
+
+        .instruction-step::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 100%;
+            background: #53e076;
+            border-radius: 2px;
+            opacity: 0.3;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+    <script src="src/js/theme.js"></script>
+    <script src="src/js/upload.js" defer></script>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md dark:bg-surface/80 border-b border-white/5 shadow-sm">
+<nav class="flex justify-between items-center h-20 px-container-padding-desktop max-w-7xl mx-auto">
+<div class="flex items-center gap-8">
+<a class="font-display-lg text-display-lg font-extrabold tracking-tighter text-primary dark:text-primary" href="index.html">Rewind</a>
+<div class="hidden md:flex gap-6 items-center">
+<a class="text-secondary-fixed-dim hover:text-on-surface transition-colors font-body-lg text-body-lg" href="overview.html">Overview</a>
+<a class="text-primary font-bold transition-colors font-body-lg text-body-lg" href="upload.html">Upload Data</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<a class="text-secondary-fixed-dim hover:text-on-surface px-4 py-2 transition-all active:scale-95 duration-200 font-body-lg text-body-lg" href="index.html">Home</a>
+<a class="bg-primary-container text-on-primary-container px-6 py-2 rounded-full font-bold transition-all hover:bg-primary-container/90 active:scale-95 duration-200 font-body-lg text-body-lg" href="overview.html">Dashboard</a>
+</div>
+</nav>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-32 pb-section-gap px-container-padding-mobile md:px-container-padding-desktop max-w-7xl mx-auto w-full">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+<!-- Left Column: Instructions -->
+<div class="space-y-8 animate-in fade-in slide-in-from-left-4 duration-700">
+<div class="space-y-2">
+<span class="text-primary font-label-bold text-label-bold tracking-widest uppercase">Getting Started</span>
+<h1 class="font-display-lg text-display-lg text-on-surface leading-tight">Import Your History</h1>
+</div>
+<div class="space-y-6">
+<div class="relative pl-6 instruction-step">
+<p class="font-body-lg text-body-lg text-on-surface">1. Locate your Spotify data export folder.</p>
+<p class="text-secondary-fixed-dim text-body-sm font-body-sm mt-1">This is usually a .zip file received via email from Spotify's privacy dashboard.</p>
+</div>
+<div class="relative pl-6 instruction-step">
+<p class="font-body-lg text-body-lg text-on-surface">2. Select only JSON files containing audio history.</p>
+<p class="text-secondary-fixed-dim text-body-sm font-body-sm mt-1">We parse your listening patterns directly from these files.</p>
+</div>
+<div class="relative pl-6 instruction-step">
+<p class="font-body-lg text-body-lg text-on-surface">3. Look for files named like <code class="bg-surface-variant text-primary px-1.5 py-0.5 rounded text-sm font-mono">'Streaming_History_Audio_YYYY_N.json'</code>.</p>
+<p class="text-secondary-fixed-dim text-body-sm font-body-sm mt-1">Example: Streaming_History_Audio_2025_1.json</p>
+</div>
+<div class="p-4 bg-tertiary-container/10 border border-tertiary-container/20 rounded-lg flex gap-3">
+<span class="material-symbols-outlined text-tertiary-container">warning</span>
+<p class="text-on-surface text-body-sm font-body-sm"><span class="font-bold text-tertiary-container">Important:</span> Do not upload video history files (e.g., <code class="bg-surface-variant text-primary px-1.5 py-0.5 rounded text-sm font-mono">'Streaming_History_Video_YYYY_N.json'</code>). These are currently not supported for analysis.</p>
+</div>
+</div>
+<div class="pt-4">
+<a class="flex items-center gap-2 text-secondary-fixed-dim hover:text-primary transition-colors text-body-sm font-body-sm group" href="index.html#how-it-works">
+<span class="material-symbols-outlined text-[18px]">help</span>
+                        Need help getting your data? View the guide
+                        <span class="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Right Column: Upload Zone -->
+<div class="animate-in fade-in slide-in-from-right-4 duration-700 delay-150">
+<div class="glass-card rounded-xl p-8 min-h-[480px] flex flex-col relative">
+<div class="upload-zone flex-grow border-2 border-dashed border-outline-variant rounded-lg flex flex-col items-center justify-center text-center p-8 transition-all cursor-pointer group" id="drop-zone">
+<input accept=".json" class="hidden" id="file-input" multiple="" type="file">
+<div class="w-20 h-20 bg-surface-variant/50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-primary-container/20 transition-all">
+<span class="material-symbols-outlined text-4xl text-secondary group-hover:text-primary">upload_file</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">Ready to Rewind?</h3>
+<p class="font-body-lg text-body-lg text-secondary-fixed-dim max-w-xs mx-auto mb-8">
+                            Drop your JSON files here or click to browse your computer
+                        </p>
+<button type="button" class="bg-primary-container text-on-primary-container px-10 py-4 rounded-full font-bold text-body-lg hover:shadow-[0_0_20px_rgba(29,185,84,0.3)] transition-all active:scale-95">
+                            Browse Files
+                        </button>
+<p class="mt-6 text-body-sm font-body-sm text-secondary-fixed-dim opacity-50">
+                            Max file size: 50MB per file
+                        </p>
+</div>
+<!-- File List (Hidden by default) -->
+<div class="hidden mt-6 space-y-3" id="file-list-container">
+<div class="flex justify-between items-center px-1">
+<span class="text-label-bold font-label-bold text-secondary uppercase tracking-wider">Queue</span>
+<span class="text-label-bold font-label-bold text-primary" id="file-count">0 files</span>
+</div>
+<div class="max-h-32 overflow-y-auto pr-2 space-y-2 custom-scrollbar" id="file-list">
+<!-- Items dynamically added here -->
+</div>
+<button type="button" class="w-full mt-4 bg-on-surface text-surface py-3 rounded-full font-bold hover:bg-white transition-colors" id="upload-all">
+                            Analyze All Files
+                        </button>
+</div>
+</div>
+<!-- Background Decorative Element -->
+<div class="absolute -z-10 blur-[120px] top-1/2 right-0 w-64 h-64 bg-primary/10 rounded-full"></div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-section-gap bg-surface-container-lowest dark:bg-surface-container-lowest border-t border-white/5 mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center px-container-padding-desktop gap-base max-w-7xl mx-auto">
+<span class="font-display-lg-mobile text-display-lg-mobile text-on-surface">Rewind</span>
+<div class="flex gap-8 my-4 md:my-0">
+<a class="text-secondary-fixed-dim hover:text-on-surface font-body-sm text-body-sm transition-all duration-300 hover:underline decoration-primary" href="#">Legal</a>
+<a class="text-secondary-fixed-dim hover:text-on-surface font-body-sm text-body-sm transition-all duration-300 hover:underline decoration-primary" href="#">Support</a>
+<a class="text-secondary-fixed-dim hover:text-on-surface font-body-sm text-body-sm transition-all duration-300 hover:underline decoration-primary" href="#">Privacy Policy</a>
+<a class="text-secondary-fixed-dim hover:text-on-surface font-body-sm text-body-sm transition-all duration-300 hover:underline decoration-primary" href="#">Terms of Service</a>
+</div>
+<p class="text-secondary-fixed-dim font-body-sm text-body-sm">© 2024 Rewind Analytics. All rights reserved.</p>
+</div>
+</footer>
+</body>
+</html>
