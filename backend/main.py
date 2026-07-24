@@ -116,32 +116,15 @@ async def upload(file: UploadFile):
 
 @app.get("/api/metrics/total-time")
 def get_total_time(
-    unit: str = "minutes",
-    request: Request = None,
+    request: Request,
     conn: Connection = Depends(get_db),
 ):
     history = table_registry.get_history_table(request.app.state.engine)
     stmt = select(func.coalesce(func.sum(history.c.ms_played), 0))
     total_ms = conn.execute(stmt).scalar() or 0
-
-    unit_lower = unit.lower()
-    if unit_lower == "hours":
-        val = round(total_ms / (1000 * 60 * 60), 2)
-        unit_label = "Hours"
-        current_unit = "hours"
-    elif unit_lower == "days":
-        val = round(total_ms / (1000 * 60 * 60 * 24), 2)
-        unit_label = "Days"
-        current_unit = "days"
-    else:
-        val = round(total_ms / (1000 * 60), 2)
-        unit_label = "Minutes"
-        current_unit = "minutes"
+    total_minutes = round(total_ms / (1000 * 60), 2)
 
     return {
         "status": "ok",
-        "unit": current_unit,
-        "label": unit_label,
-        "value": val,
-        "total_ms": total_ms,
+        "total_minutes": total_minutes,
     }

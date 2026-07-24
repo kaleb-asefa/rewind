@@ -17,7 +17,7 @@ Approach: store everything except the two fields that are a genuine privacy liab
 | `ts` | ✅ Yes | `ts` | `TIMESTAMP` | Heatmap, active-days count, date-range filtering. |
 | `username` | ✅ Yes | `username` | `VARCHAR` | Not sensitive in the way IP/user-agent are — useful once multi-user support exists. |
 | `platform` | ✅ Yes | `platform` | `VARCHAR` | Enables a future "listening by device" breakdown. |
-| `ms_played` | ✅ Yes | `ms_played` | `BIGINT` | Total listening time. |
+| `ms_played` | ✅ Yes | `ms_played` | `BIGINT` | Total listening time (in milliseconds). |
 | `conn_country` | ✅ Yes | `conn_country` | `VARCHAR` | Enables a future "listening by country" view (useful for users who travel). |
 | `master_metadata_track_name` | ✅ Yes | `track_name` | `VARCHAR` | Top track / most-skipped track. |
 | `master_metadata_album_artist_name` | ✅ Yes | `artist_name` | `VARCHAR` | Top artist / most-skipped artist. |

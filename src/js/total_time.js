@@ -5,14 +5,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!card || !valEl) return;
 
-    // Unit rotation sequence: minutes -> hours -> days -> minutes
+    let totalMinutes = null;
     const units = ["minutes", "hours", "days"];
     let currentUnitIndex = 0; // Starts at minutes
 
-    async function fetchAndDisplayTotalTime(unit) {
+    function updateDisplay() {
+        if (totalMinutes === null) return;
+
+        let displayValue;
+        let label;
+        let nextUnit;
+
+        const mode = units[currentUnitIndex];
+        if (mode === "hours") {
+            displayValue = (totalMinutes / 60).toLocaleString(undefined, { maximumFractionDigits: 2 });
+            label = "Hours";
+            nextUnit = "Days";
+        } else if (mode === "days") {
+            displayValue = (totalMinutes / (60 * 24)).toLocaleString(undefined, { maximumFractionDigits: 2 });
+            label = "Days";
+            nextUnit = "Minutes";
+        } else {
+            displayValue = Number(totalMinutes).toLocaleString(undefined, { maximumFractionDigits: 2 });
+            label = "Minutes";
+            nextUnit = "Hours";
+        }
+
+        valEl.textContent = `${displayValue} ${label}`;
+        if (unitEl) {
+            unitEl.textContent = `Click to switch to ${nextUnit}`;
+        }
+    }
+
+    async function fetchTotalTime() {
         try {
             valEl.textContent = "Loading...";
-            const response = await fetch(`http://localhost:8000/api/metrics/total-time?unit=${unit}`);
+            const response = await fetch("http://localhost:8000/api/metrics/total-time");
             if (!response.ok) {
                 valEl.textContent = "--";
                 if (unitEl) unitEl.textContent = "No data loaded yet";
@@ -20,15 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             const data = await response.json();
             if (data.status === "ok") {
-                const formattedValue = Number(data.value).toLocaleString(undefined, {
-                    maximumFractionDigits: 2
-                });
-                valEl.textContent = `${formattedValue} ${data.label}`;
-                if (unitEl) {
-                    const nextUnit = units[(currentUnitIndex + 1) % units.length];
-                    const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1);
-                    unitEl.textContent = `Click to switch to ${capitalize(nextUnit)}`;
-                }
+                totalMinutes = data.total_minutes;
+                updateDisplay();
             }
         } catch (err) {
             console.error("Failed to fetch total time metric:", err);
@@ -37,12 +58,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Initial fetch on page load (Minutes)
-    fetchAndDisplayTotalTime(units[currentUnitIndex]);
+    // Initial fetch from backend API
+    fetchTotalTime();
 
-    // On click, cycle to next unit and fetch from backend using SQLAlchemy engine
+    // On click, perform frontend unit conversion: Minutes -> Hours -> Days -> Minutes
     card.addEventListener("click", () => {
+        if (totalMinutes === null) return;
         currentUnitIndex = (currentUnitIndex + 1) % units.length;
-        fetchAndDisplayTotalTime(units[currentUnitIndex]);
+        updateDisplay();
     });
 });

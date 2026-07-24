@@ -55,27 +55,11 @@ def test_total_time_endpoint():
         with open(sample_json_path, "rb") as f:
             client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
 
-        # Test minutes (default)
-        res_min = client.get("/api/metrics/total-time?unit=minutes")
-        assert res_min.status_code == 200
-        data_min = res_min.json()
-        assert data_min["unit"] == "minutes"
-        assert data_min["label"] == "Minutes"
-        assert data_min["value"] > 0
+        res = client.get("/api/metrics/total-time")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+        assert "total_minutes" in data
+        assert data["total_minutes"] > 0
 
-        # Test hours
-        res_hr = client.get("/api/metrics/total-time?unit=hours")
-        assert res_hr.status_code == 200
-        data_hr = res_hr.json()
-        assert data_hr["unit"] == "hours"
-        assert data_hr["label"] == "Hours"
-        assert data_hr["value"] < data_min["value"]
-
-        # Test days
-        res_day = client.get("/api/metrics/total-time?unit=days")
-        assert res_day.status_code == 200
-        data_day = res_day.json()
-        assert data_day["unit"] == "days"
-        assert data_day["label"] == "Days"
-        assert data_day["value"] < data_hr["value"]
 
