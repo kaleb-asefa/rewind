@@ -145,3 +145,38 @@ def get_total_time(
         "status": "ok",
         "total_minutes": total_minutes,
     }
+
+
+@app.get("/api/metrics/top-artist")
+def get_top_artist(
+    request: Request,
+    conn: Connection = Depends(get_db),
+):
+    history = table_registry.get_history_table(request.app.state.engine)
+    stmt = (
+        select(
+            history.c.artist_name,
+            func.count().label("total_streams"),
+            func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
+        )
+        .where(history.c.artist_name.isnot(None))
+        .group_by(history.c.artist_name)
+        .order_by(func.count().desc())
+        .limit(1)
+    )
+    row = conn.execute(stmt).first()
+
+    if not row:
+        return {
+            "status": "ok",
+            "artist_name": None,
+            "total_streams": 0,
+            "total_minutes": 0,
+        }
+
+    return {
+        "status": "ok",
+        "artist_name": row.artist_name,
+        "total_streams": row.total_streams,
+        "total_minutes": round(row.total_ms / (1000 * 60), 2),
+    }

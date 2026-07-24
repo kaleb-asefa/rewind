@@ -82,4 +82,20 @@ def test_multi_file_upload():
         assert res_data["total_rows"] == 17648
 
 
+def test_top_artist_endpoint():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        res = client.get("/api/metrics/top-artist")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+        assert data["artist_name"] is not None
+        assert data["total_streams"] > 0
+        assert data["total_minutes"] > 0
+
+
+
 

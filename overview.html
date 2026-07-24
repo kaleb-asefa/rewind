@@ -90,6 +90,7 @@
     <script src="src/js/spotlight.js" defer></script>
     <script src="src/js/heatmap.js" defer></script>
     <script src="src/js/total_time.js" defer></script>
+    <script src="src/js/top_artist.js" defer></script>
 </head><body class="bg-background text-on-background antialiased">
 <!-- TopNavBar -->
 <header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-lg shadow-sm">
@@ -154,8 +155,8 @@
 <span class="material-symbols-outlined text-on-surface-variant">person</span>
 </div>
 <div class="z-10">
-<div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors">Taylor Swift</div>
-<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">42,850 total streams</div>
+<div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors" id="top-artist-name">--</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1" id="top-artist-streams">--</div>
 </div>
 <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
 <span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">music_note</span>
