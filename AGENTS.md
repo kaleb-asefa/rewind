@@ -10,7 +10,7 @@ Two pages exist right now:
 
 ## Current Stage
 
-Frontend-only. There is no backend yet. A FastAPI backend (with async SQLAlchemy) is planned for later to serve real listening data — do not build backend code, mock APIs, or data pipelines unless explicitly asked.
+Frontend-only. There is no backend yet. Architecture for the eventual FastAPI backend (async SQLAlchemy, session-scoped DuckDB) is documented in `BACKEND.md` — do not build backend code, mock APIs, or data pipelines unless explicitly asked.
 
 ## Tech Stack (fixed — do not substitute or add to this)
 
@@ -63,6 +63,7 @@ These are common suggestions that are deliberately not being built yet. Do not i
 - `index.html` — landing page
 - `overview.html` — analytics dashboard
 - `design.md` — visual design system (source of truth for styling)
+- `BACKEND.md` — backend architecture and data-handling decisions
 - `AGENTS.md` — this file
 - `src/` — Tailwind entry CSS and any JS modules
 - `dist/` or `public/` — Vite build output
