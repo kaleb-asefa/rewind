@@ -18,16 +18,41 @@ On upload, the backend creates a session-scoped database file:
 data/sessions/<session_id>.duckdb
 ```
 
-`read_json_auto` is a DuckDB-native function with no SQLAlchemy equivalent, so ingestion is the one step that goes through DuckDB's own connection rather than the ORM layer:
+`read_json_auto` is a DuckDB-native function with no SQLAlchemy equivalent, so ingestion is the one step that goes through DuckDB's own connection rather than the ORM layer. Column selection follows `SCHEMA.md` exactly — every field is kept except the two with genuine privacy risk:
 
 ```python
 import duckdb
 
 con = duckdb.connect(f"data/sessions/{session_id}.duckdb")
-con.execute("CREATE TABLE history AS SELECT * FROM read_json_auto(?)", [uploaded_file_path])
+con.execute("""
+    CREATE TABLE history AS
+    SELECT
+        ts,
+        username,
+        platform,
+        ms_played,
+        conn_country,
+        master_metadata_track_name        AS track_name,
+        master_metadata_album_artist_name  AS artist_name,
+        master_metadata_album_album_name   AS album_name,
+        spotify_track_uri                  AS track_uri,
+        episode_name,
+        episode_show_name,
+        spotify_episode_uri                AS episode_uri,
+        reason_start,
+        reason_end,
+        shuffle,
+        skipped,
+        offline,
+        offline_timestamp,
+        incognito_mode
+    FROM read_json_auto(?)
+""", [uploaded_file_path])
 ```
 
-Spotify exports typically split history across multiple JSON files. All files for a session are ingested into the same `history` table, with deduplication applied at ingestion.
+`ip_addr_decrypted` and `user_agent_decrypted` are the only two fields never named in this `SELECT` — see `SCHEMA.md` for the full field-by-field reasoning.
+
+Spotify exports typically split history across multiple JSON files. All files for a session are ingested into the same `history` table, with deduplication applied at ingestion (on `track_uri` + `ts`).
 
 ### Querying
 
@@ -45,19 +70,20 @@ stmt = select(
     history.c.ms_played,
     history.c.track_name,
     history.c.artist_name,
-    history.c.platform,
-    history.c.conn_country,
+    history.c.album_name,
+    history.c.track_uri,
+    history.c.skipped,
 )
 
 with engine.connect() as conn:
     rows = conn.execute(stmt).all()
 ```
 
-Dashboard interactions (tab switches, date-range filters) add `.where(...)` / `.order_by(...)` clauses to this same `select()` rather than re-parsing JSON or writing new raw queries per request.
+This example selects just the columns the current Overview metrics need (see `SCHEMA.md`) — the full table has more columns available for future analysis. Dashboard interactions (tab switches, date-range filters) add `.where(...)` / `.order_by(...)` clauses to this same `select()` rather than re-parsing JSON or writing new raw queries per request.
 
 ## Data Handling
 
-**Column selection:** only columns required by the dashboard are selected. `ip_addr` (present in Spotify's export as a historical connection-metadata field) is never included in a `select()` and therefore never read out of the reflected table.
+**Column selection:** every field from the Spotify export is stored except `ip_addr_decrypted` and `user_agent_decrypted` — network and device-fingerprint data with no analytical use case. These two are never named in the ingestion `SELECT` and therefore never written to disk. Full field-by-field reasoning lives in `SCHEMA.md`; individual queries still select only the columns a given feature needs.
 
 **Session lifecycle:**
 - Each session is identified by a generated ID (e.g. UUID), not tied to a user account

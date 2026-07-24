@@ -64,6 +64,7 @@ These are common suggestions that are deliberately not being built yet. Do not i
 - `overview.html` — analytics dashboard
 - `design.md` — visual design system (source of truth for styling)
 - `BACKEND.md` — backend architecture and data-handling decisions
+- `SCHEMA.md` — data schema and column-by-column storage decisions
 - `AGENTS.md` — this file
 - `src/` — Tailwind entry CSS and any JS modules
 - `dist/` or `public/` — Vite build output
