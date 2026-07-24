@@ -89,6 +89,7 @@
     <script src="src/js/theme.js"></script>
     <script src="src/js/spotlight.js" defer></script>
     <script src="src/js/heatmap.js" defer></script>
+    <script src="src/js/total_time.js" defer></script>
 </head><body class="bg-background text-on-background antialiased">
 <!-- TopNavBar -->
 <header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-lg shadow-sm">
@@ -135,16 +136,16 @@
 <!-- Top Metric Cards Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
 <!-- Total Time -->
-<div class="glass-card metric-gradient p-6 rounded-lg flex flex-col gap-4">
+<div class="glass-card metric-gradient p-6 rounded-lg flex flex-col gap-4 cursor-pointer select-none hover:border-primary/50 transition-all" id="total-time-card" title="Click to toggle unit (Minutes / Hours / Days)">
 <div class="flex justify-between items-start">
 <span class="font-label-bold text-label-bold text-primary uppercase tracking-widest">Total Time</span>
 <span class="material-symbols-outlined text-primary">schedule</span>
 </div>
 <div>
-<div class="font-headline-md text-headline-md text-on-surface">1,240 Hours</div>
+<div class="font-headline-md text-headline-md text-on-surface" id="total-time-value">--</div>
 <div class="font-body-sm text-body-sm text-on-surface-variant mt-1 flex items-center gap-1">
-<span class="text-primary material-symbols-outlined text-[14px]">trending_up</span>
-<span class="">12% from last month</span>
+<span class="text-primary material-symbols-outlined text-[14px]">touch_app</span>
+<span id="total-time-unit">Click to switch unit</span>
 </div>
 </div>
 </div>
