@@ -10,16 +10,21 @@ Two pages exist right now:
 
 ## Current Stage
 
-Frontend-only. There is no backend yet. Architecture for the eventual FastAPI backend (async SQLAlchemy, session-scoped DuckDB) is documented in `BACKEND.md` — do not build backend code, mock APIs, or data pipelines unless explicitly asked.
+Backend implementation is active in `backend/` using **FastAPI**, **DuckDB**, and **SQLAlchemy Core**.
 
 ## Tech Stack (fixed — do not substitute or add to this)
 
-- **Vanilla HTML/CSS/JS** — no framework (no React, Vue, Svelte, etc.)
-- **Tailwind CSS**, compiled via **Vite** — not the Tailwind CDN script
-- **Chart.js** (npm) — for any future line/trend charts. Not D3, not Recharts, not Plotly.
-- **Vanilla `fetch()`** — for future calls to the FastAPI backend, once it exists
+- **Frontend:**
+  - **Vanilla HTML/CSS/JS** — no framework (no React, Vue, Svelte, etc.)
+  - **Tailwind CSS**, compiled via **Vite** — not the Tailwind CDN script
+  - **Chart.js** (npm) — for any future line/trend charts. Not D3, not Recharts, not Plotly.
+  - **Vanilla `fetch()`** — for calls to the FastAPI backend
+- **Backend (`backend/`):**
+  - **FastAPI** + **Uvicorn**
+  - **DuckDB** + **SQLAlchemy Core** (`duckdb-engine`)
+  - Package manager: **`uv`** (`pyproject.toml`)
 
-This stack is a deliberate choice, not an oversight: the current scope (two static pages rendering fetched data) does not require a framework's state-management overhead. Do not suggest or introduce a framework "for best practices" or "scalability" without an explicit request — re-evaluate the stack only when the project's actual requirements change (e.g. complex client-side state, routing, or component reuse that justifies the added complexity).
+This stack is a deliberate choice, not an oversight: the current scope does not require a framework's state-management overhead. Do not suggest or introduce a framework "for best practices" or "scalability" without an explicit request.
 
 ## Design — Locked to `design.md`
 
@@ -54,7 +59,6 @@ These are common suggestions that are deliberately not being built yet. Do not i
 
 - User accounts, authentication, or authorization
 - Social/community features (leaderboards, sharing, comments, following)
-- Backend, database, or API integration of any kind
 - Mobile app or native builds
 - Any page beyond the landing page and Overview page
 
@@ -67,6 +71,12 @@ These are common suggestions that are deliberately not being built yet. Do not i
 - `SCHEMA.md` — data schema and column-by-column storage decisions
 - `AGENTS.md` — this file
 - `src/` — Tailwind entry CSS and any JS modules
+- `backend/` — FastAPI backend implementation
+  - `database.py` — Engine lifespan, TableRegistry, and get_db connection dependency
+  - `main.py` — FastAPI application & API endpoints (`/api/upload`, `/api/metrics/total-time`)
+  - `test_main.py` — Pytest test suite
+  - `pyproject.toml` — dependencies managed via uv
+- `data/sessions/` — session-scoped DuckDB storage (.duckdb files)
 - `dist/` or `public/` — Vite build output
 
 Keep this structure flat and predictable. New files should have an obvious reason to exist and a clear location; don't introduce new top-level folders without asking.
