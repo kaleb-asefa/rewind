@@ -3,10 +3,13 @@ import shutil
 import tempfile
 
 import duckdb
-from fastapi import FastAPI, HTTPException, UploadFile
+from database import DB_PATH, get_db, lifespan, table_registry
+from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import func, select
+from sqlalchemy.engine import Connection
 
-app = FastAPI(title="Rewind API")
+app = FastAPI(title="Rewind API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,12 +18,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Ensure data directory exists
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "..", "data", "sessions")
-os.makedirs(DATA_DIR, exist_ok=True)
-DB_PATH = os.path.join(DATA_DIR, "rewind.duckdb")
 
 MAPPING = [
     ("ts", "ts"),
@@ -100,6 +97,9 @@ async def upload(file: UploadFile):
         rows_added = con.execute("SELECT count(*) FROM history").fetchone()[0]
 
         con.close()
+
+        # Reset table registry cache so SQLAlchemy Core picks up updated schema
+        table_registry.reset()
 
         return {
             "status": "ok",
