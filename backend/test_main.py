@@ -63,3 +63,23 @@ def test_total_time_endpoint():
         assert data["total_minutes"] > 0
 
 
+def test_multi_file_upload():
+    with TestClient(app) as client:
+        f1_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        f2_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
+
+        with open(f1_path, "rb") as f1, open(f2_path, "rb") as f2:
+            files = [
+                ("files", ("Streaming_History_Audio_2025_1.json", f1, "application/json")),
+                ("files", ("Streaming_History_Audio_2022-2025_0.json", f2, "application/json")),
+            ]
+            response = client.post("/api/upload", files=files)
+
+        assert response.status_code == 200
+        res_data = response.json()
+        assert res_data["status"] == "ok"
+        assert res_data["files_processed"] == 2
+        assert res_data["total_rows"] == 17648
+
+
+

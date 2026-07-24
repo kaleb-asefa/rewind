@@ -1,19 +1,33 @@
 document.addEventListener("DOMContentLoaded", () => {
     const dropZone = document.getElementById("drop-zone");
+    const browseBtn = document.getElementById("browse-btn");
     const fileInput = document.getElementById("file-input");
     const fileListContainer = document.getElementById("file-list-container");
     const fileList = document.getElementById("file-list");
     const fileCount = document.getElementById("file-count");
     const uploadAllBtn = document.getElementById("upload-all");
+    const uploadStatus = document.getElementById("upload-status");
 
     if (!dropZone || !fileInput) return;
 
     let selectedFiles = [];
 
-    // Open file browser on drop zone click
+    const openFilePicker = () => {
+        fileInput.value = "";
+        fileInput.click();
+    };
+
+    if (browseBtn) {
+        browseBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openFilePicker();
+        });
+    }
+
     dropZone.addEventListener("click", (e) => {
-        if (e.target !== fileInput && !e.target.closest("button")) {
-            fileInput.click();
+        if (fileListContainer && fileListContainer.contains(e.target)) return;
+        if (e.target !== fileInput) {
+            openFilePicker();
         }
     });
 
@@ -31,25 +45,56 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     fileInput.addEventListener("change", (e) => {
-        handleFileSelection(Array.from(e.target.files));
+        if (e.target.files && e.target.files.length > 0) {
+            handleFileSelection(Array.from(e.target.files));
+        }
     });
 
     dropZone.addEventListener("drop", (e) => {
-        if (e.dataTransfer && e.dataTransfer.files) {
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             handleFileSelection(Array.from(e.dataTransfer.files));
         }
     });
 
+    function showStatus(message, type = "info") {
+        if (!uploadStatus) return;
+        uploadStatus.classList.remove("hidden", "bg-error-container/20", "text-error", "bg-primary-container/20", "text-primary", "bg-surface-variant", "text-on-surface");
+        
+        if (type === "error") {
+            uploadStatus.classList.add("bg-error-container/20", "text-error");
+        } else if (type === "success") {
+            uploadStatus.classList.add("bg-primary-container/20", "text-primary");
+        } else {
+            uploadStatus.classList.add("bg-surface-variant", "text-on-surface");
+        }
+        uploadStatus.textContent = message;
+    }
+
+    function hideStatus() {
+        if (uploadStatus) {
+            uploadStatus.classList.add("hidden");
+            uploadStatus.textContent = "";
+        }
+    }
+
     function handleFileSelection(newFiles) {
         const jsonFiles = newFiles.filter(f => f.name.toLowerCase().endsWith(".json"));
-        if (jsonFiles.length === 0) return;
+        if (jsonFiles.length === 0) {
+            showStatus("Please select valid Spotify history JSON files.", "error");
+            return;
+        }
 
+        let addedCount = 0;
         jsonFiles.forEach(file => {
-            if (!selectedFiles.some(existing => existing.name === file.name)) {
+            if (!selectedFiles.some(existing => existing.name === file.name && existing.size === file.size)) {
                 selectedFiles.push(file);
+                addedCount++;
             }
         });
 
+        if (addedCount > 0) {
+            hideStatus();
+        }
         renderFileList();
     }
 
@@ -101,51 +146,53 @@ document.addEventListener("DOMContentLoaded", () => {
             if (selectedFiles.length === 0) return;
 
             uploadAllBtn.disabled = true;
-            uploadAllBtn.textContent = "Uploading & Ingesting...";
+            uploadAllBtn.textContent = `Ingesting ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...`;
             uploadAllBtn.classList.add("opacity-75");
+            showStatus(`Uploading ${selectedFiles.length} file(s) to server...`, "info");
 
-            let successCount = 0;
-            let errorOccurred = false;
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append("files", file);
+            });
 
-            for (const file of selectedFiles) {
-                const formData = new FormData();
-                formData.append("file", file);
+            try {
+                const response = await fetch("http://localhost:8000/api/upload", {
+                    method: "POST",
+                    body: formData,
+                });
 
-                try {
-                    const response = await fetch("http://localhost:8000/api/upload", {
-                        method: "POST",
-                        body: formData,
-                    });
-
-                    if (response.ok) {
-                        successCount++;
-                    } else {
-                        const errData = await response.json().catch(() => ({}));
-                        console.error(`Failed uploading ${file.name}:`, errData.detail || response.statusText);
-                        errorOccurred = true;
-                    }
-                } catch (err) {
-                    console.error(`Network error uploading ${file.name}:`, err);
-                    errorOccurred = true;
+                if (response.ok) {
+                    const resData = await response.json();
+                    uploadAllBtn.textContent = "Upload Complete! Redirecting...";
+                    uploadAllBtn.classList.replace("bg-on-surface", "bg-primary");
+                    uploadAllBtn.classList.replace("text-surface", "text-on-primary-container");
+                    showStatus(`Success! Ingested ${resData.total_rows || 0} total rows across ${resData.files_processed || selectedFiles.length} file(s). Redirecting...`, "success");
+                    setTimeout(() => {
+                        window.location.href = "overview.html";
+                    }, 1000);
+                } else {
+                    const errData = await response.json().catch(() => ({}));
+                    const msg = errData.detail || `Upload failed with status ${response.status}`;
+                    showStatus(msg, "error");
+                    resetUploadBtn();
                 }
-            }
-
-            if (successCount > 0 && !errorOccurred) {
-                uploadAllBtn.textContent = "Upload Complete! Redirecting...";
-                uploadAllBtn.classList.replace("bg-on-surface", "bg-primary");
-                uploadAllBtn.classList.replace("text-surface", "text-on-primary-container");
-                setTimeout(() => {
-                    window.location.href = "overview.html";
-                }, 1000);
-            } else if (successCount > 0) {
-                alert(`Uploaded ${successCount} file(s). Some files failed. Redirecting to overview.`);
-                window.location.href = "overview.html";
-            } else {
-                alert("Upload failed. Please ensure the backend server is running on http://localhost:8000 and try again.");
-                uploadAllBtn.disabled = false;
-                uploadAllBtn.textContent = "Analyze All Files";
-                uploadAllBtn.classList.remove("opacity-75");
+            } catch (err) {
+                console.error("Network error uploading files:", err);
+                showStatus("Upload failed. Please ensure the backend server is running on http://localhost:8000 and try again.", "error");
+                resetUploadBtn();
             }
         });
+    }
+
+    function resetUploadBtn() {
+        if (uploadAllBtn) {
+            uploadAllBtn.disabled = false;
+            uploadAllBtn.textContent = "Analyze All Files";
+            uploadAllBtn.classList.remove("opacity-75");
+            if (uploadAllBtn.classList.contains("bg-primary")) {
+                uploadAllBtn.classList.replace("bg-primary", "bg-on-surface");
+                uploadAllBtn.classList.replace("text-on-primary-container", "text-surface");
+            }
+        }
     }
 });

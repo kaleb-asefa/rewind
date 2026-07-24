@@ -199,7 +199,7 @@
 <p class="font-body-lg text-body-lg text-secondary-fixed-dim max-w-xs mx-auto mb-8">
                             Drop your JSON files here or click to browse your computer
                         </p>
-<button type="button" class="bg-primary-container text-on-primary-container px-10 py-4 rounded-full font-bold text-body-lg hover:shadow-[0_0_20px_rgba(29,185,84,0.3)] transition-all active:scale-95">
+<button type="button" id="browse-btn" class="bg-primary-container text-on-primary-container px-10 py-4 rounded-full font-bold text-body-lg hover:shadow-[0_0_20px_rgba(29,185,84,0.3)] transition-all active:scale-95">
                             Browse Files
                         </button>
 <p class="mt-6 text-body-sm font-body-sm text-secondary-fixed-dim opacity-50">
@@ -212,9 +212,10 @@
 <span class="text-label-bold font-label-bold text-secondary uppercase tracking-wider">Queue</span>
 <span class="text-label-bold font-label-bold text-primary" id="file-count">0 files</span>
 </div>
-<div class="max-h-32 overflow-y-auto pr-2 space-y-2 custom-scrollbar" id="file-list">
+<div class="max-h-48 overflow-y-auto pr-2 space-y-2 custom-scrollbar" id="file-list">
 <!-- Items dynamically added here -->
 </div>
+<div id="upload-status" class="hidden p-3 rounded-lg text-body-sm font-medium transition-all"></div>
 <button type="button" class="w-full mt-4 bg-on-surface text-surface py-3 rounded-full font-bold hover:bg-white transition-colors" id="upload-all">
                             Analyze All Files
                         </button>

@@ -4,7 +4,7 @@ import tempfile
 
 import duckdb
 from database import DB_PATH, get_db, lifespan, table_registry
-from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, select
 from sqlalchemy.engine import Connection
@@ -20,100 +20,115 @@ app.add_middleware(
 )
 
 MAPPING = [
-    ("ts", "ts"),
-    ("username", "username"),
-    ("platform", "platform"),
-    ("ms_played", "ms_played"),
-    ("conn_country", "conn_country"),
-    ("master_metadata_track_name", "track_name"),
-    ("master_metadata_album_artist_name", "artist_name"),
-    ("master_metadata_album_album_name", "album_name"),
-    ("spotify_track_uri", "track_uri"),
-    ("episode_name", "episode_name"),
-    ("episode_show_name", "episode_show_name"),
-    ("spotify_episode_uri", "episode_uri"),
-    ("reason_start", "reason_start"),
-    ("reason_end", "reason_end"),
-    ("shuffle", "shuffle"),
-    ("skipped", "skipped"),
-    ("offline", "offline"),
-    ("offline_timestamp", "offline_timestamp"),
-    ("incognito_mode", "incognito_mode"),
+    ("ts", "ts", "TIMESTAMP"),
+    ("username", "username", "VARCHAR"),
+    ("platform", "platform", "VARCHAR"),
+    ("ms_played", "ms_played", "BIGINT"),
+    ("conn_country", "conn_country", "VARCHAR"),
+    ("master_metadata_track_name", "track_name", "VARCHAR"),
+    ("master_metadata_album_artist_name", "artist_name", "VARCHAR"),
+    ("master_metadata_album_album_name", "album_name", "VARCHAR"),
+    ("spotify_track_uri", "track_uri", "VARCHAR"),
+    ("episode_name", "episode_name", "VARCHAR"),
+    ("episode_show_name", "episode_show_name", "VARCHAR"),
+    ("spotify_episode_uri", "episode_uri", "VARCHAR"),
+    ("reason_start", "reason_start", "VARCHAR"),
+    ("reason_end", "reason_end", "VARCHAR"),
+    ("shuffle", "shuffle", "BOOLEAN"),
+    ("skipped", "skipped", "BOOLEAN"),
+    ("offline", "offline", "BOOLEAN"),
+    ("offline_timestamp", "offline_timestamp", "TIMESTAMP"),
+    ("incognito_mode", "incognito_mode", "BOOLEAN"),
 ]
 
 
 @app.post("/api/upload")
 async def upload(
-    file: UploadFile,
+    file: UploadFile = File(None),
+    files: list[UploadFile] = File(None),
     conn: Connection = Depends(get_db),
 ):
-    if not file.filename.endswith(".json"):
-        raise HTTPException(status_code=400, detail="Only JSON files are supported.")
+    upload_list = []
+    if files:
+        upload_list.extend(files)
+    if file:
+        upload_list.append(file)
 
-    # Save uploaded file to a temporary file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_file:
-        shutil.copyfileobj(file.file, temp_file)
-        temp_path = temp_file.name
+    upload_list = [f for f in upload_list if f is not None]
 
+    if not upload_list:
+        raise HTTPException(status_code=400, detail="No files provided for upload.")
+
+    for f in upload_list:
+        if not f.filename.endswith(".json"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"File '{f.filename}' is not a supported JSON file.",
+            )
+
+    temp_paths = []
     try:
-        # Retrieve the underlying DuckDB connection from the SQLAlchemy connection dependency
+        for f in upload_list:
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+            shutil.copyfileobj(f.file, temp_file)
+            temp_file.close()
+            temp_paths.append(temp_file.name)
+
         raw_con = conn.connection.driver_connection
 
-        # Inspect columns available in uploaded JSON
+        # Ensure history table exists with correct schema as defined in SCHEMA.md
+        col_defs = [f"{target} {dtype}" for _, target, dtype in MAPPING]
+        create_table_sql = f"CREATE TABLE IF NOT EXISTS history ({', '.join(col_defs)})"
+        raw_con.execute(create_table_sql)
+
+        # Inspect columns available in uploaded JSON files
         describe_res = raw_con.execute(
-            "DESCRIBE SELECT * FROM read_json_auto(?, union_by_name=True)", [temp_path]
+            "DESCRIBE SELECT * FROM read_json_auto(?, union_by_name=True)", [temp_paths]
         ).fetchall()
         existing_cols = {row[0] for row in describe_res}
 
         select_exprs = []
-        for src_col, target_col in MAPPING:
+        for src_col, target_col, dtype in MAPPING:
             if src_col in existing_cols:
-                select_exprs.append(f"{src_col} AS {target_col}")
+                select_exprs.append(f"TRY_CAST({src_col} AS {dtype}) AS {target_col}")
             else:
-                select_exprs.append(f"NULL AS {target_col}")
+                select_exprs.append(f"CAST(NULL AS {dtype}) AS {target_col}")
 
         select_clause = ",\n            ".join(select_exprs)
 
-        table_exists = (
-            raw_con.execute(
-                "SELECT count(*) FROM information_schema.tables WHERE table_name = 'history'"
-            ).fetchone()[0]
-            > 0
-        )
+        insert_query = f"""
+        INSERT INTO history
+        SELECT
+            {select_clause}
+        FROM read_json_auto(?, union_by_name=True)
+        """
 
-        if not table_exists:
-            query = f"""
-            CREATE TABLE history AS
-            SELECT
-                {select_clause}
-            FROM read_json_auto(?, union_by_name=True)
-            """
-        else:
-            query = f"""
-            INSERT INTO history
-            SELECT
-                {select_clause}
-            FROM read_json_auto(?, union_by_name=True)
-            """
+        raw_con.execute(insert_query, [temp_paths])
 
-        raw_con.execute(query, [temp_path])
-
-        rows_added = raw_con.execute("SELECT count(*) FROM history").fetchone()[0]
+        total_rows = raw_con.execute("SELECT count(*) FROM history").fetchone()[0]
 
         # Reset table registry cache so SQLAlchemy Core picks up updated schema
         table_registry.reset()
 
         return {
             "status": "ok",
-            "message": "File uploaded and loaded into DuckDB successfully.",
-            "filename": file.filename,
-            "total_rows": rows_added,
+            "message": f"Successfully ingested {len(upload_list)} file(s) into DuckDB.",
+            "files_processed": len(upload_list),
+            "total_rows": total_rows,
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to ingest JSON into DuckDB: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to ingest JSON into DuckDB: {str(e)}"
+        )
     finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+        for path in temp_paths:
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                except Exception:
+                    pass
 
 
 @app.get("/api/metrics/total-time")
