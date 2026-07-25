@@ -65,18 +65,28 @@ These are common suggestions that are deliberately not being built yet. Do not i
 ## Project Structure
 
 - `index.html` — landing page
-- `upload.html` — data export upload page
-- `overview.html` — analytics dashboard
+- `upload.html` — standalone upload page (legacy fallback)
+- `overview.html` — analytics dashboard & single-page application host
 - `design.md` — visual design system (source of truth for styling)
 - `BACKEND.md` — backend architecture and data-handling decisions
 - `SCHEMA.md` — data schema and column-by-column storage decisions
 - `AGENTS.md` — this file
-- `src/` — Tailwind entry CSS and any JS modules
+- `src/` — Tailwind entry CSS and modular JavaScript source code
+  - `js/api.js` — centralized API client with timeout support and error handling
+  - `js/router.js` — single-page client-side router and view manager (`#view-overview`, `#view-upload`)
+  - `js/total_time.js` — total listening time metric component & skeleton state handler
+  - `js/top_artist.js` — top artist metric card renderer
+  - `js/top_album.js` — top album metric card renderer
+  - `js/top_track.js` — top track metric card renderer
+  - `js/heatmap.js` — GitHub-style listening activity heatmap component
+  - `js/upload.js` — multi-file upload drag-and-drop handler & status feedback
+  - `js/theme.js` — dark mode theme toggler & local storage persistence
+  - `js/spotlight.js` — spotlight search and keyboard shortcuts handler
 - `backend/` — FastAPI backend implementation
-  - `database.py` — Engine lifespan, TableRegistry, and get_db connection dependency
-  - `main.py` — FastAPI application & API endpoints (`/api/upload`, `/api/metrics/total-time`)
-  - `test_main.py` — Pytest test suite
-  - `pyproject.toml` — dependencies managed via uv
+  - `database.py` — Engine lifespan, TableRegistry, and `get_db` connection dependency
+  - `main.py` — FastAPI application & API endpoints (`/api/upload`, `/api/metrics/total-time`, `/api/metrics/top-artist`, `/api/metrics/top-album`, `/api/metrics/top-track`)
+  - `test_main.py` — Pytest test suite covering upload and metric endpoints
+  - `pyproject.toml` — dependencies managed via `uv`
 - `data/sessions/` — session-scoped DuckDB storage (.duckdb files)
 - `dist/` or `public/` — Vite build output
 

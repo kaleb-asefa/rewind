@@ -2,7 +2,7 @@
 
 ## Status
 
-Implementation active in `backend/`. FastAPI + DuckDB + SQLAlchemy Core engine setup is implemented.
+Implementation active in `backend/`. FastAPI + DuckDB + SQLAlchemy Core engine setup is implemented and verified.
 
 ## Architecture: FastAPI + DuckDB, Session-Scoped
 
@@ -11,35 +11,59 @@ Implementation active in `backend/`. FastAPI + DuckDB + SQLAlchemy Core engine s
 - **Query layer:** SQLAlchemy Core (`Table`/`select` constructs), not raw SQL strings
 - **Engine Lifecycle:** FastAPI `lifespan` context manager manages engine instance (`app.state.engine`); request-scoped connections yielded via `Depends(get_db)`.
 - **Table Reflection:** Managed lazily by `TableRegistry` in `database.py` and reset post-upload (`table_registry.reset()`).
+- **Async Concurrency:** Blocking database query operations are offloaded to worker threads via FastAPI's `run_in_threadpool` to prevent event-loop blocking.
 
-### Ingestion
+### Ingestion & Schema Normalization
 
-On upload (`POST /api/upload`), the backend ingests Spotify Extended Streaming History JSON files into DuckDB using `read_json_auto(?, union_by_name=True)`. To avoid DuckDB connection configuration conflicts, ingestion executes via the driver connection of `get_db` (`conn.connection.driver_connection`).
+On upload (`POST /api/upload`), the backend ingests single or multiple Spotify Extended Streaming History JSON files (`files: list[UploadFile]`) into DuckDB:
+1. Uploaded files are written to temporary files and inspected via `read_json_auto(?, union_by_name=True)`.
+2. Existing JSON keys are matched against the defined schema mapping (`MAPPING` in `main.py`).
+3. Fields present in the export are safely converted via `TRY_CAST({col} AS {dtype})`, while missing schema fields default to `CAST(NULL AS {dtype})`.
+4. The schema-normalized dataset is appended into the `history` table.
+5. `table_registry.reset()` is invoked so reflected tables pick up new data cleanly.
 
-Column selection follows `SCHEMA.md` doubling as source of truth — every field is kept except the two with genuine privacy risk (`ip_addr_decrypted` and `user_agent_decrypted`).
+### Querying & Active Metric Endpoints
 
-### Querying
+Everything after ingestion — column selection, filters, dashboard queries — goes through SQLAlchemy Core against the reflected `history` table, executed asynchronously via `run_in_threadpool`:
 
-Everything after ingestion — column selection, filters, dashboard queries — goes through SQLAlchemy Core against the reflected `history` table:
+- **`POST /api/upload`**: Accepts single (`file`) or multiple (`files`) JSON exports; ingests data and returns total row count.
+- **`GET /api/metrics/total-time`**: Sums `ms_played` and converts to total minutes listening time.
+- **`GET /api/metrics/top-artist`**: Aggregates streams and total listened minutes grouped by `artist_name`, returning top artist.
+- **`GET /api/metrics/top-album`**: Aggregates streams and total listened minutes grouped by `album_name` & `artist_name`, returning top album.
+- **`GET /api/metrics/top-track`**: Aggregates streams and total listened minutes grouped by `track_name` & `artist_name`, returning top track.
 
+Example Endpoint Implementation:
 ```python
-from database import get_db, table_registry
-from fastapi import Depends, FastAPI, Request
-from sqlalchemy import func, select
-from sqlalchemy.engine import Connection
-
-
-@app.get("/api/metrics/total-time")
-def get_total_time(
+@app.get("/api/metrics/top-artist")
+async def get_top_artist(
     request: Request,
     conn: Connection = Depends(get_db),
 ):
-    history = table_registry.get_history_table(request.app.state.engine)
-    stmt = select(func.coalesce(func.sum(history.c.ms_played), 0))
-    total_ms = conn.execute(stmt).scalar() or 0
-    total_minutes = round(total_ms / (1000 * 60), 2)
-    return {"status": "ok", "total_minutes": total_minutes}
+    def query():
+        history = table_registry.get_history_table(request.app.state.engine)
+        stmt = (
+            select(
+                history.c.artist_name,
+                func.count().label("total_streams"),
+                func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
+            )
+            .where(history.c.artist_name.isnot(None))
+            .group_by(history.c.artist_name)
+            .order_by(func.count().desc())
+            .limit(1)
+        )
+        return conn.execute(stmt).first()
+
+    row = await run_in_threadpool(query)
+    ...
 ```
+
+## Frontend Integration Layer
+
+The frontend communicates with FastAPI endpoints via `src/js/api.js`:
+- Centralized `fetchAPI` helper with built-in timeout handling and automatic fallback to relative paths when API host port varies.
+- Skeleton loader integration across dashboard cards while async metric queries resolve.
+- Debounced initial data loads and event-driven refreshes (`data-updated` event) post-upload.
 
 ## Data Handling
 
@@ -53,4 +77,5 @@ def get_total_time(
 
 - Session TTL and cleanup mechanism
 - Multi-session isolation / UUID per user session
-- Additional metric endpoints (top artist, top track, top album, heatmap, etc.)
+- Heatmap, most hated artist/track, active days, and unique songs metric endpoints
+

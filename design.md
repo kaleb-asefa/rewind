@@ -17,6 +17,7 @@ What distinguishes Spotify is its pill-and-circle geometry. Primary buttons use 
 - Heavy shadows on elevated elements (`rgba(0,0,0,0.5) 0px 8px 24px`)
 - Semantic colors: negative red (`#f3727f`), warning orange (`#ffa42b`), announcement blue (`#539df5`)
 - Album art as the primary color source — the UI is achromatic by design
+- Robust dark mode state management (`src/js/theme.js`) with persistent `localStorage` preference and smooth theme toggling
 
 ## 2. Color Palette & Roles
 

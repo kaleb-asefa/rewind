@@ -62,7 +62,7 @@ CREATE TABLE history (
 );
 ```
 
-Ingestion selects all of the above from the raw JSON (see `BACKEND.md` for the ingestion/query pattern). `ip_addr_decrypted` and `user_agent_decrypted` are the only two fields never read into memory as table columns in the first place.
+Ingestion selects all of the above from the raw JSON via explicit schema normalization (`TRY_CAST({col} AS {dtype})` for existing columns and `CAST(NULL AS {dtype})` for absent keys across multiple JSON export files; see `BACKEND.md` for the ingestion/query pattern). `ip_addr_decrypted` and `user_agent_decrypted` are the only two fields never read into memory as table columns in the first place.
 
 ## Future Growth
 
