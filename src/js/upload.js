@@ -146,7 +146,11 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
 
             if (selectedFiles.length === 0) {
-                window.location.href = "overview.html";
+                if (window.switchView) {
+                    window.switchView("overview");
+                } else {
+                    window.location.href = "overview.html?view=overview";
+                }
                 return;
             }
 
@@ -158,6 +162,11 @@ document.addEventListener("DOMContentLoaded", () => {
             selectedFiles.forEach(file => {
                 formData.append("files", file);
             });
+
+            // ZERO RELOAD: Instantly switch view to Overview dashboard showing pulse skeletons
+            if (window.switchView) {
+                window.switchView("overview");
+            }
 
             try {
                 let response;
@@ -174,10 +183,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 if (response.ok) {
-                    const resData = await response.json();
-                    uploadAllBtn.textContent = "Complete! Redirecting...";
-                    showStatus(`Success! Ingested ${resData.total_rows || 0} total rows across ${resData.files_processed || selectedFiles.length} file(s). Redirecting...`, "success");
-                    window.location.href = "overview.html";
+                    // Dispatch custom event to trigger metric re-fetch across dashboard cards
+                    window.dispatchEvent(new Event("rewind:data-updated"));
+
+                    if (!window.switchView) {
+                        window.location.href = "overview.html?view=overview";
+                    }
                 } else {
                     const errData = await response.json().catch(() => ({}));
                     showStatus(errData.detail || "Upload failed. Please check files and try again.", "error");

@@ -88,12 +88,14 @@
     <link href="src/styles/main.css" rel="stylesheet"/>
     <script src="src/js/theme.js"></script>
     <script src="src/js/api.js" defer></script>
+    <script src="src/js/router.js" defer></script>
     <script src="src/js/spotlight.js" defer></script>
     <script src="src/js/heatmap.js" defer></script>
     <script src="src/js/total_time.js" defer></script>
     <script src="src/js/top_artist.js" defer></script>
     <script src="src/js/top_album.js" defer></script>
     <script src="src/js/top_track.js" defer></script>
+    <script src="src/js/upload.js" defer></script>
 </head><body class="bg-background text-on-background antialiased">
 <!-- TopNavBar -->
 <header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-lg shadow-sm">
@@ -104,8 +106,8 @@
                 Rewind
 </a>
 <div class="hidden md:flex items-center gap-6">
-<a class="font-body-lg text-body-lg text-primary dark:text-primary border-b-2 border-primary pb-1 transition-colors duration-200" href="overview.html">Overview</a>
-<a class="font-body-lg text-body-lg text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors duration-200" href="upload.html">Upload Data</a>
+<a id="nav-link-overview" class="font-body-lg text-body-lg text-primary dark:text-primary border-b-2 border-primary pb-1 transition-colors duration-200 cursor-pointer" href="?view=overview">Overview</a>
+<a id="nav-link-upload" class="font-body-lg text-body-lg text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors duration-200 cursor-pointer" href="?view=upload">Upload Data</a>
 </div>
 </div>
 <div class="flex items-center gap-4">
@@ -128,7 +130,7 @@
 </div>
 </nav>
 </header>
-<main class="pt-24 pb-section-gap px-container-padding-desktop max-w-[1440px] mx-auto space-y-section-gap">
+<main id="view-overview" class="pt-24 pb-section-gap px-container-padding-desktop max-w-[1440px] mx-auto space-y-section-gap">
 <!-- Hero Section -->
 <section>
 <div class="mb-gutter">
@@ -400,6 +402,80 @@
             </button>
 </div>
 </section>
+</main>
+<!-- Upload View Container (Hidden by default for 0-reload View Swap) -->
+<main id="view-upload" class="hidden flex-grow pt-32 pb-section-gap px-container-padding-mobile md:px-container-padding-desktop max-w-7xl mx-auto w-full">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+<!-- Left Column: Instructions -->
+<div class="space-y-8 animate-in fade-in slide-in-from-left-4 duration-700">
+<div class="space-y-2">
+<span class="text-primary font-label-bold text-label-bold tracking-widest uppercase">Getting Started</span>
+<h1 class="font-display-lg text-display-lg text-on-surface leading-tight">Import Your History</h1>
+</div>
+<div class="space-y-6">
+<div class="relative pl-6 instruction-step">
+<p class="font-body-lg text-body-lg text-on-surface">1. Locate your Spotify data export folder.</p>
+<p class="text-secondary-fixed-dim text-body-sm font-body-sm mt-1">This is usually a .zip file received via email from Spotify's privacy dashboard.</p>
+</div>
+<div class="relative pl-6 instruction-step">
+<p class="font-body-lg text-body-lg text-on-surface">2. Select only JSON files containing audio history.</p>
+<p class="text-secondary-fixed-dim text-body-sm font-body-sm mt-1">We parse your listening patterns directly from these files.</p>
+</div>
+<div class="relative pl-6 instruction-step">
+<p class="font-body-lg text-body-lg text-on-surface">3. Look for files named like <code class="bg-surface-variant text-primary px-1.5 py-0.5 rounded text-sm font-mono">'Streaming_History_Audio_YYYY_N.json'</code>.</p>
+<p class="text-secondary-fixed-dim text-body-sm font-body-sm mt-1">Example: Streaming_History_Audio_2025_1.json</p>
+</div>
+<div class="p-4 bg-tertiary-container/10 border border-tertiary-container/20 rounded-lg flex gap-3">
+<span class="material-symbols-outlined text-tertiary-container">warning</span>
+<p class="text-on-surface text-body-sm font-body-sm"><span class="font-bold text-tertiary-container">Important:</span> Do not upload video history files (e.g., <code class="bg-surface-variant text-primary px-1.5 py-0.5 rounded text-sm font-mono">'Streaming_History_Video_YYYY_N.json'</code>). These are currently not supported for analysis.</p>
+</div>
+</div>
+<div class="pt-4">
+<a class="flex items-center gap-2 text-secondary-fixed-dim hover:text-primary transition-colors text-body-sm font-body-sm group" href="index.html#how-it-works">
+<span class="material-symbols-outlined text-[18px]">help</span>
+                        Need help getting your data? View the guide
+                        <span class="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Right Column: Upload Zone -->
+<div class="animate-in fade-in slide-in-from-right-4 duration-700 delay-150">
+<div class="glass-card rounded-xl p-8 min-h-[480px] flex flex-col relative">
+<div class="upload-zone flex-grow border-2 border-dashed border-outline-variant rounded-lg flex flex-col items-center justify-center text-center p-8 transition-all cursor-pointer group" id="drop-zone">
+<input accept=".json" class="hidden" id="file-input" multiple="" type="file">
+<div class="w-20 h-20 bg-surface-variant/50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-primary-container/20 transition-all">
+<span class="material-symbols-outlined text-4xl text-secondary group-hover:text-primary">upload_file</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">Ready to Rewind?</h3>
+<p class="font-body-lg text-body-lg text-secondary-fixed-dim max-w-xs mx-auto mb-8">
+                            Drop your JSON files here or click to browse your computer
+                        </p>
+<button type="button" id="browse-btn" class="bg-primary-container text-on-primary-container px-10 py-4 rounded-full font-bold text-body-lg hover:shadow-[0_0_20px_rgba(29,185,84,0.3)] transition-all active:scale-95">
+                            Browse Files
+                        </button>
+<p class="mt-6 text-body-sm font-body-sm text-secondary-fixed-dim opacity-50">
+                            Max file size: 50MB per file
+                        </p>
+</div>
+<!-- File List (Hidden by default) -->
+<div class="hidden mt-6 space-y-3" id="file-list-container">
+<div class="flex justify-between items-center px-1">
+<span class="text-label-bold font-label-bold text-secondary uppercase tracking-wider">Queue</span>
+<span class="text-label-bold font-label-bold text-primary" id="file-count">0 files</span>
+</div>
+<div class="max-h-48 overflow-y-auto pr-2 space-y-2 custom-scrollbar" id="file-list">
+<!-- Items dynamically added here -->
+</div>
+<div id="upload-status" class="hidden p-3 rounded-lg text-body-sm font-medium transition-all"></div>
+<a href="#" class="w-full mt-4 block text-center bg-on-surface text-surface py-3 rounded-full font-bold hover:bg-white transition-colors" id="upload-all">
+                            Analyze All Files
+                        </a>
+</div>
+</div>
+<!-- Background Decorative Element -->
+<div class="absolute -z-10 blur-[120px] top-1/2 right-0 w-64 h-64 bg-primary/10 rounded-full"></div>
+</div>
+</div>
 </main>
 <!-- Footer -->
 <footer class="w-full py-section-gap bg-surface-container-lowest dark:bg-surface-container-lowest border-t border-white/5">
