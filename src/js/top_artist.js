@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const streamsEl = document.getElementById("top-artist-streams");
 
     if (!nameEl) return;
+    let isFetching = false;
 
     function showSkeleton() {
         if (skeleton) skeleton.classList.remove("hidden");
@@ -31,6 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function fetchTopArtist() {
+        if (isFetching) return;
+        isFetching = true;
         showSkeleton();
         const fetcher = window.fetchWithTimeout || (async (ep) => {
             const res = await fetch(`http://127.0.0.1:8000${ep}`);
@@ -38,29 +41,37 @@ document.addEventListener("DOMContentLoaded", () => {
             return { ok: res.ok, data, error: "Error loading top artist" };
         });
 
-        const res = await fetcher("/api/metrics/top-artist", {}, 5000);
+        try {
+            const res = await fetcher("/api/metrics/top-artist", {}, 5000);
 
-        if (res.ok && res.data && res.data.status === "ok") {
-            if (res.data.artist_name) {
-                nameEl.textContent = res.data.artist_name;
-                if (streamsEl) {
-                    const streamsFormatted = Number(res.data.total_streams).toLocaleString();
-                    streamsEl.textContent = `${streamsFormatted} total streams`;
+            if (res.ok && res.data && res.data.status === "ok") {
+                if (res.data.artist_name) {
+                    nameEl.textContent = res.data.artist_name;
+                    if (streamsEl) {
+                        const streamsFormatted = Number(res.data.total_streams).toLocaleString();
+                        streamsEl.textContent = `${streamsFormatted} total streams`;
+                    }
+                } else {
+                    nameEl.textContent = "No Data";
+                    if (streamsEl) streamsEl.textContent = "Upload data export to view top artist";
                 }
+                showContent();
             } else {
-                nameEl.textContent = "No Data";
-                if (streamsEl) streamsEl.textContent = "Upload data export to view top artist";
+                const note = res.timedOut
+                    ? "Server connection timed out (5s limit)."
+                    : (res.error || "No listening history loaded yet.");
+                showError(note);
             }
-            showContent();
-        } else {
-            const note = res.timedOut
-                ? "Server connection timed out (5s limit)."
-                : (res.error || "No listening history loaded yet.");
-            showError(note);
+        } finally {
+            isFetching = false;
         }
     }
 
     fetchTopArtist();
+
+    window.addEventListener("rewind:data-updated", () => {
+        fetchTopArtist();
+    });
 
     if (retryBtn) {
         retryBtn.addEventListener("click", (e) => {

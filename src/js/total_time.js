@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let totalMinutes = null;
     const units = ["minutes", "hours", "days"];
     let currentUnitIndex = 0;
+    let isFetching = false;
 
     function showSkeleton() {
         if (skeleton) skeleton.classList.remove("hidden");
@@ -64,6 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function fetchTotalTime() {
+        if (isFetching) return;
+        isFetching = true;
         showSkeleton();
         const fetcher = window.fetchWithTimeout || (async (ep) => {
             const res = await fetch(`http://127.0.0.1:8000${ep}`);
@@ -71,21 +74,29 @@ document.addEventListener("DOMContentLoaded", () => {
             return { ok: res.ok, data, error: "Error loading total time" };
         });
 
-        const res = await fetcher("/api/metrics/total-time", {}, 5000);
+        try {
+            const res = await fetcher("/api/metrics/total-time", {}, 5000);
 
-        if (res.ok && res.data && res.data.status === "ok") {
-            totalMinutes = res.data.total_minutes;
-            updateDisplay();
-            showContent();
-        } else {
-            const note = res.timedOut
-                ? "Server connection timed out (5s limit)."
-                : (res.error || "No listening history loaded yet.");
-            showError(note);
+            if (res.ok && res.data && res.data.status === "ok") {
+                totalMinutes = res.data.total_minutes;
+                updateDisplay();
+                showContent();
+            } else {
+                const note = res.timedOut
+                    ? "Server connection timed out (5s limit)."
+                    : (res.error || "No listening history loaded yet.");
+                showError(note);
+            }
+        } finally {
+            isFetching = false;
         }
     }
 
     fetchTotalTime();
+
+    window.addEventListener("rewind:data-updated", () => {
+        fetchTotalTime();
+    });
 
     if (retryBtn) {
         retryBtn.addEventListener("click", (e) => {
