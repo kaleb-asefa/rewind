@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const units = ["minutes", "hours", "days"];
     let currentUnitIndex = 0;
     let isFetching = false;
+    let lastFetchTime = 0;
 
     function showSkeleton() {
         if (skeleton) skeleton.classList.remove("hidden");
@@ -65,8 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function fetchTotalTime() {
-        if (isFetching) return;
+        const now = Date.now();
+        if (isFetching || (now - lastFetchTime < 300)) return;
         isFetching = true;
+        lastFetchTime = now;
+
         showSkeleton();
         const fetcher = window.fetchWithTimeout || (async (ep) => {
             const res = await fetch(`http://127.0.0.1:8000${ep}`);
@@ -92,7 +96,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    fetchTotalTime();
+    const overviewView = document.getElementById("view-overview");
+    if (overviewView && !overviewView.classList.contains("hidden")) {
+        fetchTotalTime();
+    }
 
     window.addEventListener("rewind:data-updated", () => {
         fetchTotalTime();

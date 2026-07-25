@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!trackNameEl) return;
     let isFetching = false;
+    let lastFetchTime = 0;
 
     function showSkeleton() {
         if (skeleton) skeleton.classList.remove("hidden");
@@ -32,8 +33,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function fetchTopTrack() {
-        if (isFetching) return;
+        const now = Date.now();
+        if (isFetching || (now - lastFetchTime < 300)) return;
         isFetching = true;
+        lastFetchTime = now;
+
         showSkeleton();
         const fetcher = window.fetchWithTimeout || (async (ep) => {
             const res = await fetch(`http://127.0.0.1:8000${ep}`);
@@ -68,7 +72,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    fetchTopTrack();
+    const overviewView = document.getElementById("view-overview");
+    if (overviewView && !overviewView.classList.contains("hidden")) {
+        fetchTopTrack();
+    }
 
     window.addEventListener("rewind:data-updated", () => {
         fetchTopTrack();
