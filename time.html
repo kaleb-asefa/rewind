@@ -316,23 +316,6 @@
                 </div>
             </div>
 
-            <!-- Chart Legend Bar -->
-            
-        </div>
-
-        <!-- Live Monthly Leaderboard Grid (Compact Single Row) -->
-        <div>
-            <div class="flex items-center justify-between mb-2">
-                <h2 class="text-sm font-bold tracking-tight text-white">Active Standings (<span id="leaderboard-month-label" class="text-primary">January 2022</span>)</h2>
-                <span class="font-mono text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                    TOP 8
-                </span>
-            </div>
-
-            <!-- 8 Leaderboard Cards Grid -->
-            <div id="leaderboard-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
-                <!-- Dynamically generated compact cards -->
-            </div>
         </div>
 
     </main>
@@ -615,6 +598,7 @@
         function switchCategory(category) {
             currentCategory = category;
             currentData = category === 'tracks' ? TRACKS_DATA : ARTISTS_DATA;
+            progress = 0.0; // Restart timeline from beginning when switching category!
 
             const tracksBtn = document.getElementById('tab-tracks');
             const artistsBtn = document.getElementById('tab-artists');
@@ -833,50 +817,11 @@
             const currentMonthIdx = Math.min(Math.floor(progress), 35);
             const fullDateLabel = getFullDateString(currentMonthIdx);
             
-            document.getElementById('current-month-display').textContent = fullDateLabel;
-            document.getElementById('leaderboard-month-label').textContent = fullDateLabel;
-            document.getElementById('timeline-scrubber').value = progress;
-
-            const monthStandings = currentData.map((item) => {
-                const rank = item.ranks[currentMonthIdx];
-                const prevRank = currentMonthIdx > 0 ? item.ranks[currentMonthIdx - 1] : rank;
-                const change = prevRank - rank;
-                const plays = item.plays[currentMonthIdx];
-                return { ...item, currentRank: rank, change, currentPlays: plays };
-            }).sort((a, b) => a.currentRank - b.currentRank);
-
-            const grid = document.getElementById('leaderboard-grid');
-            grid.innerHTML = '';
-
-            monthStandings.forEach((item) => {
-                let changeHtml = '<span class="text-on-surface-variant flex items-center font-mono text-[9px]">—</span>';
-                if (item.change > 0) {
-                    changeHtml = `<span class="text-primary flex items-center font-mono text-[9px] font-bold">▲+${item.change}</span>`;
-                } else if (item.change < 0) {
-                    changeHtml = `<span class="text-red-400 flex items-center font-mono text-[9px] font-bold">▼${item.change}</span>`;
-                }
-
-                const card = document.createElement('div');
-                card.className = 'glass-card p-2 rounded-lg flex items-center gap-2 transition-all hover:border-white/20';
-
-                card.innerHTML = `
-                    <div class="font-mono font-extrabold text-xs ${item.currentRank === 1 ? 'text-primary' : 'text-on-surface-variant'} w-4 text-center">
-                        #${item.currentRank}
-                    </div>
-                    <div class="relative w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
-                        <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150'"/>
-                    </div>
-                    <div class="flex-grow min-w-0">
-                        <p class="font-bold text-[10px] text-white truncate leading-tight">${item.title}</p>
-                        <p class="text-[9px] text-on-surface-variant truncate">${item.subtitle}</p>
-                    </div>
-                    <div class="text-right flex flex-col items-end flex-shrink-0">
-                        ${changeHtml}
-                    </div>
-                `;
-
-                grid.appendChild(card);
-            });
+            const monthDisp = document.getElementById('current-month-display');
+            if (monthDisp) monthDisp.textContent = fullDateLabel;
+            
+            const scrubber = document.getElementById('timeline-scrubber');
+            if (scrubber) scrubber.value = progress;
         }
 
         // Animation Loop Across 36 Months
