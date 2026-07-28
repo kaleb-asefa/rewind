@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Rewind - Dynamic Trends</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            overflow-x: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .technical-label {
+            font-family: 'Space Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        .glass-card {
+            background: rgba(20, 19, 19, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(83, 224, 118, 0.1);
+        }
+        .glass-card:hover {
+            border-color: rgba(83, 224, 118, 0.3);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #131313; }
+        ::-webkit-scrollbar-thumb { background: #53e076; border-radius: 10px; }
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#353534",
+                    "on-secondary-fixed": "#1c1b1b",
+                    "tertiary-fixed": "#ffdad9",
+                    "surface-container-low": "#1c1b1b",
+                    "tertiary-fixed-dim": "#ffb3b3",
+                    "on-error-container": "#ffdad6",
+                    "inverse-surface": "#e5e2e1",
+                    "inverse-primary": "#006e2d",
+                    "error": "#ffb4ab",
+                    "surface-container": "#201f1f",
+                    "outline-variant": "#3d4a3d",
+                    "primary-container": "#1db954",
+                    "outline": "#869585",
+                    "secondary": "#c8c6c5",
+                    "surface-dim": "#131313",
+                    "surface-container-high": "#2a2a2a",
+                    "error-container": "#93000a",
+                    "primary-fixed-dim": "#53e076",
+                    "primary": "#53e076",
+                    "on-surface-variant": "#bccbb9",
+                    "on-surface": "#e5e2e1",
+                    "on-secondary-fixed-variant": "#474746",
+                    "on-secondary-container": "#b7b4b4",
+                    "on-background": "#e5e2e1",
+                    "surface-container-lowest": "#0e0e0e",
+                    "on-error": "#690005",
+                    "surface-tint": "#53e076",
+                    "secondary-fixed": "#e5e2e1",
+                    "on-tertiary-container": "#730a1b",
+                    "on-tertiary": "#680114",
+                    "secondary-container": "#474746",
+                    "background": "#131313",
+                    "surface-variant": "#353534",
+                    "surface-bright": "#393939",
+                    "primary-fixed": "#72fe8f",
+                    "on-primary-container": "#004118",
+                    "on-tertiary-fixed": "#400009",
+                    "on-primary-fixed": "#002108",
+                    "surface": "#131313",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "on-tertiary-fixed-variant": "#881d28",
+                    "on-primary-fixed-variant": "#005320",
+                    "inverse-on-surface": "#313030",
+                    "on-primary": "#003914",
+                    "tertiary": "#ffb3b3",
+                    "on-secondary": "#313030",
+                    "tertiary-container": "#ff767b"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-gap": "48px",
+                    "base": "8px",
+                    "gutter": "24px",
+                    "container-padding-desktop": "32px",
+                    "container-padding-mobile": "16px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "display-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-sm": ["Plus Jakarta Sans"],
+                    "label-bold": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "technical": ["Space Mono"]
+            },
+            "fontSize": {
+                    "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "500"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                    "label-bold": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="font-body-lg text-on-surface">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-lg border-b border-white/5">
+<div class="flex justify-between items-center px-container-padding-desktop py-4 w-full max-w-full">
+<div class="text-headline-md font-headline-md text-primary tracking-tighter">Rewind</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-on-surface-variant font-body-lg text-body-lg hover:text-primary transition-colors duration-200" href="#">Overview</a>
+<a class="text-primary border-b-2 border-primary pb-1 font-body-lg text-body-lg" href="#">Analytics</a>
+<a class="text-on-surface-variant font-body-lg text-body-lg hover:text-primary transition-colors duration-200" href="#">Artists</a>
+<a class="text-on-surface-variant font-body-lg text-body-lg hover:text-primary transition-colors duration-200" href="#">Library</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">settings</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-primary/20">
+<img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyXbeLq0lsNMZiwl6t9qDqawchkRtywpjBNR9swtoRGo2UPzzDsIDnLnswsej_JuSCOUk3ppvtUaWoVpFM0xpZKF5jIZl2eHEKACf-gsRp_uL9FWE6DdDAPhe5uWX8EY-tmLy67lk2WDJBK52jgrJZeXxwDGwn4p4QIjQHEmPMWJhr0VchB67mIW7CIHtqCsJQvLyFZw9AsBSkl_33FlbB3UN87ex0auHglqdMtAdycbSf5NJ4ZoZXDZdli9gs0MwqOvW4-YjQ5Bw"/>
+</div>
+</div>
+</div>
+</nav>
+<main>
+<!-- Section 1: Track Trends -->
+<section class="min-h-screen flex flex-col pt-24 pb-12 px-container-padding-desktop bg-surface relative" id="tracks">
+<!-- Decorative Background Image -->
+<div class="absolute inset-0 opacity-10 pointer-events-none mix-blend-screen">
+<img alt="Decorative background" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2352B-mIDq59f7E7-P6o2u9X7X8Ff466I48Y786O_69M-v32u-3-4-5-6-7-8-9-0-A-B-C-D-E-F"/>
+</div>
+<!-- Header Info -->
+<div class="z-10 mb-12 flex justify-between items-start">
+<div>
+<p class="technical-label text-primary mb-2">Streaming Intelligence / Track Analytics</p>
+<h1 class="text-display-lg font-display-lg">Peak Velocity Tracks</h1>
+</div>
+<div class="text-right hidden md:block">
+<p class="technical-label text-on-surface-variant">System Status</p>
+<p class="text-primary flex items-center justify-end gap-2"><span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span> Analyzing Live Stream</p>
+</div>
+</div>
+<!-- Metrics Row -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 z-10 mb-12">
+<div class="glass-card p-8 rounded-lg flex flex-col justify-between">
+<div>
+<p class="technical-label text-on-surface-variant text-label-bold mb-4">Peak Listening Month</p>
+<h3 class="text-display-lg text-primary font-display-lg">November</h3>
+<p class="font-technical text-body-sm text-on-surface-variant mt-2">+24.8% <span class="opacity-50">vs_annual_avg</span></p>
+</div>
+</div>
+<div class="glass-card p-8 rounded-lg flex flex-col justify-between">
+<div>
+<p class="technical-label text-on-surface-variant text-label-bold mb-4">Avg Daily Streams</p>
+<h3 class="text-display-lg text-on-surface font-display-lg">42.00</h3>
+<p class="font-technical text-body-sm text-on-surface-variant mt-2">flow_state_detected</p>
+</div>
+</div>
+<div class="glass-card p-8 rounded-lg flex flex-col justify-between">
+<div>
+<p class="technical-label text-on-surface-variant text-label-bold mb-4">Diversity Index</p>
+<h3 class="text-display-lg text-primary font-display-lg">8.42</h3>
+<p class="font-technical text-body-sm text-on-surface-variant mt-2">high_genre_oscillation</p>
+</div>
+</div>
+</div>
+<!-- Main Animation Container for Tracks -->
+<div class="flex-grow relative min-h-[40vh] z-10 flex items-center justify-center glass-card rounded-lg overflow-hidden border-white/5">
+<!-- Axis Labels -->
+<div class="absolute left-4 top-1/2 -translate-y-1/2 font-technical text-[10px] text-on-surface-variant/50 -rotate-90 origin-center whitespace-nowrap">
+        Y: RANK (1-10)
+    </div>
+<div class="absolute bottom-4 left-1/2 -translate-x-1/2 font-technical text-[10px] text-on-surface-variant/50">
+        X: TIME (JAN-DEC)
+    </div>
+<div class="w-full h-[400px]" id="threejs-container-ANIMATION_29"></div>
+<!-- Overlay Technical Label -->
+<div class="absolute top-1/2 right-0 -translate-y-1/2 rotate-90 origin-right opacity-10 pointer-events-none hidden xl:block">
+<h2 class="technical-label text-[120px] font-bold leading-none select-none">TRACK RACING</h2>
+</div>
+</div>
+<!-- Bottom List: Tracks -->
+<div class="z-10 mt-12">
+<div class="flex justify-between items-end mb-6">
+<h4 class="text-headline-md font-headline-md text-on-surface">Top 10 Tracks Velocity</h4>
+<span class="technical-label text-primary">Live Data Stream 01</span>
+</div>
+<div class="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
+<!-- Track Items -->
+<div class="flex-shrink-0 glass-card p-3 pr-8 rounded-full flex items-center gap-4 hover:scale-105 transition-all cursor-pointer group">
+<div class="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/20 relative">
+<img alt="Album art" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnW-m_9jW_0-9-8-7-6-5-4-3-2-1-0-A-B-C-D-E-F-G-H-I-J-K-L-M-N-O-P"/>
+<div class="absolute inset-0 bg-primary/20 mix-blend-overlay"></div>
+</div>
+<div>
+<p class="font-bold text-on-surface whitespace-nowrap">Neon Drift</p>
+<p class="font-technical text-[10px] text-primary">842_PLAYS</p>
+</div>
+</div>
+<div class="flex-shrink-0 glass-card p-3 pr-8 rounded-full flex items-center gap-4 hover:scale-105 transition-all cursor-pointer group">
+<div class="w-14 h-14 rounded-full overflow-hidden border-2 border-white/5 relative">
+<img alt="Album art" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAt_P6O-1-2-3-4-5-6-7-8-9-0-A-B-C-D-E-F-G-H-I-J-K-L-M-N-O-P-Q"/>
+</div>
+<div>
+<p class="font-bold text-on-surface whitespace-nowrap">Obsidian Waves</p>
+<p class="font-technical text-[10px] text-on-surface-variant">791_PLAYS</p>
+</div>
+</div>
+<div class="flex-shrink-0 glass-card p-3 pr-8 rounded-full flex items-center gap-4 hover:scale-105 transition-all cursor-pointer group">
+<div class="w-14 h-14 rounded-full overflow-hidden border-2 border-white/5 relative">
+<img alt="Album art" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAo_K8L-1-2-3-4-5-6-7-8-9-0-A-B-C-D-E-F-G-H-I-J-K-L-M-N-O-P-R"/>
+</div>
+<div>
+<p class="font-bold text-on-surface whitespace-nowrap">Midnight Protocol</p>
+<p class="font-technical text-[10px] text-on-surface-variant">756_PLAYS</p>
+</div>
+</div>
+<div class="flex-shrink-0 glass-card p-3 pr-8 rounded-full flex items-center gap-4 hover:scale-105 transition-all cursor-pointer group">
+<div class="w-14 h-14 rounded-full overflow-hidden border-2 border-white/5 relative">
+<img alt="Album art" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAp_M4N-1-2-3-4-5-6-7-8-9-0-A-B-C-D-E-F-G-H-I-J-K-L-M-N-O-P-S"/>
+</div>
+<div>
+<p class="font-bold text-on-surface whitespace-nowrap">Pulse Echo</p>
+<p class="font-technical text-[10px] text-on-surface-variant">642_PLAYS</p>
+</div>
+</div>
+<div class="flex-shrink-0 glass-card p-3 pr-8 rounded-full flex items-center gap-4 hover:scale-105 transition-all cursor-pointer group">
+<div class="w-14 h-14 rounded-full overflow-hidden border-2 border-white/5 relative">
+<img alt="Album art" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAq_P2Q-1-2-3-4-5-6-7-8-9-0-A-B-C-D-E-F-G-H-I-J-K-L-M-N-O-P-T"/>
+</div>
+<div>
+<p class="font-bold text-on-surface whitespace-nowrap">Cyber Bloom</p>
+<p class="font-technical text-[10px] text-on-surface-variant">589_PLAYS</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Artist Affinity -->
+<section class="min-h-screen flex flex-col pt-24 pb-12 px-container-padding-desktop bg-surface-dim relative" id="artists">
+<!-- Header Info -->
+<div class="z-10 mb-12">
+<p class="technical-label text-primary mb-2">Neural Network / Artist Affinity</p>
+<h1 class="text-display-lg font-display-lg">Global Artist Index</h1>
+</div>
+<!-- Metrics Row -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 z-10 mb-12">
+<div class="glass-card p-8 rounded-lg flex flex-col justify-between border-primary/20">
+<div>
+<p class="technical-label text-on-surface-variant text-label-bold mb-4">Discovery Rate</p>
+<h3 class="text-display-lg text-primary font-display-lg">12 New/Mo</h3>
+<p class="font-technical text-body-sm text-on-surface-variant mt-2">active_exploration_engaged</p>
+</div>
+</div>
+<div class="glass-card p-8 rounded-lg flex flex-col justify-between">
+<div>
+<p class="technical-label text-on-surface-variant text-label-bold mb-4">Global Rank</p>
+<h3 class="text-display-lg text-on-surface font-display-lg">Top 1%</h3>
+<p class="font-technical text-body-sm text-on-surface-variant mt-2">enthusiast_tier_reached</p>
+</div>
+</div>
+<div class="glass-card p-8 rounded-lg flex flex-col justify-between">
+<div>
+<p class="technical-label text-on-surface-variant text-label-bold mb-4">Loyalty Score</p>
+<h3 class="text-display-lg text-primary font-display-lg">92%</h3>
+<p class="font-technical text-body-sm text-on-surface-variant mt-2">recurring_affinity_detected</p>
+</div>
+</div>
+</div>
+<!-- Artist Affinity Chart Area -->
+<div class="z-10 mb-12 relative glass-card rounded-lg overflow-hidden border-white/5 min-h-[400px] flex flex-col items-center justify-center">
+<!-- Axis Labels -->
+<div class="absolute left-4 top-1/2 -translate-y-1/2 font-technical text-[10px] text-on-surface-variant/50 -rotate-90 origin-center whitespace-nowrap">
+        Y: GLOBAL RANK
+    </div>
+<div class="absolute bottom-4 left-1/2 -translate-x-1/2 font-technical text-[10px] text-on-surface-variant/50">
+        X: AFFINITY CHRONOLOGY
+    </div>
+<div class="w-full h-[400px]" id="threejs-container-ANIMATION_30"></div>
+</div>
+<!-- Artist Gallery Content -->
+<div class="z-10 mt-auto">
+<div class="flex justify-between items-end mb-8">
+<h4 class="text-headline-md font-headline-md text-on-surface">Artist Affinity Chronology</h4>
+<span class="technical-label text-primary">Live Data Stream 02</span>
+</div>
+<div class="flex gap-8 overflow-x-auto pb-8 no-scrollbar">
+<!-- Artist Item: Solaris -->
+<div class="flex-shrink-0 group cursor-pointer">
+<div class="w-48 h-48 rounded-2xl overflow-hidden mb-4 border border-white/5 group-hover:border-primary/50 transition-all relative">
+<img alt="Solaris Portrait" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNstqU3OaYeWNFkTZLcqTJMieVZGm_mCKTZISpftGUQ9QJEETHy-0vkGsMxKlSdJv-2twY4njXAbq-vjou6QNKR8iFPdN9Sx6MofXIozMACXzhqMbySDtEUZo5lxs6osOpt4N93fLR4-2PVoY1NagDpSlgVNpqdkzPfv3V95TooSyGSRySn6G0SFKRrWUBr5Kar6BRD5JG9zyHDTUc5axlupnWhrenVl7kMEy2Wn16anAyMrHYsIYXqMruqXu5jIgZOpLP9bNvrV8"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</div>
+<p class="font-bold text-on-surface text-lg">Solaris</p>
+<p class="font-technical text-xs text-primary">124_HOURS_LOGGED</p>
+</div>
+<!-- Artist Item: The Glitch -->
+<div class="flex-shrink-0 group cursor-pointer">
+<div class="w-48 h-48 rounded-2xl overflow-hidden mb-4 border border-white/5 group-hover:border-primary/50 transition-all">
+<img alt="The Glitch Portrait" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMMu97ATxqBg8TpZ0gCiW36hYSEWCzygIjdoRP4WUJQm-vOMjur0UKAqQ3VmNjsfM865qnN4MCms_6Sck0Sdz2JzfXjdOGoFEMjYRhaLJjt1NXSjFlIH6NhsTnZZKt9MzUnrI8CjTsqZPeX0uLnd5ouM1pTwxx4-_6dM_6ckOYPJlLdOblTECUzNZR0RnCffIjLSjpACzy-KJTWoBCZzysGBC1FlaOJv4E7zzQpJ4jcMt_BJrXrJdYnK7RXeRWvKbvWKEauYwYzb8"/>
+</div>
+<p class="font-bold text-on-surface text-lg">The Glitch</p>
+<p class="font-technical text-xs text-on-surface-variant">98_HOURS_LOGGED</p>
+</div>
+<!-- Artist Item: Null Vector -->
+<div class="flex-shrink-0 group cursor-pointer">
+<div class="w-48 h-48 rounded-2xl overflow-hidden mb-4 border border-white/5 group-hover:border-primary/50 transition-all">
+<img alt="Null Vector Portrait" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDklU1Pfj3oqXREqswCrnuVA-iubEhPStJsxLLoWAHg76fUTmsC4JNpnknQpQ9RPdp5VAxmJQuYdeewukHzL8fqpxtUfzOzLVvFVbg6DVE2gJ1NcHuUj9263vB-9fz_pAJ0pgDiN_vSUqTREVxJZn3kCDBIvtGGCY_NWJ6FyH9GUpLgCJ_Rq5t7IGHvLt6KEIhtZwMx7sW5nXpevjsjrEEe2gkg5p_EV2otX8RJnRbOgS0EUU7WeoMB-bdV140zyJrIvzkk-F679hU"/>
+</div>
+<p class="font-bold text-on-surface text-lg">Null Vector</p>
+<p class="font-technical text-xs text-on-surface-variant">82_HOURS_LOGGED</p>
+</div>
+<!-- Artist Item: Neon Queen -->
+<div class="flex-shrink-0 group cursor-pointer">
+<div class="w-48 h-48 rounded-2xl overflow-hidden mb-4 border border-white/5 group-hover:border-primary/50 transition-all">
+<img alt="Neon Queen Portrait" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuESMnD3WOSgOwAy58V0qRoCQ--0WgQKdZXmCsoayETwTYwsYw3901d2f5ZZbKygI5u6R_h-3sJxcRF5ApdSokRyDk1TzNAYvrRmLtLXPMuBq0baCyPQjMGHI2V-nJzb6zrCc3OqDZTKmJUkETGVfHxL6I7IsNpf450jtyFZcx3tAl84pUIUyPmZwNVvOY0IYG-ht_-aCUEtzJYtHJVn332fmoky-KA_qZPwr4Bu97ghQMiMr1Hw4HtEsw2qq8G12WbzDc92yGwC4"/>
+</div>
+<p class="font-bold text-on-surface text-lg">Neon Queen</p>
+<p class="font-technical text-xs text-on-surface-variant">75_HOURS_LOGGED</p>
+</div>
+<!-- Artist Item: Frequence -->
+<div class="flex-shrink-0 group cursor-pointer">
+<div class="w-48 h-48 rounded-2xl overflow-hidden mb-4 border border-white/5 group-hover:border-primary/50 transition-all">
+<img alt="Frequence Portrait" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZ09lnLZw5eL4yayVm97YnMxt62653FLgonZtnRg5sSaAk9z19tAD3QNF1RXM9mxs_OJD2RF8bft6OUn3bBnPMQIHwR_dmRzXSLH1B84qrCma_Y4A4r8LWFEEQjecTmG4WkhYDxLLhCcvkXipSYqTZ6KtXd-ZpvKpJtN37nOrQlTQJDiH_38xddSlk2CB1IfVWsOkPDWsVnxaYYHUNHLIvG1UaS_gZURe5TWi6IeblIFBUO7OxwwuDcciGMLMRRT94N5BU_n1JfX8"/>
+</div>
+<p class="font-bold text-on-surface text-lg">Frequence</p>
+<p class="font-technical text-xs text-on-surface-variant">61_HOURS_LOGGED</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="w-full py-12 bg-surface-container-lowest flex flex-col md:flex-row justify-between items-center px-container-padding-desktop border-t border-white/5">
+<div class="technical-label text-primary mb-4 md:mb-0 text-sm">Rewind_Analytics_Core_v2.0</div>
+<div class="flex flex-wrap justify-center gap-8 mb-6 md:mb-0">
+<a class="font-technical text-xs text-on-surface-variant hover:text-primary transition-colors" href="#">PRIVACY_PROTOCOL</a>
+<a class="font-technical text-xs text-on-surface-variant hover:text-primary transition-colors" href="#">TERMS_OF_ACCESS</a>
+<a class="font-technical text-xs text-on-surface-variant hover:text-primary transition-colors" href="#">NODE_SUPPORT</a>
+<a class="font-technical text-xs text-on-surface-variant hover:text-primary transition-colors" href="#">API_INTERFACE</a>
+</div>
+<div class="font-technical text-[10px] text-on-surface-variant opacity-50 uppercase">© 2024 Rewind Systems. Encrypted Connection Active.</div>
+</footer>
+<script>
+// ANIMATION_29: Top 10 Tracks Velocity
+(function() {
+  const container = document.getElementById('threejs-container-ANIMATION_29');
+  if (!container) return;
+  const width = container.clientWidth || window.innerWidth;
+  const height = container.clientHeight || 400;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+  camera.position.set(0, 5, 60);
+
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  container.appendChild(renderer.domElement);
+
+  // Axis lines
+  const axisMaterial = new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.5 });
+  
+  // Y Axis (Rank)
+  const yAxisPoints = [new THREE.Vector3(-45, -20, 0), new THREE.Vector3(-45, 20, 0)];
+  const yAxisGeom = new THREE.BufferGeometry().setFromPoints(yAxisPoints);
+  const yAxis = new THREE.Line(yAxisGeom, axisMaterial);
+  scene.add(yAxis);
+
+  // X Axis (Time)
+  const xAxisPoints = [new THREE.Vector3(-45, -20, 0), new THREE.Vector3(45, -20, 0)];
+  const xAxisGeom = new THREE.BufferGeometry().setFromPoints(xAxisPoints);
+  const xAxis = new THREE.Line(xAxisGeom, axisMaterial);
+  scene.add(xAxis);
+
+  const clock = new THREE.Clock();
+  const ENTITY_COUNT = 10;
+  const SEGMENTS = 60;
+  const entities = [];
+  const COLORS = ['#1DB954', '#1ed760', '#21e065', '#26eb6b', '#2cf772', '#32ff78', '#38ff7e', '#3eff84', '#44ff8a', '#4bff91'];
+  
+  const tracks = [
+    "Neon Drift", "Obsidian Waves", "Midnight Protocol", "Pulse Echo", "Cyber Bloom",
+    "Digital Rain", "Synapse", "Volt", "Glitch Theory", "Void"
+  ];
+
+  for (let i = 0; i < ENTITY_COUNT; i++) {
+    const material = new THREE.LineBasicMaterial({ 
+      color: new THREE.Color(COLORS[i % COLORS.length]),
+      linewidth: 3,
+      transparent: true,
+      opacity: 0.8
+    });
+
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(SEGMENTS * 3);
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const line = new THREE.Line(geometry, material);
+    
+    entities.push({
+      mesh: line,
+      seed: Math.random() * 10,
+      baseRank: i * 3 - 10,
+      speed: 0.1 + Math.random() * 0.1
+    });
+    
+    scene.add(line);
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const time = clock.getElapsedTime();
+
+    entities.forEach((entity, index) => {
+      const positions = entity.mesh.geometry.attributes.position.array;
+      for (let i = 0; i < SEGMENTS; i++) {
+        const x = (i / SEGMENTS) * 90 - 45;
+        const rankFluctuation = Math.sin(time * entity.speed + i * 0.1 + entity.seed) * 3;
+        const y = 15 - (index * 4) + rankFluctuation;
+        
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = 0;
+      }
+      entity.mesh.geometry.attributes.position.needsUpdate = true;
+    });
+
+    renderer.render(scene, camera);
+  }
+
+  window.addEventListener('resize', () => {
+    const w = container.clientWidth || window.innerWidth;
+    const h = container.clientHeight || 400;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  });
+
+  animate();
+})();
+
+// ANIMATION_30: Global Artist Index
+(function() {
+  const container = document.getElementById('threejs-container-ANIMATION_30');
+  if (!container) return;
+  const width = container.clientWidth || window.innerWidth;
+  const height = container.clientHeight || 400;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+  camera.position.set(0, 5, 60);
+
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  container.appendChild(renderer.domElement);
+
+  // Axis lines
+  const axisMaterial = new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.5 });
+  
+  // Y Axis (Rank)
+  const yAxisPoints = [new THREE.Vector3(-45, -20, 0), new THREE.Vector3(-45, 20, 0)];
+  const yAxisGeom = new THREE.BufferGeometry().setFromPoints(yAxisPoints);
+  const yAxis = new THREE.Line(yAxisGeom, axisMaterial);
+  scene.add(yAxis);
+
+  // X Axis (Time)
+  const xAxisPoints = [new THREE.Vector3(-45, -20, 0), new THREE.Vector3(45, -20, 0)];
+  const xAxisGeom = new THREE.BufferGeometry().setFromPoints(xAxisPoints);
+  const xAxis = new THREE.Line(xAxisGeom, axisMaterial);
+  scene.add(xAxis);
+
+  const clock = new THREE.Clock();
+  const ENTITY_COUNT = 10;
+  const SEGMENTS = 60;
+  const entities = [];
+  const COLORS = ['#1DB954', '#1ed760', '#21e065', '#26eb6b', '#2cf772', '#32ff78', '#38ff7e', '#3eff84', '#44ff8a', '#4bff91'];
+  
+  const artists = [
+    "Solaris", "The Glitch", "Null Vector", "Neon Queen", "Frequence",
+    "Echo", "Signal", "Prism", "Vortex", "Flux"
+  ];
+
+  for (let i = 0; i < ENTITY_COUNT; i++) {
+    const material = new THREE.LineBasicMaterial({ 
+      color: new THREE.Color(COLORS[i % COLORS.length]),
+      linewidth: 3,
+      transparent: true,
+      opacity: 0.8
+    });
+
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(SEGMENTS * 3);
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const line = new THREE.Line(geometry, material);
+    
+    entities.push({
+      mesh: line,
+      seed: Math.random() * 10,
+      baseRank: i * 3 - 10,
+      speed: 0.12 + Math.random() * 0.08
+    });
+    
+    scene.add(line);
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const time = clock.getElapsedTime();
+
+    entities.forEach((entity, index) => {
+      const positions = entity.mesh.geometry.attributes.position.array;
+      for (let i = 0; i < SEGMENTS; i++) {
+        const x = (i / SEGMENTS) * 90 - 45;
+        const rankFluctuation = Math.cos(time * entity.speed + i * 0.12 + entity.seed) * 4;
+        const y = 15 - (index * 4) + rankFluctuation;
+        
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = 0;
+      }
+      entity.mesh.geometry.attributes.position.needsUpdate = true;
+    });
+
+    renderer.render(scene, camera);
+  }
+
+  window.addEventListener('resize', () => {
+    const w = container.clientWidth || window.innerWidth;
+    const h = container.clientHeight || 400;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  });
+
+  animate();
+})();
+
+// Basic scroll animations
+const observerOptions = { threshold: 0.15 };
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const children = entry.target.querySelectorAll('.glass-card, h1, .group');
+            children.forEach((child, index) => {
+                child.style.opacity = '0';
+                child.style.transform = 'translateY(30px)';
+                setTimeout(() => {
+                    child.style.transition = 'all 0.8s cubic-bezier(0.2, 1, 0.3, 1)';
+                    child.style.opacity = '1';
+                    child.style.transform = 'translateY(0)';
+                }, index * 80);
+            });
+            observer.unobserve(entry.target);
+        }
+    });
+}, observerOptions);
+
+document.querySelectorAll('section').forEach(section => observer.observe(section));
+</script>
+</body></html>
