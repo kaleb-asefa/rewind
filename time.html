@@ -57,7 +57,7 @@
         /* Fullscreen card styling */
         .glass-card:fullscreen {
             background: #121212;
-            padding: 2rem;
+            padding: 1.5rem;
             width: 100vw;
             height: 100vh;
             border-radius: 0;
@@ -67,11 +67,11 @@
         /* SVG Line Styles */
         .rank-path {
             fill: none;
-            stroke-width: 3.5px;
+            stroke-width: 3.2px;
             stroke-linecap: round;
             stroke-linejoin: round;
             opacity: 0.95;
-            filter: drop-shadow(0px 3px 8px rgba(0, 0, 0, 0.6));
+            filter: drop-shadow(0px 2px 6px rgba(0, 0, 0, 0.6));
         }
 
         /* Round Avatar Tip Container */
@@ -86,12 +86,12 @@
         }
 
         .tip-avatar-ring {
-            width: 48px;
-            height: 48px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            padding: 2.5px;
+            padding: 2px;
             background: #181818;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
             position: relative;
         }
 
@@ -102,9 +102,9 @@
             background: #121212;
             border: 1.5px solid currentColor;
             color: #ffffff;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 800;
-            padding: 1px 5px;
+            padding: 1px 4px;
             border-radius: 9999px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.8);
             line-height: 1;
@@ -112,25 +112,25 @@
 
         .tip-title-tag {
             position: absolute;
-            left: 56px;
+            left: 48px;
             top: 50%;
             transform: translateY(-50%);
             white-space: nowrap;
             background: rgba(18, 18, 18, 0.92);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 10px;
             font-weight: 700;
             color: #ffffff;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.6);
             backdrop-filter: blur(8px);
             opacity: 0.95;
         }
 
         .pulse-ring {
             position: absolute;
-            inset: -4px;
+            inset: -3px;
             border-radius: 50%;
             border: 2px solid #1ed760;
             animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -139,30 +139,30 @@
 
         @keyframes pulse-glow {
             0%, 100% { opacity: 0.85; transform: scale(1); }
-            50% { opacity: 0.2; transform: scale(1.2); }
+            50% { opacity: 0.2; transform: scale(1.18); }
         }
 
         /* Custom Scrubber Input */
         input[type=range] {
             -webkit-appearance: none;
             background: rgba(255, 255, 255, 0.12);
-            height: 6px;
+            height: 5px;
             border-radius: 3px;
         }
 
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 18px;
-            width: 18px;
+            height: 16px;
+            width: 16px;
             border-radius: 50%;
             background: #1ed760;
             cursor: pointer;
-            box-shadow: 0 0 12px rgba(30, 215, 96, 0.8);
+            box-shadow: 0 0 10px rgba(30, 215, 96, 0.8);
             transition: transform 0.15s ease;
         }
 
         input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.3);
+            transform: scale(1.25);
         }
 
         /* Custom Scrollbar */
@@ -176,109 +176,108 @@
 
     <!-- Top Navigation Bar -->
     <header class="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-md border-b border-border-subtle">
-        <nav class="flex justify-between items-center px-6 md:px-12 py-4 max-w-7xl mx-auto">
+        <nav class="flex justify-between items-center px-6 md:px-12 py-3 max-w-7xl mx-auto">
             <div class="flex items-center gap-8">
-                <a href="index.html" class="text-xl font-extrabold text-primary tracking-tight flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">fast_rewind</span>
+                <a href="index.html" class="text-lg font-extrabold text-primary tracking-tight flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">fast_rewind</span>
                     Rewind
                 </a>
-                <div class="hidden md:flex items-center gap-6 text-sm font-semibold">
+                <div class="hidden md:flex items-center gap-6 text-xs font-semibold">
                     <a href="overview.html" class="text-on-surface-variant hover:text-primary transition-colors">Overview</a>
-                    <a href="time.html" class="text-primary border-b-2 border-primary pb-1">Rank Velocity</a>
+                    <a href="time.html" class="text-primary border-b-2 border-primary pb-0.5">Rank Velocity</a>
                     <a href="overview.html#upload" class="text-on-surface-variant hover:text-primary transition-colors">Upload Data</a>
                 </div>
             </div>
             
-            <div class="flex items-center gap-4">
-                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-primary/10 text-primary border border-primary/20">
-                    <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-primary/10 text-primary border border-primary/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
                     VELOCITY MATRIX
                 </span>
-                <a href="overview.html" class="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-surface-card hover:bg-surface-hover rounded-full border border-border-subtle transition-all">
+                <a href="overview.html" class="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider bg-surface-card hover:bg-surface-hover rounded-full border border-border-subtle transition-all">
                     Dashboard
                 </a>
             </div>
         </nav>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-grow pt-24 pb-16 px-4 md:px-12 max-w-7xl mx-auto w-full">
+    <!-- Main Content (Compact Viewport Fit) -->
+    <main class="flex-grow pt-16 pb-6 px-4 md:px-10 max-w-7xl mx-auto w-full">
         
-        <!-- Header & Category Switcher -->
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+        <!-- Header & Category Switcher (Compact Height) -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
-                <p class="font-mono text-xs text-primary uppercase tracking-widest mb-1">Interactive Analytics</p>
-                <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight">Rank Velocity Over Time</h1>
-                <p class="text-on-surface-variant text-sm mt-2 max-w-xl">
-                    Spacious Top 8 rank trajectories across the year. Watch line tip avatars glide smoothly over time.
+                <h1 class="text-xl md:text-2xl font-extrabold tracking-tight">Rank Velocity Over Time</h1>
+                <p class="text-on-surface-variant text-xs mt-0.5">
+                    Top 8 rank trajectories across the year.
                 </p>
             </div>
 
             <!-- View Toggle Pills -->
-            <div class="flex items-center p-1.5 bg-surface-card rounded-full border border-border-subtle self-start md:self-auto">
-                <button id="tab-tracks" onclick="switchCategory('tracks')" class="flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all bg-primary text-black shadow-md">
-                    <span class="material-symbols-outlined text-sm">music_note</span>
+            <div class="flex items-center p-1 bg-surface-card rounded-full border border-border-subtle self-start sm:self-auto">
+                <button id="tab-tracks" onclick="switchCategory('tracks')" class="flex items-center gap-1.5 px-4 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all bg-primary text-black shadow-sm">
+                    <span class="material-symbols-outlined text-xs">music_note</span>
                     Top 8 Tracks
                 </button>
-                <button id="tab-artists" onclick="switchCategory('artists')" class="flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all text-on-surface-variant hover:text-white">
-                    <span class="material-symbols-outlined text-sm">artist</span>
+                <button id="tab-artists" onclick="switchCategory('artists')" class="flex items-center gap-1.5 px-4 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all text-on-surface-variant hover:text-white">
+                    <span class="material-symbols-outlined text-xs">artist</span>
                     Top 8 Artists
                 </button>
             </div>
         </div>
 
-        <!-- Main Chart Card Container (Supports Fullscreen) -->
-        <div id="chart-card" class="glass-card rounded-2xl p-4 md:p-6 mb-8 relative overflow-hidden transition-all duration-300">
+        <!-- Main Chart Card Container (Compact 420px Viewport Fit) -->
+        <div id="chart-card" class="glass-card rounded-xl p-3 md:p-4 mb-4 relative overflow-hidden transition-all duration-300">
             
             <!-- Controls Bar: Scrubber, Play/Pause, Month Display, Fullscreen -->
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 pb-4 border-b border-border-subtle">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mb-3 pb-3 border-b border-border-subtle">
                 
                 <!-- Playback & Month Display -->
-                <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
-                    <button id="play-btn" onclick="togglePlay()" class="w-12 h-12 rounded-full bg-primary hover:bg-primary-dark text-black flex items-center justify-center transition-all shadow-lg hover:scale-105">
-                        <span id="play-icon" class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                    <button id="play-btn" onclick="togglePlay()" class="w-9 h-9 rounded-full bg-primary hover:bg-primary-dark text-black flex items-center justify-center transition-all shadow hover:scale-105">
+                        <span id="play-icon" class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
                     </button>
                     
-                    <button onclick="resetTimeline()" class="w-9 h-9 rounded-full bg-surface-card hover:bg-surface-hover text-on-surface-variant hover:text-white flex items-center justify-center transition-all border border-border-subtle" title="Reset Timeline">
-                        <span class="material-symbols-outlined text-lg">restart_alt</span>
+                    <button onclick="resetTimeline()" class="w-8 h-8 rounded-full bg-surface-card hover:bg-surface-hover text-on-surface-variant hover:text-white flex items-center justify-center transition-all border border-border-subtle" title="Reset Timeline">
+                        <span class="material-symbols-outlined text-base">restart_alt</span>
                     </button>
 
                     <div>
-                        <div id="current-month-display" class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                        <div id="current-month-display" class="text-base font-extrabold tracking-tight text-white flex items-center gap-2">
                             January 2024
                         </div>
-                        <p class="font-mono text-[11px] text-on-surface-variant">TIMELINE PROGRESSION</p>
+                        <p class="font-mono text-[10px] text-on-surface-variant">TIMELINE PROGRESSION</p>
                     </div>
                 </div>
 
                 <!-- Timeline Scrubber -->
-                <div class="flex-grow max-w-xl w-full flex items-center gap-3">
-                    <span class="font-mono text-xs text-on-surface-variant">JAN</span>
+                <div class="flex-grow max-w-lg w-full flex items-center gap-2">
+                    <span class="font-mono text-[11px] text-on-surface-variant">JAN</span>
                     <input id="timeline-scrubber" type="range" min="0" max="11" step="0.05" value="0" class="w-full cursor-pointer" oninput="onScrub(this.value)"/>
-                    <span class="font-mono text-xs text-on-surface-variant">DEC</span>
+                    <span class="font-mono text-[11px] text-on-surface-variant">DEC</span>
                 </div>
 
                 <!-- Action Controls: Speed + Fullscreen -->
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
                     <!-- Speed Toggle -->
-                    <div class="flex items-center gap-1 bg-surface-card p-1 rounded-lg border border-border-subtle text-xs font-mono">
-                        <button onclick="setSpeed(0.5)" id="speed-05" class="px-2 py-1 rounded text-on-surface-variant hover:text-white transition-colors">0.5x</button>
-                        <button onclick="setSpeed(1)" id="speed-10" class="px-2 py-1 rounded bg-primary/20 text-primary font-bold">1.0x</button>
-                        <button onclick="setSpeed(2)" id="speed-20" class="px-2 py-1 rounded text-on-surface-variant hover:text-white transition-colors">2.0x</button>
+                    <div class="flex items-center gap-0.5 bg-surface-card p-0.5 rounded-lg border border-border-subtle text-[11px] font-mono">
+                        <button onclick="setSpeed(0.5)" id="speed-05" class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-white transition-colors">0.5x</button>
+                        <button onclick="setSpeed(1)" id="speed-10" class="px-1.5 py-0.5 rounded bg-primary/20 text-primary font-bold">1.0x</button>
+                        <button onclick="setSpeed(2)" id="speed-20" class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-white transition-colors">2.0x</button>
                     </div>
 
                     <!-- Fullscreen Toggle Button -->
-                    <button id="fullscreen-btn" onclick="toggleFullscreen()" class="w-10 h-10 rounded-full bg-surface-card hover:bg-surface-hover text-on-surface-variant hover:text-primary flex items-center justify-center transition-all border border-border-subtle" title="Toggle Fullscreen View">
-                        <span id="fullscreen-icon" class="material-symbols-outlined text-xl">fullscreen</span>
+                    <button id="fullscreen-btn" onclick="toggleFullscreen()" class="w-8 h-8 rounded-full bg-surface-card hover:bg-surface-hover text-on-surface-variant hover:text-primary flex items-center justify-center transition-all border border-border-subtle" title="Toggle Fullscreen View">
+                        <span id="fullscreen-icon" class="material-symbols-outlined text-lg">fullscreen</span>
                     </button>
                 </div>
             </div>
 
-            <!-- SVG Chart Viewport Area (High 620px viewport for spacious, non-overlapping 8 ranks) -->
-            <div id="chart-viewport" class="relative w-full h-[620px] select-none">
+            <!-- SVG Chart Viewport Area (Compact 420px height) -->
+            <div id="chart-viewport" class="relative w-full h-[420px] select-none">
                 
                 <!-- SVG Line Canvas -->
-                <svg id="chart-svg" class="w-full h-full overflow-visible" viewBox="0 0 1000 560" preserveAspectRatio="none">
+                <svg id="chart-svg" class="w-full h-full overflow-visible" viewBox="0 0 1000 420" preserveAspectRatio="none">
                     <!-- Background Grid & Y-Axis Labels -->
                     <g id="y-grid-group"></g>
                     <!-- X-Axis Month Columns -->
@@ -294,39 +293,36 @@
             </div>
 
             <!-- Chart Legend Bar -->
-            <div class="mt-4 pt-3 border-t border-border-subtle flex flex-wrap items-center justify-between text-xs text-on-surface-variant gap-4">
-                <div class="flex items-center gap-6 font-mono text-[11px]">
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-primary"></span> Y: RANK #1 (Top) to #8 (Bottom)</span>
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-cyan-400"></span> X: Timeline (Jan - Dec)</span>
+            <div class="mt-3 pt-2 border-t border-border-subtle flex flex-wrap items-center justify-between text-[11px] text-on-surface-variant gap-2">
+                <div class="flex items-center gap-5 font-mono text-[10px]">
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-primary"></span> Y: RANK #1 to #8</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-cyan-400"></span> X: Timeline (Jan - Dec)</span>
                 </div>
-                <div class="text-[11px] font-mono text-primary">SCATTERED TOP 8 LAYOUT</div>
+                <div class="text-[10px] font-mono text-primary">COMPACT TOP 8 LAYOUT</div>
             </div>
         </div>
 
-        <!-- Live Monthly Leaderboard Grid (Top 8 Cards) -->
+        <!-- Live Monthly Leaderboard Grid (Compact Cards) -->
         <div>
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h2 class="text-2xl font-bold tracking-tight">Active Leaderboard</h2>
-                    <p class="text-on-surface-variant text-xs mt-0.5">Real-time standings for <span id="leaderboard-month-label" class="text-primary font-bold">January 2024</span></p>
-                </div>
-                <span class="font-mono text-xs text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-                    8 POSITIONS
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-bold tracking-tight">Active Standings (<span id="leaderboard-month-label" class="text-primary">January 2024</span>)</h2>
+                <span class="font-mono text-[11px] text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+                    TOP 8
                 </span>
             </div>
 
-            <!-- 8 Leaderboard Cards Grid -->
-            <div id="leaderboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Dynamically generated cards -->
+            <!-- 8 Leaderboard Cards Grid (Single Row on Desktop) -->
+            <div id="leaderboard-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+                <!-- Dynamically generated compact cards -->
             </div>
         </div>
 
     </main>
 
     <!-- Footer -->
-    <footer class="w-full py-8 bg-surface-card border-t border-border-subtle text-center text-xs text-on-surface-variant font-mono">
-        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-            <span class="text-primary font-bold">Rewind Velocity Core v2.6</span>
+    <footer class="w-full py-4 bg-surface-card border-t border-border-subtle text-center text-[11px] text-on-surface-variant font-mono">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <span class="text-primary font-bold">Rewind Velocity Core v2.7</span>
             <span>Spotify Extended Streaming History Analytics</span>
             <span>© 2026 Rewind System</span>
         </div>
@@ -343,9 +339,9 @@
             {
                 id: 'track-1',
                 title: 'Neon Drift',
-                subtitle: 'Solaris & The Synth',
+                subtitle: 'Solaris',
                 image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80',
-                color: '#1ed760', // Spotify Green
+                color: '#1ed760',
                 ranks: [1, 1, 2, 1, 3, 2, 1, 1, 2, 1, 1, 1],
                 plays: [1420, 1580, 1610, 1750, 1690, 1840, 1920, 2050, 1980, 2150, 2200, 2350]
             },
@@ -354,7 +350,7 @@
                 title: 'Obsidian Waves',
                 subtitle: 'Null Vector',
                 image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80',
-                color: '#00d2ff', // Electric Cyan
+                color: '#00d2ff',
                 ranks: [3, 2, 1, 2, 1, 1, 3, 2, 1, 2, 3, 2],
                 plays: [1310, 1490, 1650, 1710, 1800, 1890, 1810, 1950, 2080, 2100, 2140, 2280]
             },
@@ -363,7 +359,7 @@
                 title: 'Midnight Protocol',
                 subtitle: 'Cyber Bloom',
                 image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=150&auto=format&fit=crop&q=80',
-                color: '#b066fe', // Purple
+                color: '#b066fe',
                 ranks: [2, 4, 3, 4, 2, 4, 2, 3, 4, 3, 2, 3],
                 plays: [1380, 1410, 1540, 1600, 1750, 1790, 1880, 1910, 1950, 2030, 2180, 2210]
             },
@@ -372,7 +368,7 @@
                 title: 'Pulse Echo',
                 subtitle: 'Neon Queen',
                 image: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=150&auto=format&fit=crop&q=80',
-                color: '#ff6b6b', // Coral
+                color: '#ff6b6b',
                 ranks: [5, 3, 5, 3, 5, 3, 4, 4, 3, 4, 4, 4],
                 plays: [1150, 1450, 1480, 1630, 1600, 1810, 1840, 1890, 1990, 2010, 2090, 2150]
             },
@@ -381,7 +377,7 @@
                 title: 'Digital Rain',
                 subtitle: 'Frequence',
                 image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=150&auto=format&fit=crop&q=80',
-                color: '#ffaa00', // Gold Amber
+                color: '#ffaa00',
                 ranks: [4, 5, 4, 5, 4, 5, 5, 5, 5, 5, 5, 5],
                 plays: [1210, 1310, 1510, 1580, 1650, 1700, 1760, 1810, 1880, 1920, 1990, 2030]
             },
@@ -390,7 +386,7 @@
                 title: 'Synapse Drift',
                 subtitle: 'Echo Shift',
                 image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=150&auto=format&fit=crop&q=80',
-                color: '#38f9d7', // Emerald Teal
+                color: '#38f9d7',
                 ranks: [6, 7, 6, 6, 7, 6, 6, 7, 6, 6, 6, 6],
                 plays: [920, 1110, 1250, 1320, 1390, 1480, 1540, 1590, 1670, 1730, 1790, 1840]
             },
@@ -399,7 +395,7 @@
                 title: 'Volt Horizon',
                 subtitle: 'Vortex',
                 image: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=150&auto=format&fit=crop&q=80',
-                color: '#ff54b0', // Hot Pink
+                color: '#ff54b0',
                 ranks: [7, 6, 7, 8, 6, 7, 8, 6, 7, 7, 7, 7],
                 plays: [1080, 1190, 1220, 1290, 1420, 1450, 1500, 1620, 1640, 1690, 1750, 1800]
             },
@@ -408,7 +404,7 @@
                 title: 'Glitch Theory',
                 subtitle: 'Signal Zero',
                 image: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=150&auto=format&fit=crop&q=80',
-                color: '#4d94ff', // Royal Blue
+                color: '#4d94ff',
                 ranks: [8, 8, 8, 7, 8, 8, 7, 8, 8, 8, 8, 8],
                 plays: [1010, 1130, 1200, 1310, 1360, 1410, 1510, 1560, 1610, 1660, 1710, 1770]
             }
@@ -419,7 +415,7 @@
             {
                 id: 'artist-1',
                 title: 'Solaris',
-                subtitle: 'Synthwave / Electronic',
+                subtitle: 'Synthwave',
                 image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80',
                 color: '#1ed760',
                 ranks: [2, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1],
@@ -428,7 +424,7 @@
             {
                 id: 'artist-2',
                 title: 'The Glitch',
-                subtitle: 'Indie Cyberpunk',
+                subtitle: 'Cyberpunk',
                 image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80',
                 color: '#00d2ff',
                 ranks: [1, 2, 2, 2, 1, 2, 2, 2, 2, 1, 2, 2],
@@ -437,7 +433,7 @@
             {
                 id: 'artist-3',
                 title: 'Null Vector',
-                subtitle: 'Ambient Darkwave',
+                subtitle: 'Darkwave',
                 image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=150&auto=format&fit=crop&q=80',
                 color: '#b066fe',
                 ranks: [4, 3, 3, 4, 3, 3, 3, 4, 3, 3, 3, 3],
@@ -446,7 +442,7 @@
             {
                 id: 'artist-4',
                 title: 'Neon Queen',
-                subtitle: 'Electropop / Disco',
+                subtitle: 'Electropop',
                 image: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=150&auto=format&fit=crop&q=80',
                 color: '#ff6b6b',
                 ranks: [3, 4, 4, 3, 4, 4, 4, 3, 4, 4, 4, 4],
@@ -455,7 +451,7 @@
             {
                 id: 'artist-5',
                 title: 'Frequence',
-                subtitle: 'Deep House / Techno',
+                subtitle: 'Techno',
                 image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=150&auto=format&fit=crop&q=80',
                 color: '#ffaa00',
                 ranks: [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
@@ -464,7 +460,7 @@
             {
                 id: 'artist-6',
                 title: 'Echo Shift',
-                subtitle: 'Chillstep / Lo-Fi',
+                subtitle: 'Lo-Fi',
                 image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=150&auto=format&fit=crop&q=80',
                 color: '#38f9d7',
                 ranks: [7, 6, 6, 7, 6, 6, 7, 6, 6, 6, 6, 6],
@@ -473,7 +469,7 @@
             {
                 id: 'artist-7',
                 title: 'Vortex',
-                subtitle: 'Industrial Wave',
+                subtitle: 'Industrial',
                 image: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=150&auto=format&fit=crop&q=80',
                 color: '#ff54b0',
                 ranks: [6, 7, 7, 6, 7, 7, 6, 7, 7, 7, 7, 7],
@@ -499,13 +495,13 @@
         let animationFrameId = null;
         let lastTimestamp = null;
 
-        // Canvas dimensions & padding constants (SVG viewBox 1000 x 560 for spacious 8 ranks)
+        // Compact Canvas dimensions & padding constants (SVG viewBox 1000 x 420)
         const SVG_W = 1000;
-        const SVG_H = 560;
-        const PADDING_LEFT = 75;
-        const PADDING_RIGHT = 210; // Extra right space for clean tip avatars and titles
-        const PADDING_TOP = 50;
-        const PADDING_BOTTOM = 60;
+        const SVG_H = 420;
+        const PADDING_LEFT = 65;
+        const PADDING_RIGHT = 195;
+        const PADDING_TOP = 30;
+        const PADDING_BOTTOM = 40;
         const CHART_W = SVG_W - PADDING_LEFT - PADDING_RIGHT;
         const CHART_H = SVG_H - PADDING_TOP - PADDING_BOTTOM;
 
@@ -526,15 +522,11 @@
             const artistsBtn = document.getElementById('tab-artists');
             
             if (category === 'tracks') {
-                tracksBtn.className = "flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all bg-primary text-black shadow-md";
-                artistsBtn.className = "flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all text-on-surface-variant hover:text-white";
-                tracksBtn.textContent = "Top 8 Tracks";
-                artistsBtn.textContent = "Top 8 Artists";
+                tracksBtn.className = "flex items-center gap-1.5 px-4 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all bg-primary text-black shadow-sm";
+                artistsBtn.className = "flex items-center gap-1.5 px-4 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all text-on-surface-variant hover:text-white";
             } else {
-                artistsBtn.className = "flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all bg-primary text-black shadow-md";
-                tracksBtn.className = "flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all text-on-surface-variant hover:text-white";
-                tracksBtn.textContent = "Top 8 Tracks";
-                artistsBtn.textContent = "Top 8 Artists";
+                artistsBtn.className = "flex items-center gap-1.5 px-4 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all bg-primary text-black shadow-sm";
+                tracksBtn.className = "flex items-center gap-1.5 px-4 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all text-on-surface-variant hover:text-white";
             }
 
             renderChart();
@@ -547,7 +539,7 @@
             yGroup.innerHTML = '';
             xGroup.innerHTML = '';
 
-            // Y-Axis: Ranks 1 to 8 (Spacious 64px vertical spacing per rank step)
+            // Y-Axis: Ranks 1 to 8 (50px vertical spacing)
             for (let r = 1; r <= 8; r++) {
                 const y = getRankY(r);
                 
@@ -564,11 +556,11 @@
 
                 // Y-Axis Rank Label
                 const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text.setAttribute('x', PADDING_LEFT - 14);
+                text.setAttribute('x', PADDING_LEFT - 12);
                 text.setAttribute('y', y + 4);
                 text.setAttribute('text-anchor', 'end');
                 text.setAttribute('fill', r === 1 ? '#1ed760' : '#808080');
-                text.setAttribute('font-size', '11');
+                text.setAttribute('font-size', '10');
                 text.setAttribute('font-weight', r === 1 ? '800' : '600');
                 text.setAttribute('font-family', 'Space Mono, monospace');
                 text.textContent = `#${r}`;
@@ -592,10 +584,10 @@
                 // X Label
                 const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                 text.setAttribute('x', x);
-                text.setAttribute('y', SVG_H - PADDING_BOTTOM + 25);
+                text.setAttribute('y', SVG_H - PADDING_BOTTOM + 22);
                 text.setAttribute('text-anchor', 'middle');
                 text.setAttribute('fill', '#909090');
-                text.setAttribute('font-size', '11');
+                text.setAttribute('font-size', '10');
                 text.setAttribute('font-weight', '700');
                 text.setAttribute('font-family', 'Space Mono, monospace');
                 text.textContent = SHORT_MONTHS[m];
@@ -609,7 +601,6 @@
         }
 
         function getRankY(rankVal) {
-            // Rank 1 at PADDING_TOP, Rank 8 at PADDING_TOP + CHART_H
             return PADDING_TOP + ((rankVal - 1) / 7) * CHART_H;
         }
 
@@ -664,7 +655,7 @@
             return d;
         }
 
-        // Render Chart Paths & Round Avatar Tips (All 8 paths constantly visible)
+        // Render Chart Paths & Round Avatar Tips
         function renderChart() {
             const pathsGroup = document.getElementById('paths-group');
             const tipsOverlay = document.getElementById('tips-overlay');
@@ -717,7 +708,7 @@
             });
         }
 
-        // Leaderboard Update (Top 8 Cards)
+        // Leaderboard Update (Compact Top 8 Single-Row Grid)
         function updateLeaderboard() {
             const currentMonthIdx = Math.min(Math.floor(progress), 11);
             const monthName = MONTH_NAMES[currentMonthIdx];
@@ -738,30 +729,29 @@
             grid.innerHTML = '';
 
             monthStandings.forEach((item) => {
-                let changeHtml = '<span class="text-on-surface-variant flex items-center font-mono text-[10px]">—</span>';
+                let changeHtml = '<span class="text-on-surface-variant flex items-center font-mono text-[9px]">—</span>';
                 if (item.change > 0) {
-                    changeHtml = `<span class="text-primary flex items-center font-mono text-[10px] font-bold">▲ +${item.change}</span>`;
+                    changeHtml = `<span class="text-primary flex items-center font-mono text-[9px] font-bold">▲+${item.change}</span>`;
                 } else if (item.change < 0) {
-                    changeHtml = `<span class="text-red-400 flex items-center font-mono text-[10px] font-bold">▼ ${item.change}</span>`;
+                    changeHtml = `<span class="text-red-400 flex items-center font-mono text-[9px] font-bold">▼${item.change}</span>`;
                 }
 
                 const card = document.createElement('div');
-                card.className = 'glass-card p-3 rounded-xl flex items-center gap-3 transition-all hover:border-white/20';
+                card.className = 'glass-card p-2 rounded-lg flex items-center gap-2 transition-all hover:border-white/20';
 
                 card.innerHTML = `
-                    <div class="font-mono font-extrabold text-sm ${item.currentRank === 1 ? 'text-primary' : 'text-on-surface-variant'} w-5 text-center">
+                    <div class="font-mono font-extrabold text-xs ${item.currentRank === 1 ? 'text-primary' : 'text-on-surface-variant'} w-4 text-center">
                         #${item.currentRank}
                     </div>
-                    <div class="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
+                    <div class="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
                         <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150'"/>
                     </div>
                     <div class="flex-grow min-w-0">
-                        <p class="font-bold text-xs text-white truncate leading-tight">${item.title}</p>
-                        <p class="text-[10px] text-on-surface-variant truncate">${item.subtitle}</p>
+                        <p class="font-bold text-[11px] text-white truncate leading-tight">${item.title}</p>
+                        <p class="text-[9px] text-on-surface-variant truncate">${item.subtitle}</p>
                     </div>
                     <div class="text-right flex flex-col items-end flex-shrink-0">
                         ${changeHtml}
-                        <span class="font-mono text-[10px] text-on-surface-variant mt-0.5">${item.currentPlays.toLocaleString()}</span>
                     </div>
                 `;
 
@@ -812,9 +802,9 @@
 
         function setSpeed(spd) {
             playSpeed = spd;
-            document.querySelectorAll('[id^="speed-"]').forEach(btn => btn.className = 'px-2 py-1 rounded text-on-surface-variant hover:text-white transition-colors');
+            document.querySelectorAll('[id^="speed-"]').forEach(btn => btn.className = 'px-1.5 py-0.5 rounded text-on-surface-variant hover:text-white transition-colors');
             const activeBtn = document.getElementById(`speed-${spd === 0.5 ? '05' : spd === 1 ? '10' : '20'}`);
-            if (activeBtn) activeBtn.className = 'px-2 py-1 rounded bg-primary/20 text-primary font-bold';
+            if (activeBtn) activeBtn.className = 'px-1.5 py-0.5 rounded bg-primary/20 text-primary font-bold';
         }
 
         // Fullscreen Toggle Handler
@@ -841,11 +831,11 @@
             if (fsIcon) fsIcon.textContent = isFS ? 'fullscreen_exit' : 'fullscreen';
             if (viewport) {
                 if (isFS) {
-                    viewport.classList.remove('h-[620px]');
-                    viewport.classList.add('h-[calc(100vh-160px)]');
+                    viewport.classList.remove('h-[420px]');
+                    viewport.classList.add('h-[calc(100vh-140px)]');
                 } else {
-                    viewport.classList.remove('h-[calc(100vh-160px)]');
-                    viewport.classList.add('h-[620px]');
+                    viewport.classList.remove('h-[calc(100vh-140px)]');
+                    viewport.classList.add('h-[420px]');
                 }
             }
             setupGrid();
