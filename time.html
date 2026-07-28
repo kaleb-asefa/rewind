@@ -229,11 +229,8 @@
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
                     Rank Velocity Over Time 
-                    <span class="text-xs font-mono px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">70% SCROLLING CAMERA</span>
                 </h1>
-                <p class="text-on-surface-variant text-xs mt-0.5">
-                    Line tips lead to 70% viewport, triggering camera scroll. At timeline end, camera locks as lines reach 100% edge.
-                </p>
+
             </div>
 
             <!-- View Toggle Pills -->
@@ -291,15 +288,15 @@
                 </div>
             </div>
 
-            <!-- SVG Chart Viewport Area (Compact 390px Viewport Height) -->
-            <div id="chart-viewport" class="relative w-full h-[390px] select-none overflow-hidden">
+            <!-- SVG Chart Viewport Area (Expanded 440px Height) -->
+            <div id="chart-viewport" class="relative w-full h-[440px] select-none overflow-hidden">
                 
                 <!-- SVG Line Canvas -->
-                <svg id="chart-svg" class="w-full h-full overflow-visible" viewBox="0 0 1000 390" preserveAspectRatio="none">
+                <svg id="chart-svg" class="w-full h-full overflow-visible" viewBox="0 0 1000 440" preserveAspectRatio="none">
                     <defs>
                         <!-- Clip path to keep lines clipped cleanly within the chart grid -->
                         <clipPath id="chart-clip">
-                            <rect x="55" y="0" width="765" height="390"/>
+                            <rect x="55" y="0" width="765" height="440"/>
                         </clipPath>
                     </defs>
 
@@ -320,13 +317,7 @@
             </div>
 
             <!-- Chart Legend Bar -->
-            <div class="mt-2.5 pt-2 border-t border-border-subtle flex items-center justify-between text-[10px] text-on-surface-variant font-mono">
-                <div class="flex items-center gap-4">
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-primary"></span> Y: RANK #1 to #8</span>
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-cyan-400"></span> X: Timeline Camera (70% Focus Point)</span>
-                </div>
-                <div class="text-primary font-bold">SMOOTH CAMERA SCROLL</div>
-            </div>
+            
         </div>
 
         <!-- Live Monthly Leaderboard Grid (Compact Single Row) -->
@@ -606,7 +597,7 @@
 
         // Compact Canvas dimensions & padding constants (SVG viewBox 1000 x 390)
         const SVG_W = 1000;
-        const SVG_H = 390;
+        const SVG_H = 440;
         const PADDING_LEFT = 60;
         const PADDING_RIGHT = 185;
         const PADDING_TOP = 25;
@@ -960,11 +951,11 @@
             if (fsIcon) fsIcon.textContent = isFS ? 'fullscreen_exit' : 'fullscreen';
             if (viewport) {
                 if (isFS) {
-                    viewport.classList.remove('h-[390px]');
+                    viewport.classList.remove('h-[440px]');
                     viewport.classList.add('h-[calc(100vh-140px)]');
                 } else {
-                    viewport.classList.remove('h-[390px]');
-                    viewport.classList.add('h-[390px]');
+                    viewport.classList.remove('h-[calc(100vh-140px)]');
+                    viewport.classList.add('h-[440px]');
                 }
             }
             renderChart();
