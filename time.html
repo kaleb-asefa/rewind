@@ -70,57 +70,29 @@
             stroke-width: 3.5px;
             stroke-linecap: round;
             stroke-linejoin: round;
-            transition: stroke-width 0.25s ease, opacity 0.25s ease, stroke 0.25s ease;
-            filter: drop-shadow(0px 3px 6px rgba(0, 0, 0, 0.6));
-        }
-
-        .rank-path.dimmed {
-            opacity: 0.12 !important;
-            stroke-width: 1.5px;
-        }
-
-        .rank-path.highlighted {
-            opacity: 1 !important;
-            stroke-width: 6px;
-            filter: drop-shadow(0px 0px 12px currentColor);
+            opacity: 0.95;
+            filter: drop-shadow(0px 3px 8px rgba(0, 0, 0, 0.6));
         }
 
         /* Round Avatar Tip Container */
         .tip-container {
             position: absolute;
             transform: translate(-50%, -50%);
-            transition: left 0.1s linear, top 0.1s linear, transform 0.2s ease, opacity 0.2s ease;
-            cursor: pointer;
+            transition: left 0.1s linear, top 0.1s linear;
             z-index: 20;
             will-change: left, top;
             user-select: none;
-        }
-
-        .tip-container.dimmed {
-            opacity: 0.2;
-            filter: grayscale(60%);
-        }
-
-        .tip-container.highlighted {
-            opacity: 1;
-            z-index: 40;
-            transform: translate(-50%, -50%) scale(1.18);
+            pointer-events: none;
         }
 
         .tip-avatar-ring {
-            width: 46px;
-            height: 46px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
-            padding: 2px;
+            padding: 2.5px;
             background: #181818;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
-            transition: all 0.2s ease;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
             position: relative;
-        }
-
-        .tip-container:hover .tip-avatar-ring,
-        .tip-container.highlighted .tip-avatar-ring {
-            box-shadow: 0 0 20px currentColor;
         }
 
         .rank-badge-pill {
@@ -140,7 +112,7 @@
 
         .tip-title-tag {
             position: absolute;
-            left: 52px;
+            left: 56px;
             top: 50%;
             transform: translateY(-50%);
             white-space: nowrap;
@@ -152,10 +124,8 @@
             font-weight: 700;
             color: #ffffff;
             box-shadow: 0 4px 14px rgba(0,0,0,0.6);
-            pointer-events: none;
             backdrop-filter: blur(8px);
             opacity: 0.95;
-            transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
         .pulse-ring {
@@ -240,7 +210,7 @@
                 <p class="font-mono text-xs text-primary uppercase tracking-widest mb-1">Interactive Analytics</p>
                 <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight">Rank Velocity Over Time</h1>
                 <p class="text-on-surface-variant text-sm mt-2 max-w-xl">
-                    Track monthly position changes across your top 10 rankings. Click or hover any line tip to isolate a trajectory, or switch to Fullscreen for deep inspection.
+                    Spacious Top 8 rank trajectories across the year. Watch line tip avatars glide smoothly over time.
                 </p>
             </div>
 
@@ -248,11 +218,11 @@
             <div class="flex items-center p-1.5 bg-surface-card rounded-full border border-border-subtle self-start md:self-auto">
                 <button id="tab-tracks" onclick="switchCategory('tracks')" class="flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all bg-primary text-black shadow-md">
                     <span class="material-symbols-outlined text-sm">music_note</span>
-                    Top 10 Tracks
+                    Top 8 Tracks
                 </button>
                 <button id="tab-artists" onclick="switchCategory('artists')" class="flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all text-on-surface-variant hover:text-white">
                     <span class="material-symbols-outlined text-sm">artist</span>
-                    Top 10 Artists
+                    Top 8 Artists
                 </button>
             </div>
         </div>
@@ -304,31 +274,11 @@
                 </div>
             </div>
 
-            <!-- Active Selection / Clear Filter Banner -->
-            <div id="selection-banner" class="hidden mb-4 flex items-center justify-between bg-primary/10 border border-primary/30 px-4 py-2 rounded-xl text-xs">
-                <div class="flex items-center gap-2 text-primary font-semibold">
-                    <span class="material-symbols-outlined text-base">filter_alt</span>
-                    Highlighting trajectory: <span id="selection-name" class="font-extrabold text-white"></span>
-                </div>
-                <button onclick="clearSelection()" class="text-on-surface-variant hover:text-white flex items-center gap-1 text-[11px] uppercase tracking-wider font-mono font-bold hover:underline">
-                    <span class="material-symbols-outlined text-sm">close</span> Clear Selection
-                </button>
-            </div>
-
-            <!-- SVG Chart Viewport Area (Increased height to 620px for looser, readable layout) -->
-            <div id="chart-viewport" class="relative w-full h-[620px] select-none cursor-pointer" onclick="onViewportClick(event)">
+            <!-- SVG Chart Viewport Area (High 620px viewport for spacious, non-overlapping 8 ranks) -->
+            <div id="chart-viewport" class="relative w-full h-[620px] select-none">
                 
                 <!-- SVG Line Canvas -->
                 <svg id="chart-svg" class="w-full h-full overflow-visible" viewBox="0 0 1000 560" preserveAspectRatio="none">
-                    <defs>
-                        <linearGradient id="grid-fade" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#121212" stop-opacity="0.8"/>
-                            <stop offset="10%" stop-color="#ffffff" stop-opacity="0.04"/>
-                            <stop offset="90%" stop-color="#ffffff" stop-opacity="0.04"/>
-                            <stop offset="100%" stop-color="#121212" stop-opacity="0.8"/>
-                        </linearGradient>
-                    </defs>
-
                     <!-- Background Grid & Y-Axis Labels -->
                     <g id="y-grid-group"></g>
                     <!-- X-Axis Month Columns -->
@@ -341,34 +291,19 @@
                 <div id="tips-overlay" class="absolute inset-0 pointer-events-none">
                     <!-- Tip Avatars will be dynamically injected here -->
                 </div>
-
-                <!-- Hover Tooltip -->
-                <div id="hover-popover" class="hidden absolute z-50 pointer-events-none bg-surface-card border border-primary/40 p-3.5 rounded-xl shadow-2xl backdrop-blur-md text-xs transition-opacity duration-150">
-                    <div class="flex items-center gap-3 mb-1">
-                        <img id="popover-img" src="" class="w-9 h-9 rounded-full object-cover border border-white/20"/>
-                        <div>
-                            <p id="popover-title" class="font-bold text-white text-sm leading-tight"></p>
-                            <p id="popover-subtitle" class="text-on-surface-variant text-[11px]"></p>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center gap-6 mt-2 pt-2 border-t border-white/10 font-mono text-[11px]">
-                        <div>RANK: <span id="popover-rank" class="text-primary font-bold">#1</span></div>
-                        <div>STREAMS: <span id="popover-plays" class="text-white font-bold">0</span></div>
-                    </div>
-                </div>
             </div>
 
             <!-- Chart Legend Bar -->
             <div class="mt-4 pt-3 border-t border-border-subtle flex flex-wrap items-center justify-between text-xs text-on-surface-variant gap-4">
-                <div class="flex items-center gap-5 font-mono text-[11px]">
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-primary"></span> Y: RANK #1 (Top) to #10 (Bottom)</span>
+                <div class="flex items-center gap-6 font-mono text-[11px]">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-primary"></span> Y: RANK #1 (Top) to #8 (Bottom)</span>
                     <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-cyan-400"></span> X: Timeline (Jan - Dec)</span>
                 </div>
-                <div class="text-[11px] italic">Click any tip avatar or line to lock selection • Click empty space to unselect</div>
+                <div class="text-[11px] font-mono text-primary">SCATTERED TOP 8 LAYOUT</div>
             </div>
         </div>
 
-        <!-- Live Monthly Leaderboard Grid -->
+        <!-- Live Monthly Leaderboard Grid (Top 8 Cards) -->
         <div>
             <div class="flex items-center justify-between mb-6">
                 <div>
@@ -376,12 +311,12 @@
                     <p class="text-on-surface-variant text-xs mt-0.5">Real-time standings for <span id="leaderboard-month-label" class="text-primary font-bold">January 2024</span></p>
                 </div>
                 <span class="font-mono text-xs text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-                    10 POSITIONS
+                    8 POSITIONS
                 </span>
             </div>
 
-            <!-- 10 Leaderboard Cards -->
-            <div id="leaderboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- 8 Leaderboard Cards Grid -->
+            <div id="leaderboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Dynamically generated cards -->
             </div>
         </div>
@@ -391,7 +326,7 @@
     <!-- Footer -->
     <footer class="w-full py-8 bg-surface-card border-t border-border-subtle text-center text-xs text-on-surface-variant font-mono">
         <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-            <span class="text-primary font-bold">Rewind Velocity Core v2.5</span>
+            <span class="text-primary font-bold">Rewind Velocity Core v2.6</span>
             <span>Spotify Extended Streaming History Analytics</span>
             <span>© 2026 Rewind System</span>
         </div>
@@ -403,6 +338,7 @@
         const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         const SHORT_MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
+        // Scattered Top 8 Tracks Data
         const TRACKS_DATA = [
             {
                 id: 'track-1',
@@ -455,7 +391,7 @@
                 subtitle: 'Echo Shift',
                 image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=150&auto=format&fit=crop&q=80',
                 color: '#38f9d7', // Emerald Teal
-                ranks: [8, 7, 6, 6, 7, 6, 6, 7, 6, 6, 6, 6],
+                ranks: [6, 7, 6, 6, 7, 6, 6, 7, 6, 6, 6, 6],
                 plays: [920, 1110, 1250, 1320, 1390, 1480, 1540, 1590, 1670, 1730, 1790, 1840]
             },
             {
@@ -464,7 +400,7 @@
                 subtitle: 'Vortex',
                 image: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=150&auto=format&fit=crop&q=80',
                 color: '#ff54b0', // Hot Pink
-                ranks: [6, 6, 7, 8, 6, 7, 8, 6, 7, 7, 7, 7],
+                ranks: [7, 6, 7, 8, 6, 7, 8, 6, 7, 7, 7, 7],
                 plays: [1080, 1190, 1220, 1290, 1420, 1450, 1500, 1620, 1640, 1690, 1750, 1800]
             },
             {
@@ -472,30 +408,13 @@
                 title: 'Glitch Theory',
                 subtitle: 'Signal Zero',
                 image: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=150&auto=format&fit=crop&q=80',
-                color: '#70e0d0', // Aqua
-                ranks: [7, 8, 8, 7, 8, 8, 7, 8, 8, 8, 8, 8],
+                color: '#4d94ff', // Royal Blue
+                ranks: [8, 8, 8, 7, 8, 8, 7, 8, 8, 8, 8, 8],
                 plays: [1010, 1130, 1200, 1310, 1360, 1410, 1510, 1560, 1610, 1660, 1710, 1770]
-            },
-            {
-                id: 'track-9',
-                title: 'Lunar Static',
-                subtitle: 'Prism Nova',
-                image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=150&auto=format&fit=crop&q=80',
-                color: '#a8c0ff', // Soft Indigo
-                ranks: [10, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
-                plays: [810, 960, 1120, 1210, 1280, 1340, 1410, 1480, 1530, 1590, 1640, 1700]
-            },
-            {
-                id: 'track-10',
-                title: 'Void Echoes',
-                subtitle: 'Aether Collective',
-                image: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=150&auto=format&fit=crop&q=80',
-                color: '#e14efa', // Magenta
-                ranks: [9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
-                plays: [880, 890, 980, 1050, 1120, 1190, 1260, 1320, 1390, 1440, 1490, 1550]
             }
         ];
 
+        // Scattered Top 8 Artists Data
         const ARTISTS_DATA = [
             {
                 id: 'artist-1',
@@ -565,27 +484,9 @@
                 title: 'Signal Zero',
                 subtitle: 'Glitch Hop',
                 image: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=150&auto=format&fit=crop&q=80',
-                color: '#70e0d0',
+                color: '#4d94ff',
                 ranks: [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
                 plays: [2500, 2700, 2900, 3150, 3350, 3550, 3750, 3950, 4150, 4350, 4550, 4750]
-            },
-            {
-                id: 'artist-9',
-                title: 'Prism Nova',
-                subtitle: 'Futuristic Pop',
-                image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=150&auto=format&fit=crop&q=80',
-                color: '#a8c0ff',
-                ranks: [9, 10, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
-                plays: [2100, 2250, 2500, 2750, 2950, 3150, 3350, 3550, 3750, 3950, 4150, 4350]
-            },
-            {
-                id: 'artist-10',
-                title: 'Aether Collective',
-                subtitle: 'Neoclassical Ambient',
-                image: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=150&auto=format&fit=crop&q=80',
-                color: '#e14efa',
-                ranks: [10, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
-                plays: [1950, 2300, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200]
             }
         ];
 
@@ -597,18 +498,14 @@
         let playSpeed = 1.0;
         let animationFrameId = null;
         let lastTimestamp = null;
-        
-        // Selection & Hover state
-        let selectedId = null; // Locked selection via click
-        let hoveredId = null;  // Temporary hover state
 
-        // Canvas dimensions & padding constants (SVG viewBox 1000 x 560 for extra height & spacing)
+        // Canvas dimensions & padding constants (SVG viewBox 1000 x 560 for spacious 8 ranks)
         const SVG_W = 1000;
         const SVG_H = 560;
         const PADDING_LEFT = 75;
-        const PADDING_RIGHT = 190; // Space for avatar tips and title tags on line tips
-        const PADDING_TOP = 45;
-        const PADDING_BOTTOM = 55;
+        const PADDING_RIGHT = 210; // Extra right space for clean tip avatars and titles
+        const PADDING_TOP = 50;
+        const PADDING_BOTTOM = 60;
         const CHART_W = SVG_W - PADDING_LEFT - PADDING_RIGHT;
         const CHART_H = SVG_H - PADDING_TOP - PADDING_BOTTOM;
 
@@ -618,23 +515,11 @@
             renderChart();
             updateLeaderboard();
             startAnimationLoop();
-
-            // Clear hover/popover on chart mouseleave
-            const viewport = document.getElementById('chart-viewport');
-            viewport.addEventListener('mouseleave', () => {
-                hoveredId = null;
-                hidePopover();
-                renderChart();
-                updateLeaderboard();
-            });
         });
 
         function switchCategory(category) {
             currentCategory = category;
             currentData = category === 'tracks' ? TRACKS_DATA : ARTISTS_DATA;
-            selectedId = null;
-            hoveredId = null;
-            updateSelectionBanner();
 
             // Update tabs UI
             const tracksBtn = document.getElementById('tab-tracks');
@@ -643,9 +528,13 @@
             if (category === 'tracks') {
                 tracksBtn.className = "flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all bg-primary text-black shadow-md";
                 artistsBtn.className = "flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all text-on-surface-variant hover:text-white";
+                tracksBtn.textContent = "Top 8 Tracks";
+                artistsBtn.textContent = "Top 8 Artists";
             } else {
                 artistsBtn.className = "flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all bg-primary text-black shadow-md";
                 tracksBtn.className = "flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all text-on-surface-variant hover:text-white";
+                tracksBtn.textContent = "Top 8 Tracks";
+                artistsBtn.textContent = "Top 8 Artists";
             }
 
             renderChart();
@@ -658,8 +547,8 @@
             yGroup.innerHTML = '';
             xGroup.innerHTML = '';
 
-            // Y-Axis: Ranks 1 to 10
-            for (let r = 1; r <= 10; r++) {
+            // Y-Axis: Ranks 1 to 8 (Spacious 64px vertical spacing per rank step)
+            for (let r = 1; r <= 8; r++) {
                 const y = getRankY(r);
                 
                 // Grid Line
@@ -714,13 +603,14 @@
             }
         }
 
-        // Coordinate calculations
+        // Coordinate calculations for 8 ranks
         function getMonthX(monthIdx) {
             return PADDING_LEFT + (monthIdx / 11) * CHART_W;
         }
 
         function getRankY(rankVal) {
-            return PADDING_TOP + ((rankVal - 1) / 9) * CHART_H;
+            // Rank 1 at PADDING_TOP, Rank 8 at PADDING_TOP + CHART_H
+            return PADDING_TOP + ((rankVal - 1) / 7) * CHART_H;
         }
 
         function getInterpolatedRank(ranks, prog) {
@@ -736,13 +626,6 @@
             
             const smoothFrac = (1 - Math.cos(frac * Math.PI)) / 2;
             return r1 + (r2 - r1) * smoothFrac;
-        }
-
-        function getInterpolatedPlays(plays, prog) {
-            const idx = Math.min(Math.floor(prog), 11);
-            const frac = prog - idx;
-            if (idx >= 11) return plays[11];
-            return Math.round(plays[idx] + (plays[idx + 1] - plays[idx]) * frac);
         }
 
         // Generate Catmull-Rom or cubic Bezier SVG path data for a line up to progress
@@ -781,12 +664,7 @@
             return d;
         }
 
-        // Active focus helper
-        function getActiveId() {
-            return selectedId || hoveredId;
-        }
-
-        // Render Chart Paths & Round Avatar Tips
+        // Render Chart Paths & Round Avatar Tips (All 8 paths constantly visible)
         function renderChart() {
             const pathsGroup = document.getElementById('paths-group');
             const tipsOverlay = document.getElementById('tips-overlay');
@@ -794,31 +672,14 @@
             pathsGroup.innerHTML = '';
             tipsOverlay.innerHTML = '';
 
-            const activeId = getActiveId();
-
             currentData.forEach((item) => {
-                const isFocused = activeId === item.id;
-                const isDimmed = activeId && !isFocused;
-
                 // 1. Draw SVG Rank Trajectory Line
                 const pathD = generatePathD(item.ranks, progress);
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 path.setAttribute('d', pathD);
                 path.setAttribute('stroke', item.color);
-                path.setAttribute('class', `rank-path ${isDimmed ? 'dimmed' : isFocused ? 'highlighted' : ''}`);
+                path.setAttribute('class', 'rank-path');
                 path.setAttribute('id', `path-${item.id}`);
-                path.style.cursor = 'pointer';
-
-                // Path Event Listeners
-                path.addEventListener('mouseenter', (e) => {
-                    hoveredId = item.id;
-                    renderChart();
-                    updateLeaderboard();
-                });
-                path.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    toggleSelect(item.id);
-                });
 
                 pathsGroup.appendChild(path);
 
@@ -834,11 +695,10 @@
 
                 // Create Tip HTML Element
                 const tipEl = document.createElement('div');
-                tipEl.className = `tip-container ${isDimmed ? 'dimmed' : isFocused ? 'highlighted' : ''}`;
+                tipEl.className = 'tip-container';
                 tipEl.style.left = `${tipX_percent}%`;
                 tipEl.style.top = `${tipY_percent}%`;
                 tipEl.id = `tip-${item.id}`;
-                tipEl.style.pointerEvents = 'auto'; // Enable interactions
 
                 tipEl.innerHTML = `
                     <div class="tip-avatar-ring" style="border: 2px solid ${item.color};">
@@ -853,30 +713,11 @@
                     </div>
                 `;
 
-                // Tip Event Listeners
-                tipEl.addEventListener('mouseenter', (e) => {
-                    hoveredId = item.id;
-                    showPopover(e, item);
-                    renderChart();
-                    updateLeaderboard();
-                });
-                tipEl.addEventListener('mousemove', (e) => updatePopoverPos(e));
-                tipEl.addEventListener('mouseleave', () => {
-                    hoveredId = null;
-                    hidePopover();
-                    renderChart();
-                    updateLeaderboard();
-                });
-                tipEl.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    toggleSelect(item.id);
-                });
-
                 tipsOverlay.appendChild(tipEl);
             });
         }
 
-        // Leaderboard Update
+        // Leaderboard Update (Top 8 Cards)
         function updateLeaderboard() {
             const currentMonthIdx = Math.min(Math.floor(progress), 11);
             const monthName = MONTH_NAMES[currentMonthIdx];
@@ -884,8 +725,6 @@
             document.getElementById('current-month-display').textContent = `${monthName} 2024`;
             document.getElementById('leaderboard-month-label').textContent = `${monthName} 2024`;
             document.getElementById('timeline-scrubber').value = progress;
-
-            const activeId = getActiveId();
 
             const monthStandings = currentData.map((item) => {
                 const rank = item.ranks[currentMonthIdx];
@@ -906,24 +745,8 @@
                     changeHtml = `<span class="text-red-400 flex items-center font-mono text-[10px] font-bold">▼ ${item.change}</span>`;
                 }
 
-                const isCardFocused = activeId === item.id;
-
                 const card = document.createElement('div');
-                card.className = `glass-card p-3 rounded-xl flex items-center gap-3 transition-all cursor-pointer ${isCardFocused ? 'border-primary bg-surface-hover scale-[1.03] ring-1 ring-primary' : 'hover:border-white/20'}`;
-                card.addEventListener('mouseenter', () => {
-                    hoveredId = item.id;
-                    renderChart();
-                    updateLeaderboard();
-                });
-                card.addEventListener('mouseleave', () => {
-                    hoveredId = null;
-                    renderChart();
-                    updateLeaderboard();
-                });
-                card.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    toggleSelect(item.id);
-                });
+                card.className = 'glass-card p-3 rounded-xl flex items-center gap-3 transition-all hover:border-white/20';
 
                 card.innerHTML = `
                     <div class="font-mono font-extrabold text-sm ${item.currentRank === 1 ? 'text-primary' : 'text-on-surface-variant'} w-5 text-center">
@@ -944,48 +767,6 @@
 
                 grid.appendChild(card);
             });
-        }
-
-        // Selection Handlers
-        function toggleSelect(id) {
-            if (selectedId === id) {
-                selectedId = null; // Unselect if clicking again!
-            } else {
-                selectedId = id;   // Select target
-            }
-            updateSelectionBanner();
-            renderChart();
-            updateLeaderboard();
-        }
-
-        function clearSelection() {
-            selectedId = null;
-            hoveredId = null;
-            hidePopover();
-            updateSelectionBanner();
-            renderChart();
-            updateLeaderboard();
-        }
-
-        function onViewportClick(e) {
-            // Clicking empty viewport space clears selection!
-            if (selectedId) {
-                clearSelection();
-            }
-        }
-
-        function updateSelectionBanner() {
-            const banner = document.getElementById('selection-banner');
-            const nameEl = document.getElementById('selection-name');
-            if (selectedId) {
-                const item = currentData.find(d => d.id === selectedId);
-                if (item) {
-                    nameEl.textContent = item.title;
-                    banner.classList.remove('hidden');
-                    return;
-                }
-            }
-            banner.classList.add('hidden');
         }
 
         // Animation Loop
@@ -1070,37 +851,6 @@
             setupGrid();
             renderChart();
         });
-
-        // Tooltip Popover
-        function showPopover(e, item) {
-            const popover = document.getElementById('hover-popover');
-            document.getElementById('popover-img').src = item.image;
-            document.getElementById('popover-title').textContent = item.title;
-            document.getElementById('popover-subtitle').textContent = item.subtitle;
-            
-            const currentMonthIdx = Math.min(Math.floor(progress), 11);
-            const rank = Math.round(getInterpolatedRank(item.ranks, progress));
-            const plays = getInterpolatedPlays(item.plays, progress);
-            
-            document.getElementById('popover-rank').textContent = `#${rank}`;
-            document.getElementById('popover-plays').textContent = plays.toLocaleString();
-
-            popover.classList.remove('hidden');
-            updatePopoverPos(e);
-        }
-
-        function updatePopoverPos(e) {
-            const popover = document.getElementById('hover-popover');
-            const viewportRect = document.getElementById('chart-viewport').getBoundingClientRect();
-            const x = e.clientX - viewportRect.left + 15;
-            const y = e.clientY - viewportRect.top - 15;
-            popover.style.left = `${x}px`;
-            popover.style.top = `${y}px`;
-        }
-
-        function hidePopover() {
-            document.getElementById('hover-popover').classList.add('hidden');
-        }
 
         // Handle Responsive Window Resize
         window.addEventListener('resize', () => {
