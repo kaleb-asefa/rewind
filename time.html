@@ -229,10 +229,10 @@
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
                     Rank Velocity Over Time 
-                    <span class="text-xs font-mono px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">3-YEAR TIMELINE (2022 - 2024)</span>
+                    <span class="text-xs font-mono px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">70% SCROLLING CAMERA</span>
                 </h1>
                 <p class="text-on-surface-variant text-xs mt-0.5">
-                    Smooth scrolling X-axis timeline camera. Watch rank lines pan horizontally across 36 months of streaming data.
+                    Line tips lead to 70% viewport, triggering camera scroll. At timeline end, camera locks as lines reach 100% edge.
                 </p>
             </div>
 
@@ -297,9 +297,9 @@
                 <!-- SVG Line Canvas -->
                 <svg id="chart-svg" class="w-full h-full overflow-visible" viewBox="0 0 1000 390" preserveAspectRatio="none">
                     <defs>
-                        <!-- Clip path to keep lines clipped cleanly within the chart area -->
+                        <!-- Clip path to keep lines clipped cleanly within the chart grid -->
                         <clipPath id="chart-clip">
-                            <rect x="55" y="0" width="760" height="390"/>
+                            <rect x="55" y="0" width="765" height="390"/>
                         </clipPath>
                     </defs>
 
@@ -323,9 +323,9 @@
             <div class="mt-2.5 pt-2 border-t border-border-subtle flex items-center justify-between text-[10px] text-on-surface-variant font-mono">
                 <div class="flex items-center gap-4">
                     <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-primary"></span> Y: RANK #1 to #8</span>
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-cyan-400"></span> X: Moving Viewport (6-Month Sliding Window)</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-cyan-400"></span> X: Timeline Camera (70% Focus Point)</span>
                 </div>
-                <div class="text-primary font-bold">SCROLLING TIMELINE CAMERA</div>
+                <div class="text-primary font-bold">SMOOTH CAMERA SCROLL</div>
             </div>
         </div>
 
@@ -349,7 +349,7 @@
     <!-- Footer -->
     <footer class="w-full py-4 bg-surface-card border-t border-border-subtle text-center text-[11px] text-on-surface-variant font-mono mt-auto">
         <div class="max-w-[1440px] mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-2">
-            <span class="text-primary font-bold">Rewind Velocity Core v3.0</span>
+            <span class="text-primary font-bold">Rewind Velocity Core v3.1</span>
             <span>Spotify 36-Month Extended Streaming History Analytics</span>
             <span>© 2026 Rewind System</span>
         </div>
@@ -361,7 +361,9 @@
         const SHORT_MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
         
         const TOTAL_MONTHS = 36; // 3 Years: Jan 2022 to Dec 2024
-        const VISIBLE_WINDOW = 6; // 6 months visible at a time inside viewport
+        const VISIBLE_WINDOW = 10; // 10 months visible in chart viewport
+        const FOCUS_RATIO = 0.70;  // Camera locks tip avatar at 70% viewport width
+        const FOCUS_OFFSET = (VISIBLE_WINDOW - 1) * FOCUS_RATIO; // 9 * 0.70 = 6.3 months
 
         function getFullDateString(monthIdx) {
             const idx = Math.min(Math.max(0, Math.floor(monthIdx)), 35);
@@ -384,11 +386,11 @@
                 title: 'Neon Drift',
                 subtitle: 'Solaris',
                 image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80',
-                color: '#1ed760', // Spotify Green
+                color: '#1ed760',
                 ranks: [
-                    2, 2, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, // 2022
-                    1, 1, 2, 1, 3, 2, 1, 1, 2, 1, 1, 1, // 2023
-                    1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1  // 2024
+                    2, 2, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1,
+                    1, 1, 2, 1, 3, 2, 1, 1, 2, 1, 1, 1,
+                    1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1
                 ],
                 plays: Array.from({length: 36}, (_, i) => 1200 + i * 45)
             },
@@ -397,11 +399,11 @@
                 title: 'Obsidian Waves',
                 subtitle: 'Null Vector',
                 image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80',
-                color: '#00d2ff', // Electric Cyan
+                color: '#00d2ff',
                 ranks: [
-                    1, 1, 2, 2, 3, 1, 2, 3, 1, 2, 3, 2, // 2022
-                    3, 2, 1, 2, 1, 1, 3, 2, 1, 2, 3, 2, // 2023
-                    2, 1, 3, 2, 1, 2, 2, 1, 2, 3, 2, 2  // 2024
+                    1, 1, 2, 2, 3, 1, 2, 3, 1, 2, 3, 2,
+                    3, 2, 1, 2, 1, 1, 3, 2, 1, 2, 3, 2,
+                    2, 1, 3, 2, 1, 2, 2, 1, 2, 3, 2, 2
                 ],
                 plays: Array.from({length: 36}, (_, i) => 1150 + i * 42)
             },
@@ -410,11 +412,11 @@
                 title: 'Midnight Protocol',
                 subtitle: 'Cyber Bloom',
                 image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=150&auto=format&fit=crop&q=80',
-                color: '#b066fe', // Purple
+                color: '#b066fe',
                 ranks: [
-                    3, 4, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, // 2022
-                    2, 4, 3, 4, 2, 4, 2, 3, 4, 3, 2, 3, // 2023
-                    4, 3, 2, 4, 3, 3, 3, 4, 3, 2, 3, 3  // 2024
+                    3, 4, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3,
+                    2, 4, 3, 4, 2, 4, 2, 3, 4, 3, 2, 3,
+                    4, 3, 2, 4, 3, 3, 3, 4, 3, 2, 3, 3
                 ],
                 plays: Array.from({length: 36}, (_, i) => 1100 + i * 40)
             },
@@ -423,11 +425,11 @@
                 title: 'Pulse Echo',
                 subtitle: 'Neon Queen',
                 image: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=150&auto=format&fit=crop&q=80',
-                color: '#ff6b6b', // Coral
+                color: '#ff6b6b',
                 ranks: [
-                    4, 3, 5, 3, 4, 5, 3, 4, 5, 3, 4, 4, // 2022
-                    5, 3, 5, 3, 5, 3, 4, 4, 3, 4, 4, 4, // 2023
-                    3, 4, 4, 3, 4, 4, 4, 3, 4, 4, 4, 4  // 2024
+                    4, 3, 5, 3, 4, 5, 3, 4, 5, 3, 4, 4,
+                    5, 3, 5, 3, 5, 3, 4, 4, 3, 4, 4, 4,
+                    3, 4, 4, 3, 4, 4, 4, 3, 4, 4, 4, 4
                 ],
                 plays: Array.from({length: 36}, (_, i) => 1050 + i * 38)
             },
@@ -436,11 +438,11 @@
                 title: 'Digital Rain',
                 subtitle: 'Frequence',
                 image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=150&auto=format&fit=crop&q=80',
-                color: '#ffaa00', // Amber
+                color: '#ffaa00',
                 ranks: [
-                    5, 5, 4, 5, 5, 4, 5, 5, 4, 5, 5, 5, // 2022
-                    4, 5, 4, 5, 4, 5, 5, 5, 5, 5, 5, 5, // 2023
-                    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5  // 2024
+                    5, 5, 4, 5, 5, 4, 5, 5, 4, 5, 5, 5,
+                    4, 5, 4, 5, 4, 5, 5, 5, 5, 5, 5, 5,
+                    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
                 ],
                 plays: Array.from({length: 36}, (_, i) => 1000 + i * 35)
             },
@@ -449,11 +451,11 @@
                 title: 'Synapse Drift',
                 subtitle: 'Echo Shift',
                 image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=150&auto=format&fit=crop&q=80',
-                color: '#38f9d7', // Teal
+                color: '#38f9d7',
                 ranks: [
-                    6, 6, 7, 6, 6, 7, 6, 6, 7, 6, 6, 6, // 2022
-                    6, 7, 6, 6, 7, 6, 6, 7, 6, 6, 6, 6, // 2023
-                    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6  // 2024
+                    6, 6, 7, 6, 6, 7, 6, 6, 7, 6, 6, 6,
+                    6, 7, 6, 6, 7, 6, 6, 7, 6, 6, 6, 6,
+                    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
                 ],
                 plays: Array.from({length: 36}, (_, i) => 900 + i * 32)
             },
@@ -462,11 +464,11 @@
                 title: 'Volt Horizon',
                 subtitle: 'Vortex',
                 image: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=150&auto=format&fit=crop&q=80',
-                color: '#ff54b0', // Hot Pink
+                color: '#ff54b0',
                 ranks: [
-                    7, 7, 6, 7, 7, 6, 7, 7, 6, 7, 7, 7, // 2022
-                    7, 6, 7, 8, 6, 7, 8, 6, 7, 7, 7, 7, // 2023
-                    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7  // 2024
+                    7, 7, 6, 7, 7, 6, 7, 7, 6, 7, 7, 7,
+                    7, 6, 7, 8, 6, 7, 8, 6, 7, 7, 7, 7,
+                    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
                 ],
                 plays: Array.from({length: 36}, (_, i) => 850 + i * 30)
             },
@@ -475,11 +477,11 @@
                 title: 'Glitch Theory',
                 subtitle: 'Signal Zero',
                 image: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=150&auto=format&fit=crop&q=80',
-                color: '#4d94ff', // Royal Blue
+                color: '#4d94ff',
                 ranks: [
-                    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, // 2022
-                    8, 8, 8, 7, 8, 8, 7, 8, 8, 8, 8, 8, // 2023
-                    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8  // 2024
+                    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+                    8, 8, 8, 7, 8, 8, 7, 8, 8, 8, 8, 8,
+                    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
                 ],
                 plays: Array.from({length: 36}, (_, i) => 800 + i * 28)
             }
@@ -623,7 +625,6 @@
             currentCategory = category;
             currentData = category === 'tracks' ? TRACKS_DATA : ARTISTS_DATA;
 
-            // Update tabs UI
             const tracksBtn = document.getElementById('tab-tracks');
             const artistsBtn = document.getElementById('tab-artists');
             
@@ -639,16 +640,27 @@
             updateLeaderboard();
         }
 
-        // Compute sliding time camera window parameters
+        // Camera window bounds calculation:
+        // Phase 1 (Lead-in): prog <= 6.3 => winStart = 0. Tip avatar moves 0% to 70% across viewport.
+        // Phase 2 (Camera scroll): 6.3 < prog < (35 - 2.7) => winStart = prog - 6.3. Camera scrolls, tip avatar stays locked at 70%.
+        // Phase 3 (Lead-out): prog >= 32.3 => winStart = 26 (camera locked). Tip avatar finishes drawing to 100% right edge.
         function getWindowBounds(prog) {
-            // When prog < 5, window spans 0 to 5.
-            // As prog >= 5, winStart scrolls smoothly to (prog - 5) and winEnd = prog!
-            const winEnd = Math.max(VISIBLE_WINDOW - 1, prog);
-            const winStart = winEnd - (VISIBLE_WINDOW - 1);
+            const maxProg = TOTAL_MONTHS - 1; // 35
+            const windowSpan = VISIBLE_WINDOW - 1; // 9 months span
+            
+            let winStart;
+            if (prog <= FOCUS_OFFSET) {
+                winStart = 0;
+            } else if (prog >= maxProg - (windowSpan - FOCUS_OFFSET)) {
+                winStart = maxProg - windowSpan;
+            } else {
+                winStart = prog - FOCUS_OFFSET;
+            }
+
+            const winEnd = winStart + windowSpan;
             return { winStart, winEnd };
         }
 
-        // Coordinate calculations with sliding window winStart
         function getMonthX(monthIdx, winStart) {
             return PADDING_LEFT + ((monthIdx - winStart) / (VISIBLE_WINDOW - 1)) * CHART_W;
         }
@@ -672,7 +684,7 @@
             return r1 + (r2 - r1) * smoothFrac;
         }
 
-        // Generate smooth Catmull-Rom / cubic Bezier path for a rank line scrolling across the visible window
+        // Generate Catmull-Rom / cubic Bezier path for rank line scrolling with window
         function generatePathD(ranks, prog, winStart) {
             const currentMaxMonth = Math.min(prog, 35);
             const points = [];
@@ -710,7 +722,7 @@
             return d;
         }
 
-        // Render Dynamic Sliding Chart Grid, Scrolling Rank Paths & Line Tip Avatars
+        // Render Chart Grid, Camera Scroll & Tip Avatars
         function renderChart() {
             const yGroup = document.getElementById('y-grid-group');
             const xGroup = document.getElementById('x-grid-group');
@@ -724,7 +736,7 @@
 
             const { winStart, winEnd } = getWindowBounds(progress);
 
-            // 1. Draw Fixed Y-Axis Lines (#1 to #8)
+            // 1. Fixed Y-Axis Lines (#1 to #8)
             for (let r = 1; r <= 8; r++) {
                 const y = getRankY(r);
                 
@@ -750,14 +762,13 @@
                 yGroup.appendChild(text);
             }
 
-            // 2. Draw Dynamic Sliding X-Axis Month Column Ticks (JAN '22 ... DEC '24)
+            // 2. Dynamic Sliding X-Axis Month Ticks
             const minMonthVisible = Math.max(0, Math.floor(winStart) - 1);
             const maxMonthVisible = Math.min(TOTAL_MONTHS - 1, Math.ceil(winEnd) + 1);
 
             for (let m = minMonthVisible; m <= maxMonthVisible; m++) {
                 const x = getMonthX(m, winStart);
 
-                // Only render ticks within SVG canvas bounds
                 if (x >= PADDING_LEFT - 30 && x <= SVG_W - PADDING_RIGHT + 30) {
                     const isJanNewYear = m % 12 === 0;
 
@@ -783,9 +794,8 @@
                 }
             }
 
-            // 3. Draw Sliding Rank Trajectories & Position Round Tip Avatars
+            // 3. Draw Rank Trajectories & Position Tip Avatars
             currentData.forEach((item) => {
-                // Rank Path
                 const pathD = generatePathD(item.ranks, progress, winStart);
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 path.setAttribute('d', pathD);
@@ -795,7 +805,6 @@
 
                 pathsGroup.appendChild(path);
 
-                // Round Avatar Tip at active cursor
                 const currentRank = getInterpolatedRank(item.ranks, progress);
                 const tipX_svg = getMonthX(progress, winStart);
                 const tipY_svg = getRankY(currentRank);
@@ -828,7 +837,7 @@
             });
         }
 
-        // Leaderboard Update Across 36 Months
+        // Leaderboard Update
         function updateLeaderboard() {
             const currentMonthIdx = Math.min(Math.floor(progress), 35);
             const fullDateLabel = getFullDateString(currentMonthIdx);
@@ -887,7 +896,6 @@
                 lastTimestamp = timestamp;
 
                 if (isPlaying) {
-                    // Smoothly advance through 36 months (~30s loop)
                     progress += (dt / 0.8) * playSpeed;
                     if (progress >= 35) {
                         progress = 0; // Loop back smooth
@@ -955,7 +963,7 @@
                     viewport.classList.remove('h-[390px]');
                     viewport.classList.add('h-[calc(100vh-140px)]');
                 } else {
-                    viewport.classList.remove('h-[calc(100vh-140px)]');
+                    viewport.classList.remove('h-[390px]');
                     viewport.classList.add('h-[390px]');
                 }
             }
