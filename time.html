@@ -7,7 +7,7 @@
     
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -20,12 +20,19 @@
                     colors: {
                         "surface": "#121212",
                         "surface-card": "#181818",
+                        "surface-container": "#201f1f",
+                        "surface-container-high": "#2a2a2a",
                         "surface-hover": "#282828",
                         "primary": "#1ed760",
                         "primary-dark": "#1db954",
                         "on-surface": "#ffffff",
                         "on-surface-variant": "#b3b3b3",
                         "border-subtle": "rgba(255, 255, 255, 0.08)"
+                    },
+                    spacing: {
+                        "container-padding-desktop": "32px",
+                        "container-padding-mobile": "16px",
+                        "section-gap": "48px"
                     },
                     fontFamily: {
                         sans: ['Plus Jakarta Sans', 'sans-serif'],
@@ -36,6 +43,10 @@
         };
     </script>
     
+    <!-- Modular Custom CSS & Scripts -->
+    <link href="src/styles/main.css" rel="stylesheet"/>
+    <script src="src/js/theme.js"></script>
+
     <style>
         body {
             background-color: #121212;
@@ -86,8 +97,8 @@
         }
 
         .tip-avatar-ring {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             padding: 2px;
             background: #181818;
@@ -112,13 +123,13 @@
 
         .tip-title-tag {
             position: absolute;
-            left: 48px;
+            left: 46px;
             top: 50%;
             transform: translateY(-50%);
             white-space: nowrap;
             background: rgba(18, 18, 18, 0.92);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 3px 8px;
+            padding: 2.5px 7.5px;
             border-radius: 6px;
             font-size: 10px;
             font-weight: 700;
@@ -142,22 +153,22 @@
             50% { opacity: 0.2; transform: scale(1.18); }
         }
 
-        /* Custom Scrubber Input */
+        /* Sleek Inline Scrubber Input */
         input[type=range] {
             -webkit-appearance: none;
             background: rgba(255, 255, 255, 0.12);
-            height: 5px;
-            border-radius: 3px;
+            height: 4px;
+            border-radius: 2px;
         }
 
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 16px;
-            width: 16px;
+            height: 14px;
+            width: 14px;
             border-radius: 50%;
             background: #1ed760;
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(30, 215, 96, 0.8);
+            box-shadow: 0 0 8px rgba(30, 215, 96, 0.8);
             transition: transform 0.15s ease;
         }
 
@@ -172,38 +183,54 @@
         ::-webkit-scrollbar-thumb:hover { background: #1ed760; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col bg-surface text-on-surface">
+<body class="bg-background text-on-background antialiased min-h-screen flex flex-col">
 
-    <!-- Top Navigation Bar -->
-    <header class="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-md border-b border-border-subtle">
-        <nav class="flex justify-between items-center px-6 md:px-12 py-3 max-w-7xl mx-auto">
+    <!-- Top Navigation Bar (Identical Layout to overview.html) -->
+    <header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-lg shadow-sm">
+        <nav class="flex justify-between items-center px-container-padding-desktop py-4 w-full max-w-[1440px] mx-auto">
             <div class="flex items-center gap-8">
-                <a href="index.html" class="text-lg font-extrabold text-primary tracking-tight flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">fast_rewind</span>
+                <a href="index.html" class="text-headline-md font-headline-md text-primary dark:text-primary tracking-tighter flex items-center gap-2 font-bold">
+                    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">fast_rewind</span>
                     Rewind
                 </a>
-                <div class="hidden md:flex items-center gap-6 text-xs font-semibold">
-                    <a href="overview.html" class="text-on-surface-variant hover:text-primary transition-colors">Overview</a>
-                    <a href="time.html" class="text-primary border-b-2 border-primary pb-0.5">Rank Velocity</a>
-                    <a href="overview.html#upload" class="text-on-surface-variant hover:text-primary transition-colors">Upload Data</a>
+                <div class="hidden md:flex items-center gap-6">
+                    <a id="nav-link-overview" class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" href="overview.html">Overview</a>
+                    <a id="nav-link-velocity" class="font-body-lg text-body-lg text-primary border-b-2 border-primary pb-1 transition-colors duration-200 cursor-pointer" href="time.html">Rank Velocity</a>
+                    <a id="nav-link-upload" class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" href="overview.html#upload">Upload Data</a>
                 </div>
             </div>
             
-            <div class="flex items-center gap-3">
-                <a href="overview.html" class="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider bg-surface-card hover:bg-surface-hover rounded-full border border-border-subtle transition-all">
-                    Dashboard
-                </a>
+            <div class="flex items-center gap-4">
+                <div class="relative hidden lg:block">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+                    <input class="bg-surface-container rounded-full pl-10 pr-4 py-2 text-body-sm font-body-sm focus:outline-none focus:ring-1 focus:ring-primary w-64 transition-all" placeholder="Search insights..." type="text">
+                </div>
+                <button id="theme-toggle" type="button" aria-label="Switch to dark mode" class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" title="Toggle theme">
+                    <span id="theme-icon" class="theme-icon material-symbols-outlined text-lg">dark_mode</span>
+                </button>
+                <button class="active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined text-on-surface-variant hover:text-primary">notifications</span>
+                </button>
+                <button class="active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined text-on-surface-variant hover:text-primary">settings</span>
+                </button>
+                <div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+                    <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdc-VwAPlptMYg1R-WMAI8hFkkxEEZoTC4nwZaYz81F2NFITmm0DjPGIso0GsK5xqjHy0UlgXcJ1D2gWb6x4QQ0Zu5Jn1Aaw368QyBCDgMfBIcDmnalxAx4zwK6SGJG0LRVcwVMFJlUd8XV3NFRJLAn7Tw_-vf63-PDYLs_84ArnjCgK-EK9HdWoPs4MZ6cDEzNVB03kqxWq4HVesK4syA8q5Rt-nnZxulcepAonRSOAmKBvoXuOVCubWs5az9WaaHAqlHoP1IXc4" alt="User Profile">
+                </div>
             </div>
         </nav>
     </header>
 
-    <!-- Main Content (Compact Viewport Fit) -->
-    <main class="flex-grow pt-16 pb-6 px-4 md:px-10 max-w-7xl mx-auto w-full">
+    <!-- Main Content (With pt-24 navbar clearance matching overview.html) -->
+    <main class="flex-grow pt-24 pb-12 px-container-padding-desktop max-w-[1440px] mx-auto w-full space-y-4">
         
-        <!-- Header & Category Switcher (Compact Height) -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <!-- Header Row (Compact Title + Category Switcher) -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-                <h1 class="text-xl md:text-2xl font-extrabold tracking-tight">Rank Velocity Over Time</h1>
+                <h1 class="text-2xl font-bold tracking-tight text-white">Rank Velocity Over Time</h1>
+                <p class="text-on-surface-variant text-xs mt-0.5">
+                    Monthly Top 8 rank trajectories animated over time.
+                </p>
             </div>
 
             <!-- View Toggle Pills -->
@@ -219,58 +246,53 @@
             </div>
         </div>
 
-        <!-- Main Chart Card Container (Compact 420px Viewport Fit) -->
-        <div id="chart-card" class="glass-card rounded-xl p-3 md:p-4 mb-4 relative overflow-hidden transition-all duration-300">
+        <!-- Main Chart Card Container -->
+        <div id="chart-card" class="glass-card rounded-xl p-3 md:p-4 relative overflow-hidden transition-all duration-300">
             
-            <!-- Controls Bar: Scrubber, Play/Pause, Month Display, Fullscreen -->
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mb-3 pb-3 border-b border-border-subtle">
+            <!-- Minimized Slim Controls Bar -->
+            <div class="flex items-center justify-between gap-3 mb-2.5 pb-2 border-b border-border-subtle text-xs">
                 
-                <!-- Playback & Month Display -->
-                <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-                    <button id="play-btn" onclick="togglePlay()" class="w-9 h-9 rounded-full bg-primary hover:bg-primary-dark text-black flex items-center justify-center transition-all shadow hover:scale-105">
-                        <span id="play-icon" class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                <!-- Playback & Month Badge -->
+                <div class="flex items-center gap-2.5 flex-shrink-0">
+                    <button id="play-btn" onclick="togglePlay()" class="w-7 h-7 rounded-full bg-primary hover:bg-primary-dark text-black flex items-center justify-center transition-all shadow hover:scale-105" title="Play/Pause">
+                        <span id="play-icon" class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
                     </button>
                     
-                    <button onclick="resetTimeline()" class="w-8 h-8 rounded-full bg-surface-card hover:bg-surface-hover text-on-surface-variant hover:text-white flex items-center justify-center transition-all border border-border-subtle" title="Reset Timeline">
-                        <span class="material-symbols-outlined text-base">restart_alt</span>
+                    <button onclick="resetTimeline()" class="w-6 h-6 rounded-full text-on-surface-variant hover:text-white flex items-center justify-center transition-all" title="Reset Timeline">
+                        <span class="material-symbols-outlined text-sm">restart_alt</span>
                     </button>
 
-                    <div>
-                        <div id="current-month-display" class="text-base font-extrabold tracking-tight text-white flex items-center gap-2">
-                            January 2024
-                        </div>
-                        <p class="font-mono text-[10px] text-on-surface-variant">TIMELINE PROGRESSION</p>
+                    <div id="current-month-display" class="text-xs font-extrabold tracking-tight text-white font-mono uppercase">
+                        January 2024
                     </div>
                 </div>
 
-                <!-- Timeline Scrubber -->
-                <div class="flex-grow max-w-lg w-full flex items-center gap-2">
-                    <span class="font-mono text-[11px] text-on-surface-variant">JAN</span>
+                <!-- Slim Timeline Scrubber -->
+                <div class="flex-grow max-w-md flex items-center gap-2 mx-2">
+                    <span class="font-mono text-[10px] text-on-surface-variant">JAN</span>
                     <input id="timeline-scrubber" type="range" min="0" max="11" step="0.05" value="0" class="w-full cursor-pointer" oninput="onScrub(this.value)"/>
-                    <span class="font-mono text-[11px] text-on-surface-variant">DEC</span>
+                    <span class="font-mono text-[10px] text-on-surface-variant">DEC</span>
                 </div>
 
-                <!-- Action Controls: Speed + Fullscreen -->
-                <div class="flex items-center gap-2">
-                    <!-- Speed Toggle -->
-                    <div class="flex items-center gap-0.5 bg-surface-card p-0.5 rounded-lg border border-border-subtle text-[11px] font-mono">
+                <!-- Action Controls: Speed Pills + Fullscreen -->
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <div class="flex items-center gap-0.5 bg-surface-card p-0.5 rounded-md border border-border-subtle text-[10px] font-mono">
                         <button onclick="setSpeed(0.5)" id="speed-05" class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-white transition-colors">0.5x</button>
                         <button onclick="setSpeed(1)" id="speed-10" class="px-1.5 py-0.5 rounded bg-primary/20 text-primary font-bold">1.0x</button>
                         <button onclick="setSpeed(2)" id="speed-20" class="px-1.5 py-0.5 rounded text-on-surface-variant hover:text-white transition-colors">2.0x</button>
                     </div>
 
-                    <!-- Fullscreen Toggle Button -->
-                    <button id="fullscreen-btn" onclick="toggleFullscreen()" class="w-8 h-8 rounded-full bg-surface-card hover:bg-surface-hover text-on-surface-variant hover:text-primary flex items-center justify-center transition-all border border-border-subtle" title="Toggle Fullscreen View">
-                        <span id="fullscreen-icon" class="material-symbols-outlined text-lg">fullscreen</span>
+                    <button id="fullscreen-btn" onclick="toggleFullscreen()" class="w-7 h-7 rounded-full text-on-surface-variant hover:text-primary flex items-center justify-center transition-all" title="Toggle Fullscreen View">
+                        <span id="fullscreen-icon" class="material-symbols-outlined text-base">fullscreen</span>
                     </button>
                 </div>
             </div>
 
-            <!-- SVG Chart Viewport Area (Compact 420px height) -->
-            <div id="chart-viewport" class="relative w-full h-[420px] select-none">
+            <!-- SVG Chart Viewport Area (Compact 390px Viewport Height) -->
+            <div id="chart-viewport" class="relative w-full h-[390px] select-none">
                 
                 <!-- SVG Line Canvas -->
-                <svg id="chart-svg" class="w-full h-full overflow-visible" viewBox="0 0 1000 420" preserveAspectRatio="none">
+                <svg id="chart-svg" class="w-full h-full overflow-visible" viewBox="0 0 1000 390" preserveAspectRatio="none">
                     <!-- Background Grid & Y-Axis Labels -->
                     <g id="y-grid-group"></g>
                     <!-- X-Axis Month Columns -->
@@ -286,25 +308,25 @@
             </div>
 
             <!-- Chart Legend Bar -->
-            <div class="mt-3 pt-2 border-t border-border-subtle flex flex-wrap items-center justify-between text-[11px] text-on-surface-variant gap-2">
-                <div class="flex items-center gap-5 font-mono text-[10px]">
+            <div class="mt-2.5 pt-2 border-t border-border-subtle flex items-center justify-between text-[10px] text-on-surface-variant font-mono">
+                <div class="flex items-center gap-4">
                     <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-primary"></span> Y: RANK #1 to #8</span>
                     <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-cyan-400"></span> X: Timeline (Jan - Dec)</span>
                 </div>
-                <div class="text-[10px] font-mono text-primary">COMPACT TOP 8 LAYOUT</div>
+                <div class="text-primary font-bold">TOP 8 RANK VELOCITY</div>
             </div>
         </div>
 
-        <!-- Live Monthly Leaderboard Grid (Compact Cards) -->
+        <!-- Live Monthly Leaderboard Grid (Compact Single Row) -->
         <div>
-            <div class="flex items-center justify-between mb-3">
-                <h2 class="text-lg font-bold tracking-tight">Active Standings (<span id="leaderboard-month-label" class="text-primary">January 2024</span>)</h2>
-                <span class="font-mono text-[11px] text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="text-sm font-bold tracking-tight text-white">Active Standings (<span id="leaderboard-month-label" class="text-primary">January 2024</span>)</h2>
+                <span class="font-mono text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
                     TOP 8
                 </span>
             </div>
 
-            <!-- 8 Leaderboard Cards Grid (Single Row on Desktop) -->
+            <!-- 8 Leaderboard Cards Grid -->
             <div id="leaderboard-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
                 <!-- Dynamically generated compact cards -->
             </div>
@@ -313,9 +335,9 @@
     </main>
 
     <!-- Footer -->
-    <footer class="w-full py-4 bg-surface-card border-t border-border-subtle text-center text-[11px] text-on-surface-variant font-mono">
-        <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-2">
-            <span class="text-primary font-bold">Rewind Velocity Core v2.7</span>
+    <footer class="w-full py-4 bg-surface-card border-t border-border-subtle text-center text-[11px] text-on-surface-variant font-mono mt-auto">
+        <div class="max-w-[1440px] mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <span class="text-primary font-bold">Rewind Velocity Core v2.8</span>
             <span>Spotify Extended Streaming History Analytics</span>
             <span>© 2026 Rewind System</span>
         </div>
@@ -488,13 +510,13 @@
         let animationFrameId = null;
         let lastTimestamp = null;
 
-        // Compact Canvas dimensions & padding constants (SVG viewBox 1000 x 420)
+        // Compact Canvas dimensions & padding constants (SVG viewBox 1000 x 390)
         const SVG_W = 1000;
-        const SVG_H = 420;
-        const PADDING_LEFT = 65;
-        const PADDING_RIGHT = 195;
-        const PADDING_TOP = 30;
-        const PADDING_BOTTOM = 40;
+        const SVG_H = 390;
+        const PADDING_LEFT = 60;
+        const PADDING_RIGHT = 185;
+        const PADDING_TOP = 25;
+        const PADDING_BOTTOM = 35;
         const CHART_W = SVG_W - PADDING_LEFT - PADDING_RIGHT;
         const CHART_H = SVG_H - PADDING_TOP - PADDING_BOTTOM;
 
@@ -532,7 +554,7 @@
             yGroup.innerHTML = '';
             xGroup.innerHTML = '';
 
-            // Y-Axis: Ranks 1 to 8 (50px vertical spacing)
+            // Y-Axis: Ranks 1 to 8
             for (let r = 1; r <= 8; r++) {
                 const y = getRankY(r);
                 
@@ -577,7 +599,7 @@
                 // X Label
                 const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                 text.setAttribute('x', x);
-                text.setAttribute('y', SVG_H - PADDING_BOTTOM + 22);
+                text.setAttribute('y', SVG_H - PADDING_BOTTOM + 20);
                 text.setAttribute('text-anchor', 'middle');
                 text.setAttribute('fill', '#909090');
                 text.setAttribute('font-size', '10');
@@ -736,11 +758,11 @@
                     <div class="font-mono font-extrabold text-xs ${item.currentRank === 1 ? 'text-primary' : 'text-on-surface-variant'} w-4 text-center">
                         #${item.currentRank}
                     </div>
-                    <div class="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
+                    <div class="relative w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
                         <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150'"/>
                     </div>
                     <div class="flex-grow min-w-0">
-                        <p class="font-bold text-[11px] text-white truncate leading-tight">${item.title}</p>
+                        <p class="font-bold text-[10px] text-white truncate leading-tight">${item.title}</p>
                         <p class="text-[9px] text-on-surface-variant truncate">${item.subtitle}</p>
                     </div>
                     <div class="text-right flex flex-col items-end flex-shrink-0">
@@ -824,11 +846,11 @@
             if (fsIcon) fsIcon.textContent = isFS ? 'fullscreen_exit' : 'fullscreen';
             if (viewport) {
                 if (isFS) {
-                    viewport.classList.remove('h-[420px]');
+                    viewport.classList.remove('h-[390px]');
                     viewport.classList.add('h-[calc(100vh-140px)]');
                 } else {
                     viewport.classList.remove('h-[calc(100vh-140px)]');
-                    viewport.classList.add('h-[420px]');
+                    viewport.classList.add('h-[390px]');
                 }
             }
             setupGrid();
