@@ -139,6 +139,10 @@ def test_artist_rank_endpoint():
         assert res.status_code == 200
         data = res.json()
         assert data["status"] == "ok"
+        assert "start_month" in data
+        assert "end_month" in data
+        assert data["total_months"] > 0
+        assert len(data["months"]) == data["total_months"]
         assert len(data["data"]) == 5
         first_item = data["data"][0]
         assert first_item["rank"] == 1
@@ -146,7 +150,7 @@ def test_artist_rank_endpoint():
         assert "total_streams" in first_item
         assert "total_minutes" in first_item
         assert "monthly_ranks" in first_item
-        assert len(first_item["monthly_ranks"]) == 36
+        assert len(first_item["monthly_ranks"]) == data["total_months"]
 
 
 def test_track_rank_endpoint():
@@ -159,6 +163,10 @@ def test_track_rank_endpoint():
         assert res.status_code == 200
         data = res.json()
         assert data["status"] == "ok"
+        assert "start_month" in data
+        assert "end_month" in data
+        assert data["total_months"] > 0
+        assert len(data["months"]) == data["total_months"]
         assert len(data["data"]) == 5
         first_item = data["data"][0]
         assert first_item["rank"] == 1
@@ -167,7 +175,8 @@ def test_track_rank_endpoint():
         assert "total_streams" in first_item
         assert "total_minutes" in first_item
         assert "monthly_ranks" in first_item
-        assert len(first_item["monthly_ranks"]) == 36
+        assert len(first_item["monthly_ranks"]) == data["total_months"]
+
 
 
 

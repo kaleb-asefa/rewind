@@ -1,35 +1,26 @@
-/**
- * Rewind - Rank Velocity Chart Component (src/js/velocity.js)
- * Modular multi-year rank trajectory renderer with smooth sliding timeline camera.
- */
-
-(function () {
-    const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const SHORT_MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-    
-    const TOTAL_MONTHS = 36; // 3 Years: Jan 2022 to Dec 2024
-    const VISIBLE_WINDOW = 10; // 10 months visible in chart viewport
-    const FOCUS_RATIO = 0.70;  // Camera locks tip avatar at 70% viewport width
-    const FOCUS_OFFSET = (VISIBLE_WINDOW - 1) * FOCUS_RATIO; // 6.3 months
+    let dynamicMonthsList = [];
 
     function getFullDateString(monthIdx) {
-        const idx = Math.min(Math.max(0, Math.floor(monthIdx)), 35);
-        const year = 2022 + Math.floor(idx / 12);
-        const month = MONTH_NAMES[idx % 12];
-        return `${month} ${year}`;
+        if (!dynamicMonthsList.length) return "NO DATA";
+        const idx = Math.min(Math.max(0, Math.floor(monthIdx)), dynamicMonthsList.length - 1);
+        const yyyymm = dynamicMonthsList[idx];
+        const y = yyyymm.slice(0, 4);
+        const m = parseInt(yyyymm.slice(5, 7), 10) - 1;
+        return `${MONTH_NAMES[m]} ${y}`;
     }
 
     function getShortMonthYear(monthIdx) {
-        const idx = Math.min(Math.max(0, Math.floor(monthIdx)), 35);
-        const year = 2022 + Math.floor(idx / 12);
-        const month = SHORT_MONTHS[idx % 12];
-        return `${month} '${String(year).slice(2)}`;
+        if (!dynamicMonthsList.length) return "";
+        const idx = Math.min(Math.max(0, Math.floor(monthIdx)), dynamicMonthsList.length - 1);
+        const yyyymm = dynamicMonthsList[idx];
+        const y = yyyymm.slice(0, 4);
+        const m = parseInt(yyyymm.slice(5, 7), 10) - 1;
+        return `${SHORT_MONTHS[m]} '${y.slice(2)}`;
     }
 
     // Dynamic Rank Data populated from FastAPI endpoints
     const TRACKS_DATA = [];
     const ARTISTS_DATA = [];
-
 
     // Module State
     let currentCategory = 'tracks';
@@ -49,10 +40,14 @@
     const PADDING_BOTTOM = 35;
     const CHART_W = SVG_W - PADDING_LEFT - PADDING_RIGHT;
     const CHART_H = SVG_H - PADDING_TOP - PADDING_BOTTOM;
+    const VISIBLE_WINDOW = 10;
+    const FOCUS_RATIO = 0.70;
+    const FOCUS_OFFSET = (VISIBLE_WINDOW - 1) * FOCUS_RATIO;
 
     function getWindowBounds(prog) {
-        const maxProg = TOTAL_MONTHS - 1;
-        const windowSpan = VISIBLE_WINDOW - 1;
+        const totalM = Math.max(1, dynamicMonthsList.length);
+        const maxProg = Math.max(0, totalM - 1);
+        const windowSpan = Math.min(VISIBLE_WINDOW - 1, maxProg);
         
         let winStart;
         if (prog <= FOCUS_OFFSET) {
@@ -68,7 +63,8 @@
     }
 
     function getMonthX(monthIdx, winStart) {
-        return PADDING_LEFT + ((monthIdx - winStart) / (VISIBLE_WINDOW - 1)) * CHART_W;
+        const span = Math.max(1, VISIBLE_WINDOW - 1);
+        return PADDING_LEFT + ((monthIdx - winStart) / span) * CHART_W;
     }
 
     function getRankY(rankVal) {
@@ -76,12 +72,14 @@
     }
 
     function getInterpolatedRank(ranks, prog) {
+        if (!ranks || ranks.length === 0) return 8;
+        const maxIdx = ranks.length - 1;
         if (prog <= 0) return ranks[0];
-        if (prog >= 35) return ranks[35];
+        if (prog >= maxIdx) return ranks[maxIdx];
         
         const idx = Math.floor(prog);
         const frac = prog - idx;
-        if (idx >= 35) return ranks[35];
+        if (idx >= maxIdx) return ranks[maxIdx];
 
         const r1 = ranks[idx];
         const r2 = ranks[idx + 1];
@@ -91,13 +89,15 @@
     }
 
     function generatePathD(ranks, prog, winStart) {
-        const currentMaxMonth = Math.min(prog, 35);
+        if (!ranks || ranks.length === 0) return '';
+        const maxIdx = ranks.length - 1;
+        const currentMaxMonth = Math.min(prog, maxIdx);
         const points = [];
 
         const minIdx = Math.max(0, Math.floor(winStart) - 1);
-        const maxIdx = Math.ceil(currentMaxMonth);
+        const maxIdxPoint = Math.ceil(currentMaxMonth);
 
-        for (let m = minIdx; m <= maxIdx; m++) {
+        for (let m = minIdx; m <= maxIdxPoint; m++) {
             if (m < currentMaxMonth) {
                 points.push({ x: getMonthX(m, winStart), y: getRankY(ranks[m]) });
             } else {
@@ -140,7 +140,7 @@
         pathsGroup.innerHTML = '';
         tipsOverlay.innerHTML = '';
 
-        const { winStart, winEnd } = getWindowBounds(progress);
+        const totalM = dynamicMonthsList.length;
 
         // Fixed Y-Axis Lines (#1 to #8)
         for (let r = 1; r <= 8; r++) {
@@ -168,15 +168,29 @@
             yGroup.appendChild(text);
         }
 
+        if (totalM === 0 || !currentData || currentData.length === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.className = 'absolute inset-0 flex flex-col items-center justify-center text-on-surface-variant text-body-sm font-medium gap-2';
+            emptyMsg.innerHTML = `
+                <span class="material-symbols-outlined text-3xl text-primary opacity-80">info</span>
+                <span>No listening rank data loaded yet.</span>
+                <span class="text-xs opacity-60">Upload your Spotify listening data export to view rank velocity.</span>
+            `;
+            tipsOverlay.appendChild(emptyMsg);
+            return;
+        }
+
+        const { winStart, winEnd } = getWindowBounds(progress);
+
         // Dynamic Sliding X-Axis Month Ticks
         const minMonthVisible = Math.max(0, Math.floor(winStart) - 1);
-        const maxMonthVisible = Math.min(TOTAL_MONTHS - 1, Math.ceil(winEnd) + 1);
+        const maxMonthVisible = Math.min(totalM - 1, Math.ceil(winEnd) + 1);
 
         for (let m = minMonthVisible; m <= maxMonthVisible; m++) {
             const x = getMonthX(m, winStart);
 
             if (x >= PADDING_LEFT - 30 && x <= SVG_W - PADDING_RIGHT + 30) {
-                const isJanNewYear = m % 12 === 0;
+                const isJanNewYear = dynamicMonthsList[m] && dynamicMonthsList[m].endsWith('-01');
 
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 line.setAttribute('x1', x);
@@ -200,21 +214,8 @@
             }
         }
 
-        if (!currentData || currentData.length === 0) {
-            const emptyMsg = document.createElement('div');
-            emptyMsg.className = 'absolute inset-0 flex flex-col items-center justify-center text-on-surface-variant text-body-sm font-medium gap-2';
-            emptyMsg.innerHTML = `
-                <span class="material-symbols-outlined text-3xl text-primary opacity-80">info</span>
-                <span>No listening rank data loaded yet.</span>
-                <span class="text-xs opacity-60">Upload your Spotify listening data export to view rank velocity.</span>
-            `;
-            tipsOverlay.appendChild(emptyMsg);
-            return;
-        }
-
         // Draw Rank Trajectories & Position Tip Avatars
         currentData.forEach((item) => {
-
             const pathD = generatePathD(item.ranks, progress, winStart);
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', pathD);
@@ -242,7 +243,7 @@
             tipEl.innerHTML = `
                 <div class="tip-avatar-ring" style="border: 2px solid ${item.color};">
                     ${isRankOne ? '<div class="pulse-ring"></div>' : ''}
-                    <img src="${item.image}" alt="${item.title}" class="w-full h-full rounded-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150'"/>
+                    <img src="${item.image}" alt="${item.title}" class="w-full h-full rounded-full object-cover" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23201f1f\\'/><text x=\\'50%\\' y=\\'55%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%2353e076\\' font-family=\\'sans-serif\\' font-size=\\'40\\'>♪</text></svg>'"/>
                     <div class="rank-badge-pill" style="border-color: ${item.color}; color: ${isRankOne ? '#53e076' : '#ffffff'};">
                         #${Math.round(currentRank)}
                     </div>
@@ -257,14 +258,19 @@
     }
 
     function updateDisplay() {
-        const currentMonthIdx = Math.min(Math.floor(progress), 35);
+        const totalM = dynamicMonthsList.length;
+        if (!totalM) return;
+        const currentMonthIdx = Math.min(Math.floor(progress), totalM - 1);
         const fullDateLabel = getFullDateString(currentMonthIdx);
         
         const monthDisp = document.getElementById('current-month-display');
         if (monthDisp) monthDisp.textContent = fullDateLabel;
         
         const scrubber = document.getElementById('timeline-scrubber');
-        if (scrubber) scrubber.value = progress;
+        if (scrubber) {
+            scrubber.max = Math.max(0, totalM - 1);
+            scrubber.value = progress;
+        }
     }
 
     function startAnimationLoop() {
@@ -273,9 +279,10 @@
             const dt = (timestamp - lastTimestamp) / 1000;
             lastTimestamp = timestamp;
 
-            if (isPlaying) {
+            if (isPlaying && dynamicMonthsList.length > 0) {
+                const maxP = Math.max(0, dynamicMonthsList.length - 1);
                 progress += (dt / 0.8) * playSpeed;
-                if (progress >= 35) {
+                if (progress >= maxP) {
                     progress = 0;
                 }
 
@@ -288,11 +295,87 @@
         animationFrameId = requestAnimationFrame(step);
     }
 
+    const DEFAULT_COLORS = [
+        '#53e076', '#00d2ff', '#b066fe', '#ff6b6b',
+        '#ffaa00', '#38f9d7', '#ff54b0', '#4d94ff'
+    ];
+
+    async function fetchRankData() {
+        const fetcher = window.fetchWithTimeout || (async (ep) => {
+            const res = await fetch(`http://127.0.0.1:8000${ep}`);
+            const data = await res.json();
+            return { ok: res.ok, data };
+        });
+
+        try {
+            const [tracksRes, artistsRes] = await Promise.all([
+                fetcher('/api/metrics/track-rank?limit=8', {}, 5000),
+                fetcher('/api/metrics/artist-rank?limit=8', {}, 5000)
+            ]);
+
+            let activeMonths = [];
+
+            if (tracksRes.ok && tracksRes.data && tracksRes.data.status === "ok" && Array.isArray(tracksRes.data.months)) {
+                activeMonths = tracksRes.data.months;
+            } else if (artistsRes.ok && artistsRes.data && artistsRes.data.status === "ok" && Array.isArray(artistsRes.data.months)) {
+                activeMonths = artistsRes.data.months;
+            }
+
+            if (activeMonths.length > 0) {
+                dynamicMonthsList = activeMonths;
+                const startY = activeMonths[0].slice(0, 4);
+                const endY = activeMonths[activeMonths.length - 1].slice(0, 4);
+                
+                const startEl = document.getElementById('timeline-start-year');
+                const endEl = document.getElementById('timeline-end-year');
+                if (startEl) startEl.textContent = startY;
+                if (endEl) endEl.textContent = endY;
+
+                const scrubber = document.getElementById('timeline-scrubber');
+                if (scrubber) {
+                    scrubber.max = Math.max(0, activeMonths.length - 1);
+                }
+            }
+
+            if (tracksRes.ok && tracksRes.data && tracksRes.data.status === "ok" && Array.isArray(tracksRes.data.data) && tracksRes.data.data.length > 0) {
+                const mappedTracks = tracksRes.data.data.map((item, idx) => ({
+                    id: `track-${idx + 1}`,
+                    title: item.track_name || 'Unknown Track',
+                    subtitle: item.artist_name || 'Unknown Artist',
+                    image: 'data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23201f1f\\'/><text x=\\'50%\\' y=\\'55%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%2353e076\\' font-family=\\'sans-serif\\' font-size=\\'40\\'>♪</text></svg>',
+                    color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
+                    ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
+                    plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
+                }));
+                TRACKS_DATA.splice(0, TRACKS_DATA.length, ...mappedTracks);
+            }
+
+            if (artistsRes.ok && artistsRes.data && artistsRes.data.status === "ok" && Array.isArray(artistsRes.data.data) && artistsRes.data.data.length > 0) {
+                const mappedArtists = artistsRes.data.data.map((item, idx) => ({
+                    id: `artist-${idx + 1}`,
+                    title: item.artist_name || 'Unknown Artist',
+                    subtitle: `${item.total_streams || 0} streams`,
+                    image: 'data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23201f1f\\'/><text x=\\'50%\\' y=\\'55%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%2353e076\\' font-family=\\'sans-serif\\' font-size=\\'40\\'>👤</text></svg>',
+                    color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
+                    ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
+                    plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
+                }));
+                ARTISTS_DATA.splice(0, ARTISTS_DATA.length, ...mappedArtists);
+            }
+
+            currentData = currentCategory === 'tracks' ? TRACKS_DATA : ARTISTS_DATA;
+            renderChart();
+            updateDisplay();
+        } catch (e) {
+            console.warn("Could not load backend rank data, using default view.", e);
+        }
+    }
+
     // Exposed Global Actions for Controls
     window.switchCategory = function (category) {
         currentCategory = category;
         currentData = category === 'tracks' ? TRACKS_DATA : ARTISTS_DATA;
-        progress = 0.0; // Restart timeline on category switch
+        progress = 0.0;
 
         const tracksBtn = document.getElementById('tab-tracks');
         const artistsBtn = document.getElementById('tab-artists');
@@ -372,57 +455,9 @@
         renderChart();
     });
 
-    const DEFAULT_COLORS = [
-        '#53e076', '#00d2ff', '#b066fe', '#ff6b6b',
-        '#ffaa00', '#38f9d7', '#ff54b0', '#4d94ff'
-    ];
-
-    async function fetchRankData() {
-        const fetcher = window.fetchWithTimeout || (async (ep) => {
-            const res = await fetch(`http://127.0.0.1:8000${ep}`);
-            const data = await res.json();
-            return { ok: res.ok, data };
-        });
-
-        try {
-            const [tracksRes, artistsRes] = await Promise.all([
-                fetcher('/api/metrics/track-rank?limit=8', {}, 5000),
-                fetcher('/api/metrics/artist-rank?limit=8', {}, 5000)
-            ]);
-
-            if (tracksRes.ok && tracksRes.data && tracksRes.data.status === "ok" && Array.isArray(tracksRes.data.data) && tracksRes.data.data.length > 0) {
-                const mappedTracks = tracksRes.data.data.map((item, idx) => ({
-                    id: `track-${idx + 1}`,
-                    title: item.track_name || 'Unknown Track',
-                    subtitle: item.artist_name || 'Unknown Artist',
-                    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80',
-                    color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
-                    ranks: Array.isArray(item.monthly_ranks) && item.monthly_ranks.length === 36 ? item.monthly_ranks : Array(36).fill(item.rank || (idx + 1)),
-                    plays: Array(36).fill(item.total_streams || 0)
-                }));
-                TRACKS_DATA.splice(0, TRACKS_DATA.length, ...mappedTracks);
-            }
-
-            if (artistsRes.ok && artistsRes.data && artistsRes.data.status === "ok" && Array.isArray(artistsRes.data.data) && artistsRes.data.data.length > 0) {
-                const mappedArtists = artistsRes.data.data.map((item, idx) => ({
-                    id: `artist-${idx + 1}`,
-                    title: item.artist_name || 'Unknown Artist',
-                    subtitle: `${item.total_streams || 0} streams`,
-                    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80',
-                    color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
-                    ranks: Array.isArray(item.monthly_ranks) && item.monthly_ranks.length === 36 ? item.monthly_ranks : Array(36).fill(item.rank || (idx + 1)),
-                    plays: Array(36).fill(item.total_streams || 0)
-                }));
-                ARTISTS_DATA.splice(0, ARTISTS_DATA.length, ...mappedArtists);
-            }
-
-            currentData = currentCategory === 'tracks' ? TRACKS_DATA : ARTISTS_DATA;
-            renderChart();
-            updateDisplay();
-        } catch (e) {
-            console.warn("Could not load backend rank data, using default view.", e);
-        }
-    }
+    window.addEventListener('resize', () => {
+        renderChart();
+    });
 
     // Initialize on DOM Ready
     document.addEventListener('DOMContentLoaded', () => {
@@ -437,4 +472,5 @@
     });
 
 })();
+
 

@@ -274,6 +274,23 @@ async def get_top_track(
     }
 
 
+def _generate_month_sequence(start_str: str, end_str: str) -> list[str]:
+    try:
+        start_y, start_m = int(start_str[:4]), int(start_str[5:7])
+        end_y, end_m = int(end_str[:4]), int(end_str[5:7])
+    except Exception:
+        return []
+    months = []
+    curr_y, curr_m = start_y, start_m
+    while (curr_y < end_y) or (curr_y == end_y and curr_m <= end_m):
+        months.append(f"{curr_y:04d}-{curr_m:02d}")
+        curr_m += 1
+        if curr_m > 12:
+            curr_m = 1
+            curr_y += 1
+    return months
+
+
 @app.get("/api/metrics/artist-rank")
 async def get_artist_rank(
     request: Request,
@@ -311,16 +328,22 @@ async def get_artist_rank(
                 .limit(limit)
             )
             rows = conn.execute(stmt).fetchall()
-            return [
-                {
-                    "rank": idx,
-                    "artist_name": row.artist_name,
-                    "total_streams": row.total_streams,
-                    "total_minutes": round(row.total_ms / 60000, 2),
-                    "monthly_ranks": [idx] * 36,
-                }
-                for idx, row in enumerate(rows, start=1)
-            ]
+            return {
+                "start_month": None,
+                "end_month": None,
+                "total_months": 0,
+                "months": [],
+                "data": [
+                    {
+                        "rank": idx,
+                        "artist_name": row.artist_name,
+                        "total_streams": row.total_streams,
+                        "total_minutes": round(row.total_ms / 60000, 2),
+                        "monthly_ranks": [],
+                    }
+                    for idx, row in enumerate(rows, start=1)
+                ],
+            }
 
         month_groups = {}
         for month, artist, ms, streams in monthly_data:
@@ -330,21 +353,24 @@ async def get_artist_rank(
             month_groups[m_key].append((artist, ms, streams))
 
         sorted_months = sorted(month_groups.keys())
+        start_month = sorted_months[0]
+        end_month = sorted_months[-1]
+        full_months = _generate_month_sequence(start_month, end_month)
 
         month_top_artists = {}
         prev_top_list = []
 
-        for m_key in sorted_months:
-            m_items = month_groups[m_key]
-            top_for_month = [artist for artist, ms, streams in m_items[:limit]]
-            if not top_for_month and prev_top_list:
-                top_for_month = list(prev_top_list)
-            else:
+        for m_key in full_months:
+            if m_key in month_groups:
+                m_items = month_groups[m_key]
+                top_for_month = [artist for artist, ms, streams in m_items[:limit]]
                 prev_top_list = top_for_month
+            else:
+                top_for_month = list(prev_top_list)
             month_top_artists[m_key] = top_for_month
 
         all_featured = []
-        for m_key in sorted_months:
+        for m_key in full_months:
             for artist in month_top_artists[m_key]:
                 if artist not in all_featured:
                     all_featured.append(artist)
@@ -365,11 +391,11 @@ async def get_artist_rank(
             for r in conn.execute(stmt).fetchall():
                 overall_stats[r.artist_name] = (r.total_streams, r.total_ms)
 
-        result = []
+        result_data = []
         for idx, artist_name in enumerate(all_featured, start=1):
             monthly_ranks = []
             last_known_rank = idx
-            for m_key in sorted_months:
+            for m_key in full_months:
                 top_list = month_top_artists[m_key]
                 if artist_name in top_list:
                     r = top_list.index(artist_name) + 1
@@ -378,14 +404,8 @@ async def get_artist_rank(
                     r = min(last_known_rank, limit)
                 monthly_ranks.append(r)
 
-            if len(monthly_ranks) < 36:
-                if monthly_ranks:
-                    monthly_ranks = (monthly_ranks * (36 // len(monthly_ranks) + 1))[:36]
-                else:
-                    monthly_ranks = [idx] * 36
-
             streams, total_ms = overall_stats.get(artist_name, (0, 0))
-            result.append({
+            result_data.append({
                 "rank": idx,
                 "artist_name": artist_name,
                 "total_streams": streams,
@@ -393,12 +413,22 @@ async def get_artist_rank(
                 "monthly_ranks": monthly_ranks,
             })
 
-        return result
+        return {
+            "start_month": start_month,
+            "end_month": end_month,
+            "total_months": len(full_months),
+            "months": full_months,
+            "data": result_data,
+        }
 
-    data = await run_in_threadpool(query)
+    res = await run_in_threadpool(query)
     return {
         "status": "ok",
-        "data": data,
+        "start_month": res["start_month"],
+        "end_month": res["end_month"],
+        "total_months": res["total_months"],
+        "months": res["months"],
+        "data": res["data"],
     }
 
 
@@ -441,17 +471,23 @@ async def get_track_rank(
                 .limit(limit)
             )
             rows = conn.execute(stmt).fetchall()
-            return [
-                {
-                    "rank": idx,
-                    "track_name": row.track_name,
-                    "artist_name": row.artist_name,
-                    "total_streams": row.total_streams,
-                    "total_minutes": round(row.total_ms / 60000, 2),
-                    "monthly_ranks": [idx] * 36,
-                }
-                for idx, row in enumerate(rows, start=1)
-            ]
+            return {
+                "start_month": None,
+                "end_month": None,
+                "total_months": 0,
+                "months": [],
+                "data": [
+                    {
+                        "rank": idx,
+                        "track_name": row.track_name,
+                        "artist_name": row.artist_name,
+                        "total_streams": row.total_streams,
+                        "total_minutes": round(row.total_ms / 60000, 2),
+                        "monthly_ranks": [],
+                    }
+                    for idx, row in enumerate(rows, start=1)
+                ],
+            }
 
         month_groups = {}
         for month, track, artist, ms, streams in monthly_data:
@@ -461,21 +497,24 @@ async def get_track_rank(
             month_groups[m_key].append(((track, artist), ms, streams))
 
         sorted_months = sorted(month_groups.keys())
+        start_month = sorted_months[0]
+        end_month = sorted_months[-1]
+        full_months = _generate_month_sequence(start_month, end_month)
 
         month_top_tracks = {}
         prev_top_list = []
 
-        for m_key in sorted_months:
-            m_items = month_groups[m_key]
-            top_for_month = [pair for pair, ms, streams in m_items[:limit]]
-            if not top_for_month and prev_top_list:
-                top_for_month = list(prev_top_list)
-            else:
+        for m_key in full_months:
+            if m_key in month_groups:
+                m_items = month_groups[m_key]
+                top_for_month = [pair for pair, ms, streams in m_items[:limit]]
                 prev_top_list = top_for_month
+            else:
+                top_for_month = list(prev_top_list)
             month_top_tracks[m_key] = top_for_month
 
         all_featured = []
-        for m_key in sorted_months:
+        for m_key in full_months:
             for pair in month_top_tracks[m_key]:
                 if pair not in all_featured:
                     all_featured.append(pair)
@@ -496,12 +535,12 @@ async def get_track_rank(
             if r:
                 overall_stats[(track_name, artist_name)] = (r.total_streams, r.total_ms)
 
-        result = []
+        result_data = []
         for idx, (track_name, artist_name) in enumerate(all_featured, start=1):
             pair = (track_name, artist_name)
             monthly_ranks = []
             last_known_rank = idx
-            for m_key in sorted_months:
+            for m_key in full_months:
                 top_list = month_top_tracks[m_key]
                 if pair in top_list:
                     r = top_list.index(pair) + 1
@@ -510,14 +549,8 @@ async def get_track_rank(
                     r = min(last_known_rank, limit)
                 monthly_ranks.append(r)
 
-            if len(monthly_ranks) < 36:
-                if monthly_ranks:
-                    monthly_ranks = (monthly_ranks * (36 // len(monthly_ranks) + 1))[:36]
-                else:
-                    monthly_ranks = [idx] * 36
-
             streams, total_ms = overall_stats.get(pair, (0, 0))
-            result.append({
+            result_data.append({
                 "rank": idx,
                 "track_name": track_name,
                 "artist_name": artist_name,
@@ -526,10 +559,20 @@ async def get_track_rank(
                 "monthly_ranks": monthly_ranks,
             })
 
-        return result
+        return {
+            "start_month": start_month,
+            "end_month": end_month,
+            "total_months": len(full_months),
+            "months": full_months,
+            "data": result_data,
+        }
 
-    data = await run_in_threadpool(query)
+    res = await run_in_threadpool(query)
     return {
         "status": "ok",
-        "data": data,
+        "start_month": res["start_month"],
+        "end_month": res["end_month"],
+        "total_months": res["total_months"],
+        "months": res["months"],
+        "data": res["data"],
     }

@@ -192,12 +192,13 @@
                     </div>
                 </div>
 
-                <!-- 3-Year Scrubber (0 to 35 months) -->
+                <!-- Dynamic Timeline Scrubber -->
                 <div class="flex-grow max-w-md flex items-center gap-2 mx-2">
-                    <span class="font-mono text-label-bold text-on-surface-variant">2022</span>
-                    <input id="timeline-scrubber" type="range" min="0" max="35" step="0.05" value="0" class="w-full cursor-pointer velocity-scrubber" oninput="onScrub(this.value)"/>
-                    <span class="font-mono text-label-bold text-on-surface-variant">2024</span>
+                    <span id="timeline-start-year" class="font-mono text-label-bold text-on-surface-variant">----</span>
+                    <input id="timeline-scrubber" type="range" min="0" max="0" step="0.05" value="0" class="w-full cursor-pointer velocity-scrubber" oninput="onScrub(this.value)"/>
+                    <span id="timeline-end-year" class="font-mono text-label-bold text-on-surface-variant">----</span>
                 </div>
+
 
                 <!-- Action Controls: Speed Pills + Fullscreen -->
                 <div class="flex items-center gap-2 flex-shrink-0">
