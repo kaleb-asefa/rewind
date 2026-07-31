@@ -1,351 +1,684 @@
-<!DOCTYPE html>
+<!doctype html>
 
-<html class="light" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script>
-        try {
-            const t = localStorage.getItem('rewind-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            document.documentElement.classList.toggle('dark', t === 'dark');
-            document.documentElement.classList.toggle('light', t !== 'dark');
-        } catch (_e) {}
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+      try {
+        const t =
+          localStorage.getItem("rewind-theme") ||
+          (matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light");
+        document.documentElement.classList.toggle("dark", t === "dark");
+        document.documentElement.classList.toggle("light", t !== "dark");
+      } catch (_e) {}
     </script>
-<script id="tailwind-config">
-        try {
-            tailwind.config = {
-                darkMode: "class",
-                theme: {
-                    extend: {
-                        "colors": {
-                            "tertiary": "rgb(var(--color-tertiary) / <alpha-value>)",
-                            "tertiary-fixed": "rgb(var(--color-tertiary-fixed) / <alpha-value>)",
-                            "on-primary-fixed": "rgb(var(--color-on-primary-fixed) / <alpha-value>)",
-                            "on-tertiary-container": "rgb(var(--color-on-tertiary-container) / <alpha-value>)",
-                            "surface": "rgb(var(--color-surface) / <alpha-value>)",
-                            "error-container": "rgb(var(--color-error-container) / <alpha-value>)",
-                            "on-secondary-fixed-variant": "rgb(var(--color-on-secondary-fixed-variant) / <alpha-value>)",
-                            "inverse-on-surface": "rgb(var(--color-inverse-on-surface) / <alpha-value>)",
-                            "outline": "rgb(var(--color-outline) / <alpha-value>)",
-                            "background": "rgb(var(--color-background) / <alpha-value>)",
-                            "surface-container-low": "rgb(var(--color-surface-container-low) / <alpha-value>)",
-                            "error": "rgb(var(--color-error) / <alpha-value>)",
-                            "surface-dim": "rgb(var(--color-surface-dim) / <alpha-value>)",
-                            "outline-variant": "rgb(var(--color-outline-variant) / <alpha-value>)",
-                            "on-tertiary-fixed-variant": "rgb(var(--color-on-tertiary-fixed-variant) / <alpha-value>)",
-                            "on-surface": "rgb(var(--color-on-surface) / <alpha-value>)",
-                            "on-secondary-fixed": "rgb(var(--color-on-secondary-fixed) / <alpha-value>)",
-                            "tertiary-fixed-dim": "rgb(var(--color-tertiary-fixed-dim) / <alpha-value>)",
-                            "surface-bright": "rgb(var(--color-surface-bright) / <alpha-value>)",
-                            "primary-container": "rgb(var(--color-primary-container) / <alpha-value>)",
-                            "secondary-container": "rgb(var(--color-secondary-container) / <alpha-value>)",
-                            "on-secondary-container": "rgb(var(--color-on-secondary-container) / <alpha-value>)",
-                            "surface-container-lowest": "rgb(var(--color-surface-container-lowest) / <alpha-value>)",
-                            "secondary-fixed": "rgb(var(--color-secondary-fixed) / <alpha-value>)",
-                            "primary": "rgb(var(--color-primary) / <alpha-value>)",
-                            "on-background": "rgb(var(--color-on-background) / <alpha-value>)",
-                            "on-secondary": "rgb(var(--color-on-secondary) / <alpha-value>)",
-                            "primary-fixed-dim": "rgb(var(--color-primary-fixed-dim) / <alpha-value>)",
-                            "inverse-primary": "rgb(var(--color-inverse-primary) / <alpha-value>)",
-                            "surface-tint": "rgb(var(--color-surface-tint) / <alpha-value>)",
-                            "surface-variant": "rgb(var(--color-surface-variant) / <alpha-value>)",
-                            "on-error-container": "rgb(var(--color-on-error-container) / <alpha-value>)",
-                            "surface-container-high": "rgb(var(--color-surface-container-high) / <alpha-value>)",
-                            "secondary-fixed-dim": "rgb(var(--color-secondary-fixed-dim) / <alpha-value>)",
-                            "on-error": "rgb(var(--color-on-error) / <alpha-value>)",
-                            "inverse-surface": "rgb(var(--color-inverse-surface) / <alpha-value>)",
-                            "on-surface-variant": "rgb(var(--color-on-surface-variant) / <alpha-value>)",
-                            "on-primary": "rgb(var(--color-on-primary) / <alpha-value>)",
-                            "tertiary-container": "rgb(var(--color-tertiary-container) / <alpha-value>)",
-                            "surface-container-highest": "rgb(var(--color-surface-container-highest) / <alpha-value>)",
-                            "surface-container": "rgb(var(--color-surface-container) / <alpha-value>)",
-                            "primary-fixed": "rgb(var(--color-primary-fixed) / <alpha-value>)",
-                            "on-primary-fixed-variant": "rgb(var(--color-on-primary-fixed-variant) / <alpha-value>)",
-                            "on-tertiary-fixed": "rgb(var(--color-on-tertiary-fixed) / <alpha-value>)",
-                            "on-tertiary": "rgb(var(--color-on-tertiary) / <alpha-value>)",
-                            "secondary": "rgb(var(--color-secondary) / <alpha-value>)",
-                            "on-primary-container": "rgb(var(--color-on-primary-container) / <alpha-value>)"
-                        },
-                        "borderRadius": {
-                            "DEFAULT": "0.25rem",
-                            "lg": "0.5rem",
-                            "xl": "0.75rem",
-                            "full": "9999px"
-                        },
-                        "spacing": {
-                            "section-gap": "48px",
-                            "container-padding-desktop": "32px",
-                            "gutter": "24px",
-                            "base": "8px",
-                            "container-padding-mobile": "16px"
-                        },
-                        "fontFamily": {
-                            "headline-lg": ["Plus Jakarta Sans"],
-                            "body-sm": ["Inter"],
-                            "label-caps": ["JetBrains Mono"],
-                            "body-lg": ["Inter"],
-                            "title-md": ["Plus Jakarta Sans"],
-                            "display-lg": ["Plus Jakarta Sans"]
-                        },
-                        "fontSize": {
-                            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
-                            "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
-                            "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
-                            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
-                            "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
-                            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
-                            "display-lg-mobile": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
-                        },
-                        "boxShadow": {
-                            "spotify-card": "rgba(0,0,0,0.3) 0px 8px 8px",
-                            "spotify-dialog": "rgba(0,0,0,0.5) 0px 8px 24px",
-                            "spotify-green": "0 8px 24px rgba(30, 215, 96, 0.25)"
-                        }
-                    }
-                }
-            }
-        } catch (_e) {}
+    <script id="tailwind-config">
+      try {
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                tertiary: "rgb(var(--color-tertiary) / <alpha-value>)",
+                "tertiary-fixed":
+                  "rgb(var(--color-tertiary-fixed) / <alpha-value>)",
+                "on-primary-fixed":
+                  "rgb(var(--color-on-primary-fixed) / <alpha-value>)",
+                "on-tertiary-container":
+                  "rgb(var(--color-on-tertiary-container) / <alpha-value>)",
+                surface: "rgb(var(--color-surface) / <alpha-value>)",
+                "error-container":
+                  "rgb(var(--color-error-container) / <alpha-value>)",
+                "on-secondary-fixed-variant":
+                  "rgb(var(--color-on-secondary-fixed-variant) / <alpha-value>)",
+                "inverse-on-surface":
+                  "rgb(var(--color-inverse-on-surface) / <alpha-value>)",
+                outline: "rgb(var(--color-outline) / <alpha-value>)",
+                background: "rgb(var(--color-background) / <alpha-value>)",
+                "surface-container-low":
+                  "rgb(var(--color-surface-container-low) / <alpha-value>)",
+                error: "rgb(var(--color-error) / <alpha-value>)",
+                "surface-dim": "rgb(var(--color-surface-dim) / <alpha-value>)",
+                "outline-variant":
+                  "rgb(var(--color-outline-variant) / <alpha-value>)",
+                "on-tertiary-fixed-variant":
+                  "rgb(var(--color-on-tertiary-fixed-variant) / <alpha-value>)",
+                "on-surface": "rgb(var(--color-on-surface) / <alpha-value>)",
+                "on-secondary-fixed":
+                  "rgb(var(--color-on-secondary-fixed) / <alpha-value>)",
+                "tertiary-fixed-dim":
+                  "rgb(var(--color-tertiary-fixed-dim) / <alpha-value>)",
+                "surface-bright":
+                  "rgb(var(--color-surface-bright) / <alpha-value>)",
+                "primary-container":
+                  "rgb(var(--color-primary-container) / <alpha-value>)",
+                "secondary-container":
+                  "rgb(var(--color-secondary-container) / <alpha-value>)",
+                "on-secondary-container":
+                  "rgb(var(--color-on-secondary-container) / <alpha-value>)",
+                "surface-container-lowest":
+                  "rgb(var(--color-surface-container-lowest) / <alpha-value>)",
+                "secondary-fixed":
+                  "rgb(var(--color-secondary-fixed) / <alpha-value>)",
+                primary: "rgb(var(--color-primary) / <alpha-value>)",
+                "on-background":
+                  "rgb(var(--color-on-background) / <alpha-value>)",
+                "on-secondary":
+                  "rgb(var(--color-on-secondary) / <alpha-value>)",
+                "primary-fixed-dim":
+                  "rgb(var(--color-primary-fixed-dim) / <alpha-value>)",
+                "inverse-primary":
+                  "rgb(var(--color-inverse-primary) / <alpha-value>)",
+                "surface-tint":
+                  "rgb(var(--color-surface-tint) / <alpha-value>)",
+                "surface-variant":
+                  "rgb(var(--color-surface-variant) / <alpha-value>)",
+                "on-error-container":
+                  "rgb(var(--color-on-error-container) / <alpha-value>)",
+                "surface-container-high":
+                  "rgb(var(--color-surface-container-high) / <alpha-value>)",
+                "secondary-fixed-dim":
+                  "rgb(var(--color-secondary-fixed-dim) / <alpha-value>)",
+                "on-error": "rgb(var(--color-on-error) / <alpha-value>)",
+                "inverse-surface":
+                  "rgb(var(--color-inverse-surface) / <alpha-value>)",
+                "on-surface-variant":
+                  "rgb(var(--color-on-surface-variant) / <alpha-value>)",
+                "on-primary": "rgb(var(--color-on-primary) / <alpha-value>)",
+                "tertiary-container":
+                  "rgb(var(--color-tertiary-container) / <alpha-value>)",
+                "surface-container-highest":
+                  "rgb(var(--color-surface-container-highest) / <alpha-value>)",
+                "surface-container":
+                  "rgb(var(--color-surface-container) / <alpha-value>)",
+                "primary-fixed":
+                  "rgb(var(--color-primary-fixed) / <alpha-value>)",
+                "on-primary-fixed-variant":
+                  "rgb(var(--color-on-primary-fixed-variant) / <alpha-value>)",
+                "on-tertiary-fixed":
+                  "rgb(var(--color-on-tertiary-fixed) / <alpha-value>)",
+                "on-tertiary": "rgb(var(--color-on-tertiary) / <alpha-value>)",
+                secondary: "rgb(var(--color-secondary) / <alpha-value>)",
+                "on-primary-container":
+                  "rgb(var(--color-on-primary-container) / <alpha-value>)",
+              },
+              borderRadius: {
+                DEFAULT: "0.25rem",
+                lg: "0.5rem",
+                xl: "0.75rem",
+                full: "9999px",
+              },
+              spacing: {
+                "section-gap": "48px",
+                "container-padding-desktop": "32px",
+                gutter: "24px",
+                base: "8px",
+                "container-padding-mobile": "16px",
+              },
+              fontFamily: {
+                "headline-lg": ["Plus Jakarta Sans"],
+                "body-sm": ["Inter"],
+                "label-caps": ["JetBrains Mono"],
+                "body-lg": ["Inter"],
+                "title-md": ["Plus Jakarta Sans"],
+                "display-lg": ["Plus Jakarta Sans"],
+              },
+              fontSize: {
+                "headline-lg": [
+                  "32px",
+                  {
+                    lineHeight: "40px",
+                    letterSpacing: "-0.01em",
+                    fontWeight: "700",
+                  },
+                ],
+                "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                "label-caps": [
+                  "12px",
+                  {
+                    lineHeight: "16px",
+                    letterSpacing: "0.05em",
+                    fontWeight: "500",
+                  },
+                ],
+                "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                "title-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                "display-lg": [
+                  "48px",
+                  {
+                    lineHeight: "56px",
+                    letterSpacing: "-0.02em",
+                    fontWeight: "800",
+                  },
+                ],
+                "display-lg-mobile": [
+                  "36px",
+                  {
+                    lineHeight: "44px",
+                    letterSpacing: "-0.02em",
+                    fontWeight: "800",
+                  },
+                ],
+              },
+              boxShadow: {
+                "spotify-card": "rgba(0,0,0,0.3) 0px 8px 8px",
+                "spotify-dialog": "rgba(0,0,0,0.5) 0px 8px 24px",
+                "spotify-green": "0 8px 24px rgba(30, 215, 96, 0.25)",
+              },
+            },
+          },
+        };
+      } catch (_e) {}
     </script>
     <!-- Custom Modular Stylesheet & Scripts -->
-    <link href="src/styles/main.css" rel="stylesheet"/>
+    <link href="src/styles/main.css" rel="stylesheet" />
     <script src="src/js/theme.js"></script>
-</head>
-<body class="bg-background text-on-surface selection:bg-primary selection:text-on-primary antialiased">
-<!-- TopNavBar -->
-<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop h-16 md:h-20 bg-surface/90 backdrop-blur-md border-b border-outline-variant/20">
-<div class="flex items-center gap-2">
-<a href="index.html" class="font-display-lg text-title-md text-primary tracking-tight font-bold">Rewind</a>
-</div>
-<nav class="hidden md:flex gap-gutter items-center">
-<a class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors" href="overview.html">Dashboard</a>
-<a class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors" href="time.html">Rank Velocity</a>
-<a class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors" href="upload.html">Upload Data</a>
-</nav>
-<div class="flex items-center gap-3">
-<button id="theme-toggle" type="button" aria-label="Switch to dark mode" class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" title="Toggle theme">
-<span id="theme-icon" class="theme-icon material-symbols-outlined text-xl">dark_mode</span>
-</button>
-<a href="upload.html" class="btn-pill bg-primary text-on-primary px-6 py-2.5 rounded-full hover:scale-105 active:scale-95 transition-all hover:shadow-spotify-green text-center inline-block font-bold">
-        Get Started
-</a>
-</div>
-</header>
-<main>
-<!-- Redesigned Hero Section: Music Player Aesthetic -->
-<section class="relative min-h-screen flex items-center justify-center overflow-hidden bg-background pt-16">
-<!-- Abstract Background Elements -->
-<div class="absolute inset-0 z-0 flex items-center justify-center pointer-events-none" style="opacity: var(--vinyl-opacity);">
-<div class="relative w-[800px] h-[800px] flex items-center justify-center">
-<!-- Outer Vinyl Ring -->
-<div class="absolute inset-0 border-[40px] border-surface-container-high rounded-full animate-vinyl"></div>
-<!-- Middle Glow -->
-<div class="absolute w-[600px] h-[600px] rounded-full blur-[100px]" style="background: var(--hero-glow);"></div>
-<!-- Waveform Lines (Simulated) -->
-<div class="flex items-end gap-1 h-32 opacity-30">
-<div class="w-1 bg-primary h-[20%] rounded-full"></div>
-<div class="w-1 bg-primary h-[40%] rounded-full"></div>
-<div class="w-1 bg-primary h-[80%] rounded-full"></div>
-<div class="w-1 bg-primary h-[60%] rounded-full"></div>
-<div class="w-1 bg-primary h-[90%] rounded-full"></div>
-<div class="w-1 bg-primary h-[45%] rounded-full"></div>
-<div class="w-1 bg-primary h-[70%] rounded-full"></div>
-</div>
-</div>
-</div>
-<!-- Content Container (Glassmorphism Player) -->
-<div class="relative z-10 max-w-3xl w-full mx-container-padding-mobile glass-player p-8 md:p-16 rounded-2xl flex flex-col items-center text-center">
-<!-- Now Playing Label -->
-<div class="flex items-center gap-2 mb-8 bg-primary/10 px-4 py-1.5 rounded-full text-primary font-label-caps text-[10px] tracking-[0.2em] uppercase">
-<span class="flex h-2 w-2 relative">
-<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-</span>
-                Now Playing History
+  </head>
+  <body
+    class="bg-background text-on-surface selection:bg-primary selection:text-on-primary antialiased"
+  >
+    <!-- TopNavBar -->
+    <header
+      class="fixed top-0 w-full z-50 flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop h-16 md:h-20 bg-surface/90 backdrop-blur-md border-b border-outline-variant/20"
+    >
+      <div class="flex items-center gap-2">
+        <a
+          href="index.html"
+          class="font-display-lg text-title-md text-primary tracking-tight font-bold"
+          >Rewind</a
+        >
+      </div>
+      <nav class="hidden md:flex gap-gutter items-center">
+        <a
+          class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors"
+          href="overview.html"
+          >Dashboard</a
+        >
+        <a
+          class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors"
+          href="time.html"
+          >Rank Velocity</a
+        >
+        <a
+          class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors"
+          href="upload.html"
+          >Upload Data</a
+        >
+      </nav>
+      <div class="flex items-center gap-3">
+        <button
+          id="theme-toggle"
+          type="button"
+          aria-label="Switch to dark mode"
+          class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all"
+          title="Toggle theme"
+        >
+          <span
+            id="theme-icon"
+            class="theme-icon material-symbols-outlined text-xl"
+            >dark_mode</span
+          >
+        </button>
+        <a
+          href="upload.html"
+          class="btn-pill bg-primary text-on-primary px-6 py-2.5 rounded-full hover:scale-105 active:scale-95 transition-all hover:shadow-spotify-green text-center inline-block font-bold"
+        >
+          Get Started
+        </a>
+      </div>
+    </header>
+    <main>
+      <!-- Redesigned Hero Section: Music Player Aesthetic -->
+      <section
+        class="relative min-h-screen flex items-center justify-center overflow-hidden bg-background pt-16"
+      >
+        <!-- Abstract Background Elements -->
+        <div
+          class="absolute inset-0 z-0 flex items-center justify-center pointer-events-none"
+          style="opacity: var(--vinyl-opacity)"
+        >
+          <div
+            class="relative w-[800px] h-[800px] flex items-center justify-center"
+          >
+            <!-- Outer Vinyl Ring -->
+            <div
+              class="absolute inset-0 border-[40px] border-surface-container-high rounded-full animate-vinyl"
+            ></div>
+            <!-- Middle Glow -->
+            <div
+              class="absolute w-[600px] h-[600px] rounded-full blur-[100px]"
+              style="background: var(--hero-glow)"
+            ></div>
+            <!-- Waveform Lines (Simulated) -->
+            <div class="flex items-end gap-1 h-32 opacity-30">
+              <div class="w-1 bg-primary h-[20%] rounded-full"></div>
+              <div class="w-1 bg-primary h-[40%] rounded-full"></div>
+              <div class="w-1 bg-primary h-[80%] rounded-full"></div>
+              <div class="w-1 bg-primary h-[60%] rounded-full"></div>
+              <div class="w-1 bg-primary h-[90%] rounded-full"></div>
+              <div class="w-1 bg-primary h-[45%] rounded-full"></div>
+              <div class="w-1 bg-primary h-[70%] rounded-full"></div>
             </div>
-<!-- Headline -->
-<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg mb-4 text-on-surface leading-[1.1] tracking-tight font-bold">
-                Your music history.<br/>
-<span class="text-primary not-italic">Unwrapped</span>, any day.
-            </h1>
-<!-- Subtitle Echoing Player Subtext -->
-<p class="font-body-lg text-on-surface-variant mb-12 max-w-lg">
-                The ultimate audio analytics dashboard for your lifetime streaming journey.
+          </div>
+        </div>
+        <!-- Content Container (Glassmorphism Player) -->
+        <div
+          class="relative z-10 max-w-3xl w-full mx-container-padding-mobile glass-player p-8 md:p-16 rounded-2xl flex flex-col items-center text-center"
+        >
+          <!-- Now Playing Label -->
+          <div
+            class="flex items-center gap-2 mb-8 bg-primary/10 px-4 py-1.5 rounded-full text-primary font-label-caps text-[10px] tracking-[0.2em] uppercase"
+          >
+            <span class="flex h-2 w-2 relative">
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
+              ></span>
+              <span
+                class="relative inline-flex rounded-full h-2 w-2 bg-primary"
+              ></span>
+            </span>
+            Now Playing History
+          </div>
+          <!-- Headline -->
+          <h1
+            class="font-display-lg text-display-lg-mobile md:text-display-lg mb-4 text-on-surface leading-[1.1] tracking-tight font-bold"
+          >
+            Your music history.<br />
+            <span class="text-primary not-italic">Unwrapped</span>, any day.
+          </h1>
+          <!-- Subtitle Echoing Player Subtext -->
+          <p class="font-body-lg text-on-surface-variant mb-12 max-w-lg">
+            The ultimate audio analytics dashboard for your lifetime streaming
+            journey.
+          </p>
+          <!-- Buttons: Prominent and Centered -->
+          <div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
+            <a
+              href="upload.html"
+              class="btn-pill-lg bg-primary text-on-primary px-10 py-4 rounded-full hover:scale-105 active:scale-95 transition-all shadow-spotify-green flex items-center justify-center gap-3 font-bold"
+            >
+              <span class="material-symbols-outlined fill-1 text-xl"
+                >play_circle</span
+              >
+              Start Your Rewind
+            </a>
+            <a
+              href="overview.html"
+              class="btn-pill-lg bg-surface-container-high text-on-surface px-10 py-4 rounded-full hover:bg-surface-container transition-all flex items-center justify-center gap-3 border border-outline-variant/30 font-bold"
+            >
+              <span class="material-symbols-outlined text-xl">visibility</span>
+              View Demo
+            </a>
+          </div>
+          <!-- Playback Bar Decoration -->
+          <div class="w-full mt-16 space-y-3">
+            <div
+              class="w-full h-1.5 bg-surface-dim rounded-full overflow-hidden"
+            >
+              <div class="h-full bg-primary w-2/3 rounded-full relative">
+                <div
+                  class="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-primary border-4 border-[rgb(var(--scrubber-knob))] rounded-full shadow-lg"
+                ></div>
+              </div>
+            </div>
+            <div
+              class="flex justify-between font-label-caps text-[10px] text-on-surface-variant"
+            >
+              <span>2024:01:01</span>
+              <span>LIVE</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Two Paths Section -->
+      <section
+        class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop max-w-7xl mx-auto"
+      >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+          <!-- Card 1: Quick Insights -->
+          <div
+            class="spotify-card bg-surface-container-low p-8 md:p-12 rounded-lg group"
+          >
+            <div
+              class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform"
+            >
+              <span class="material-symbols-outlined text-primary text-3xl"
+                >bolt</span
+              >
+            </div>
+            <h3 class="font-headline-lg mb-4 text-on-surface font-bold">
+              Quick Insights
+            </h3>
+            <p
+              class="font-body-lg text-on-surface-variant mb-8 leading-relaxed"
+            >
+              Connect your account for an instant snapshot of your top artists
+              and tracks from the last 4 weeks, 6 months, or all time.
             </p>
-<!-- Buttons: Prominent and Centered -->
-<div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
-<a href="upload.html" class="btn-pill-lg bg-primary text-on-primary px-10 py-4 rounded-full hover:scale-105 active:scale-95 transition-all shadow-spotify-green flex items-center justify-center gap-3 font-bold">
-<span class="material-symbols-outlined fill-1 text-xl">play_circle</span>
-                    Start Your Rewind
-</a>
-<a href="overview.html" class="btn-pill-lg bg-surface-container-high text-on-surface px-10 py-4 rounded-full hover:bg-surface-container transition-all flex items-center justify-center gap-3 border border-outline-variant/30 font-bold">
-<span class="material-symbols-outlined text-xl">visibility</span>
-                    View Demo
-</a>
-</div>
-<!-- Playback Bar Decoration -->
-<div class="w-full mt-16 space-y-3">
-<div class="w-full h-1.5 bg-surface-dim rounded-full overflow-hidden">
-<div class="h-full bg-primary w-2/3 rounded-full relative">
-<div class="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-primary border-4 border-[rgb(var(--scrubber-knob))] rounded-full shadow-lg"></div>
-</div>
-</div>
-<div class="flex justify-between font-label-caps text-[10px] text-on-surface-variant">
-<span>2024:01:01</span>
-<span>LIVE</span>
-</div>
-</div>
-</div>
-</section>
-<!-- Two Paths Section -->
-<section class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop max-w-7xl mx-auto">
-<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
-<!-- Card 1: Quick Insights -->
-<div class="spotify-card bg-surface-container-low p-8 md:p-12 rounded-lg group">
-<div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-<span class="material-symbols-outlined text-primary text-3xl">bolt</span>
-</div>
-<h3 class="font-headline-lg mb-4 text-on-surface font-bold">Quick Insights</h3>
-<p class="font-body-lg text-on-surface-variant mb-8 leading-relaxed">
-                    Connect your account for an instant snapshot of your top artists and tracks from the last 4 weeks, 6 months, or all time.
-                </p>
-<a href="upload.html" class="btn-pill-lg w-full bg-primary text-on-primary py-4 rounded-full flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] hover:shadow-spotify-green transition-all font-bold">
-                    Upload Your Data
-                    <span class="material-symbols-outlined text-xl">arrow_forward</span>
-</a>
-</div>
-<!-- Card 2: Deep Dive -->
-<div class="spotify-card bg-surface-container-low p-8 md:p-12 rounded-lg group">
-<div class="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-<span class="material-symbols-outlined text-on-surface text-3xl">analytics</span>
-</div>
-<h3 class="font-headline-lg mb-4 text-on-surface font-bold">Deep Dive</h3>
-<p class="font-body-lg text-on-surface-variant mb-8 leading-relaxed">
-                    Upload your full Spotify data export for years of extensive analytics, genre mood mapping, and long-term listening trends.
-                </p>
-<a href="upload.html" class="btn-pill-lg w-full border border-outline text-on-surface py-4 rounded-full flex items-center justify-center gap-2 hover:border-on-surface hover:scale-[1.02] active:scale-[0.98] transition-all font-bold">
-                    Upload Data
-                    <span class="material-symbols-outlined text-xl">upload_file</span>
-</a>
-</div>
-</div>
-</div>
-</section>
-<!-- How to request your data Section -->
-<section class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop bg-surface-container-low relative overflow-hidden">
-<div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-<div class="lg:col-span-7">
-<h2 class="font-display-lg text-display-lg-mobile md:text-headline-lg mb-8 text-on-surface font-bold">Get your full history</h2>
-<div class="relative group aspect-video rounded-lg overflow-hidden shadow-spotify-dialog bg-surface-container-highest transition-all duration-700">
-<div class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A high-tech dashboard preview" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDJUzvP9Wh3gvzRQHmv7xNQElNWJklY7LgkEXP4h3bnLH08xgdeaptqIg9BQkTKhAMGMdWxE4YjhxKZjJGAwMbD-wvTe-b-UGmriiAPVsjs0fOt3xSA-SSzhKvzCHaMQVJWPlYjBhUMdbpq7g3hVXEjO4EwaWA4auAdQ4cbF-WBw1NSq13Gm7gdNObaziasRASeji7hrcak4cuW4j4fw4VYZ3rysV0YOuruE_veQI2gWI1IWi5_tCOQlpgukhxeIrfb3y4ynnBVHYE');"></div>
-<div class="absolute inset-0 bg-black/40 flex items-center justify-center">
-<button class="w-16 h-16 md:w-20 md:h-20 bg-primary rounded-full flex items-center justify-center text-on-primary scale-100 group-hover:scale-110 transition-transform shadow-spotify-green">
-<span class="material-symbols-outlined text-3xl md:text-4xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-</button>
-</div>
-</div>
-</div>
-<div class="lg:col-span-5">
-<div class="space-y-2">
-<div class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors">
-<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">1</div>
-<div>
-<h4 class="font-title-md text-on-surface font-bold">Go to Spotify Privacy Settings</h4>
-<p class="font-body-sm text-on-surface-variant">Navigate to the account settings on the Spotify web player.</p>
-</div>
-</div>
-<div class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors">
-<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">2</div>
-<div>
-<h4 class="font-title-md text-on-surface font-bold">Request your data</h4>
-<p class="font-body-sm text-on-surface-variant">Select "Extended streaming history" to get your full lifetime data.</p>
-</div>
-</div>
-<div class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors">
-<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">3</div>
-<div>
-<h4 class="font-title-md text-on-surface font-bold">Wait for the email</h4>
-<p class="font-body-sm text-on-surface-variant">Spotify usually takes up to 30 days to process full data requests.</p>
-</div>
-</div>
-<div class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors">
-<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">4</div>
-<div>
-<h4 class="font-title-md text-on-surface font-bold">Upload it here</h4>
-<p class="font-body-sm text-on-surface-variant">Once you receive the .json files, drag them directly into Rewind.</p>
-</div>
-</div>
-</div>
-<button class="mt-8 text-primary font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-4 transition-all group">
-                    Read Detailed Guide
-                    <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_right_alt</span>
-</button>
-</div>
-</div>
-</section>
-<!-- Dynamic Visual Section -->
-<section class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop">
-<div class="max-w-7xl mx-auto bg-surface-container-low rounded-lg overflow-hidden p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 shadow-spotify-card">
-<div class="flex flex-col lg:flex-row items-center gap-12 w-full">
-<div class="lg:w-[40%] space-y-6">
-<div class="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary font-label-caps text-[10px] uppercase tracking-[0.2em]">Live Analytics</div>
-<h2 class="font-display-lg text-display-lg-mobile md:text-headline-lg text-on-surface leading-tight font-bold">See your data in a whole new light.</h2>
-<p class="font-body-lg text-on-surface-variant">We don't just show you lists. We show you the story of your life through audio—tempo shifts, mood trends, and the songs that defined your biggest moments.</p>
-<div class="flex gap-8 py-4">
-<div class="text-center">
-<div class="font-display-lg text-primary font-bold text-2xl">10k+</div>
-<div class="font-label-caps text-on-surface-variant text-[10px] uppercase tracking-wider">Users Logged</div>
-</div>
-<div class="text-center">
-<div class="font-display-lg text-primary font-bold text-2xl">1M+</div>
-<div class="font-label-caps text-on-surface-variant text-[10px] uppercase tracking-wider">Songs Scanned</div>
-</div>
-</div>
-</div>
-<div class="lg:w-[60%] w-full">
-<div class="relative group">
-<div class="absolute -inset-1 bg-primary/10 rounded-2xl blur-xl opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-<img alt="Rewind Dashboard Preview" class="relative rounded-lg shadow-spotify-dialog w-full h-auto transform transition-transform duration-500 group-hover:scale-[1.01]" src="src/styles/static/image.png"/>
-</div>
-</div>
-</div>
-</div>
-</section>
-</main>
-<!-- Community Leaderboard Section -->
-<section class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop bg-background">
-<div class="max-w-7xl mx-auto text-center mb-12">
-<h2 class="font-display-lg text-display-lg-mobile md:text-headline-lg mb-4 text-on-surface font-bold">Community Leaderboard</h2>
-<p class="font-body-lg text-on-surface-variant max-w-2xl mx-auto">Compare your listening habits and fan status with the global community. See where you rank among the world's top listeners.</p>
-</div>
-<div class="max-w-5xl mx-auto relative group">
-<div class="absolute -inset-4 bg-primary/5 rounded-3xl blur-3xl opacity-50"></div>
-<div class="relative bg-surface-container-low rounded-lg overflow-hidden shadow-spotify-dialog transition-all duration-700">
-<img alt="Community Leaderboard Preview" class="w-full h-auto transform transition-transform duration-700 group-hover:scale-[1.01]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5gpS3Kn-BqVUigBKTGDWnsrJLeBfnkbqJCUlff_jQOnw647lE_1BFaRbL9ZGG_-t-4QcH0nFurVPeO9vzsvQuqYN82Kkez6I1LfwE7LkrSQ-NqsJgWvsAoiYj9WIjQ1oaBMshNB2iC78e7Z7gk0yY47vpB6l2ucXRAPOoS5wZQ0Nugn_zV3xOahNtZrnf2FzBqlQBmvgWzaYunVOrvRT-wunn9UzfpjTFm-EaILHipJYsxh1rc4FkXJzZki6KSahubxoMp-gsNBA"/>
-</div>
-</div>
-</section>
-<!-- Footer -->
-<footer class="w-full py-16 px-container-padding-mobile md:px-container-padding-desktop bg-surface-container-low border-t border-outline-variant/20">
-<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-<div class="flex flex-col items-center md:items-start gap-2">
-<span class="font-display-lg text-title-md text-primary font-bold">Rewind</span>
-<p class="font-body-sm text-on-surface-variant">© 2024 Rewind. All rights reserved.</p>
-</div>
-<div class="flex gap-gutter">
-<a class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy</a>
-<a class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors" href="#">Terms</a>
-<a class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors" href="#">Contact</a>
-</div>
-<div class="flex gap-4">
-<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary transition-all" href="#">
-<svg class="w-5 h-5 fill-current" viewbox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg>
-</a>
-<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary transition-all" href="#">
-<svg class="w-5 h-5 fill-current" viewbox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.058-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"></path></svg>
-</a>
-</div>
-</div>
-</footer>
-</body></html>
+            <a
+              href="upload.html"
+              class="btn-pill-lg w-full bg-primary text-on-primary py-4 rounded-full flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] hover:shadow-spotify-green transition-all font-bold"
+            >
+              Upload Your Data
+              <span class="material-symbols-outlined text-xl"
+                >arrow_forward</span
+              >
+            </a>
+          </div>
+          <!-- Card 2: Deep Dive -->
+          <div
+            class="spotify-card bg-surface-container-low p-8 md:p-12 rounded-lg group"
+          >
+            <div
+              class="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center mb-8 group-hover:scale-110 transition-transform"
+            >
+              <span class="material-symbols-outlined text-on-surface text-3xl"
+                >analytics</span
+              >
+            </div>
+            <h3 class="font-headline-lg mb-4 text-on-surface font-bold">
+              Deep Dive
+            </h3>
+            <p
+              class="font-body-lg text-on-surface-variant mb-8 leading-relaxed"
+            >
+              Upload your full Spotify data export for years of extensive
+              analytics, genre mood mapping, and long-term listening trends.
+            </p>
+            <a
+              href="upload.html"
+              class="btn-pill-lg w-full border border-outline text-on-surface py-4 rounded-full flex items-center justify-center gap-2 hover:border-on-surface hover:scale-[1.02] active:scale-[0.98] transition-all font-bold"
+            >
+              Upload Data
+              <span class="material-symbols-outlined text-xl">upload_file</span>
+            </a>
+          </div>
+        </div>
+      </section>
+      <!-- How to request your data Section -->
+      <section
+        class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop bg-surface-container-low relative overflow-hidden"
+      >
+        <div
+          class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
+        >
+          <div class="lg:col-span-7">
+            <h2
+              class="font-display-lg text-display-lg-mobile md:text-headline-lg mb-8 text-on-surface font-bold"
+            >
+              Get your full history
+            </h2>
+            <div
+              class="relative group aspect-video rounded-lg overflow-hidden shadow-spotify-dialog bg-surface-container-highest transition-all duration-700"
+            >
+              <div
+                class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                data-alt="A high-tech dashboard preview"
+                style="
+                  background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuDJUzvP9Wh3gvzRQHmv7xNQElNWJklY7LgkEXP4h3bnLH08xgdeaptqIg9BQkTKhAMGMdWxE4YjhxKZjJGAwMbD-wvTe-b-UGmriiAPVsjs0fOt3xSA-SSzhKvzCHaMQVJWPlYjBhUMdbpq7g3hVXEjO4EwaWA4auAdQ4cbF-WBw1NSq13Gm7gdNObaziasRASeji7hrcak4cuW4j4fw4VYZ3rysV0YOuruE_veQI2gWI1IWi5_tCOQlpgukhxeIrfb3y4ynnBVHYE&quot;);
+                "
+              ></div>
+              <div
+                class="absolute inset-0 bg-black/40 flex items-center justify-center"
+              >
+                <button
+                  class="w-16 h-16 md:w-20 md:h-20 bg-primary rounded-full flex items-center justify-center text-on-primary scale-100 group-hover:scale-110 transition-transform shadow-spotify-green"
+                >
+                  <span
+                    class="material-symbols-outlined text-3xl md:text-4xl"
+                    style="font-variation-settings: &quot;FILL&quot; 1"
+                    >play_arrow</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="lg:col-span-5">
+            <div class="space-y-2">
+              <div
+                class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors"
+              >
+                <div
+                  class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm"
+                >
+                  1
+                </div>
+                <div>
+                  <h4 class="font-title-md text-on-surface font-bold">
+                    Go to Spotify Privacy Settings
+                  </h4>
+                  <p class="font-body-sm text-on-surface-variant">
+                    Navigate to the account settings on the Spotify web player.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors"
+              >
+                <div
+                  class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm"
+                >
+                  2
+                </div>
+                <div>
+                  <h4 class="font-title-md text-on-surface font-bold">
+                    Request your data
+                  </h4>
+                  <p class="font-body-sm text-on-surface-variant">
+                    Select "Extended streaming history" to get your full
+                    lifetime data.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors"
+              >
+                <div
+                  class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm"
+                >
+                  3
+                </div>
+                <div>
+                  <h4 class="font-title-md text-on-surface font-bold">
+                    Wait for the email
+                  </h4>
+                  <p class="font-body-sm text-on-surface-variant">
+                    Spotify usually takes up to 30 days to process full data
+                    requests.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="flex items-start gap-4 p-4 rounded-lg hover:bg-surface-container transition-colors"
+              >
+                <div
+                  class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm"
+                >
+                  4
+                </div>
+                <div>
+                  <h4 class="font-title-md text-on-surface font-bold">
+                    Upload it here
+                  </h4>
+                  <p class="font-body-sm text-on-surface-variant">
+                    Once you receive the .json files, drag them directly into
+                    Rewind.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <button
+              class="mt-8 text-primary font-bold text-sm uppercase tracking-wider flex items-center gap-2 hover:gap-4 transition-all group"
+            >
+              Read Detailed Guide
+              <span
+                class="material-symbols-outlined transition-transform group-hover:translate-x-1"
+                >arrow_right_alt</span
+              >
+            </button>
+          </div>
+        </div>
+      </section>
+      <!-- Dynamic Visual Section -->
+      <section
+        class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop"
+      >
+        <div
+          class="max-w-7xl mx-auto bg-surface-container-low rounded-lg overflow-hidden p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 shadow-spotify-card"
+        >
+          <div class="flex flex-col lg:flex-row items-center gap-12 w-full">
+            <div class="lg:w-[40%] space-y-6">
+              <div
+                class="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary font-label-caps text-[10px] uppercase tracking-[0.2em]"
+              >
+                Live Analytics
+              </div>
+              <h2
+                class="font-display-lg text-display-lg-mobile md:text-headline-lg text-on-surface leading-tight font-bold"
+              >
+                See your data in a whole new light.
+              </h2>
+              <p class="font-body-lg text-on-surface-variant">
+                We don't just show you lists. We show you the story of your life
+                through audio—tempo shifts, mood trends, and the songs that
+                defined your biggest moments.
+              </p>
+              <div class="flex gap-8 py-4">
+                <div class="text-center">
+                  <div class="font-display-lg text-primary font-bold text-2xl">
+                    10k+
+                  </div>
+                  <div
+                    class="font-label-caps text-on-surface-variant text-[10px] uppercase tracking-wider"
+                  >
+                    Users Logged
+                  </div>
+                </div>
+                <div class="text-center">
+                  <div class="font-display-lg text-primary font-bold text-2xl">
+                    1M+
+                  </div>
+                  <div
+                    class="font-label-caps text-on-surface-variant text-[10px] uppercase tracking-wider"
+                  >
+                    Songs Scanned
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="lg:w-[60%] w-full">
+              <div class="relative group">
+                <div
+                  class="absolute -inset-1 bg-primary/10 rounded-2xl blur-xl opacity-25 group-hover:opacity-40 transition duration-1000"
+                ></div>
+                <img
+                  alt="Rewind Dashboard Preview"
+                  class="relative rounded-lg shadow-spotify-dialog w-full h-auto transform transition-transform duration-500 group-hover:scale-[1.01]"
+                  src="src/styles/static/image.png"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <!-- Community Leaderboard Section -->
+    <section
+      class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop bg-background"
+    >
+      <div class="max-w-7xl mx-auto text-center mb-12">
+        <h2
+          class="font-display-lg text-display-lg-mobile md:text-headline-lg mb-4 text-on-surface font-bold"
+        >
+          Community Leaderboard
+        </h2>
+        <p class="font-body-lg text-on-surface-variant max-w-2xl mx-auto">
+          Compare your listening habits and fan status with the global
+          community. See where you rank among the world's top listeners.
+        </p>
+      </div>
+      <div class="max-w-5xl mx-auto relative group">
+        <div
+          class="absolute -inset-4 bg-primary/5 rounded-3xl blur-3xl opacity-50"
+        ></div>
+        <div
+          class="relative bg-surface-container-low rounded-lg overflow-hidden shadow-spotify-dialog transition-all duration-700"
+        >
+          <img
+            alt="Community Leaderboard Preview"
+            class="w-full h-auto transform transition-transform duration-700 group-hover:scale-[1.01]"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5gpS3Kn-BqVUigBKTGDWnsrJLeBfnkbqJCUlff_jQOnw647lE_1BFaRbL9ZGG_-t-4QcH0nFurVPeO9vzsvQuqYN82Kkez6I1LfwE7LkrSQ-NqsJgWvsAoiYj9WIjQ1oaBMshNB2iC78e7Z7gk0yY47vpB6l2ucXRAPOoS5wZQ0Nugn_zV3xOahNtZrnf2FzBqlQBmvgWzaYunVOrvRT-wunn9UzfpjTFm-EaILHipJYsxh1rc4FkXJzZki6KSahubxoMp-gsNBA"
+          />
+        </div>
+      </div>
+    </section>
+    <!-- Footer -->
+    <footer
+      class="w-full py-16 px-container-padding-mobile md:px-container-padding-desktop bg-surface-container-low border-t border-outline-variant/20"
+    >
+      <div
+        class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8"
+      >
+        <div class="flex flex-col items-center md:items-start gap-2">
+          <span class="font-display-lg text-title-md text-primary font-bold"
+            >Rewind</span
+          >
+          <p class="font-body-sm text-on-surface-variant">
+            © 2024 Rewind. All rights reserved.
+          </p>
+        </div>
+        <div class="flex gap-gutter">
+          <a
+            class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors"
+            href="#"
+            >Privacy</a
+          >
+          <a
+            class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors"
+            href="#"
+            >Terms</a
+          >
+          <a
+            class="font-body-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors"
+            href="#"
+            >Contact</a
+          >
+        </div>
+        <div class="flex gap-4">
+          <a
+            class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary transition-all"
+            href="#"
+          >
+            <svg class="w-5 h-5 fill-current" viewbox="0 0 24 24">
+              <path
+                d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"
+              ></path>
+            </svg>
+          </a>
+          <a
+            class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-on-primary transition-all"
+            href="#"
+          >
+            <svg class="w-5 h-5 fill-current" viewbox="0 0 24 24">
+              <path
+                d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.058-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"
+              ></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
