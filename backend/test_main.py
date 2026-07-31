@@ -129,6 +129,48 @@ def test_top_track_endpoint():
         assert data["total_minutes"] > 0
 
 
+def test_artist_rank_endpoint():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        res = client.get("/api/metrics/artist-rank?limit=5")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+        assert len(data["data"]) == 5
+        first_item = data["data"][0]
+        assert first_item["rank"] == 1
+        assert "artist_name" in first_item
+        assert "total_streams" in first_item
+        assert "total_minutes" in first_item
+        assert "monthly_ranks" in first_item
+        assert len(first_item["monthly_ranks"]) == 36
+
+
+def test_track_rank_endpoint():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        res = client.get("/api/metrics/track-rank?limit=5")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+        assert len(data["data"]) == 5
+        first_item = data["data"][0]
+        assert first_item["rank"] == 1
+        assert "track_name" in first_item
+        assert "artist_name" in first_item
+        assert "total_streams" in first_item
+        assert "total_minutes" in first_item
+        assert "monthly_ranks" in first_item
+        assert len(first_item["monthly_ranks"]) == 36
+
+
+
 
 
 

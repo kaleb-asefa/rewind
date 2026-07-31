@@ -570,15 +570,69 @@
         renderChart();
     });
 
-    window.addEventListener('resize', () => {
-        renderChart();
-    });
+    const DEFAULT_COLORS = [
+        '#53e076', '#00d2ff', '#b066fe', '#ff6b6b',
+        '#ffaa00', '#38f9d7', '#ff54b0', '#4d94ff'
+    ];
+
+    async function fetchRankData() {
+        const fetcher = window.fetchWithTimeout || (async (ep) => {
+            const res = await fetch(`http://127.0.0.1:8000${ep}`);
+            const data = await res.json();
+            return { ok: res.ok, data };
+        });
+
+        try {
+            const [tracksRes, artistsRes] = await Promise.all([
+                fetcher('/api/metrics/track-rank?limit=8', {}, 5000),
+                fetcher('/api/metrics/artist-rank?limit=8', {}, 5000)
+            ]);
+
+            if (tracksRes.ok && tracksRes.data && tracksRes.data.status === "ok" && Array.isArray(tracksRes.data.data) && tracksRes.data.data.length > 0) {
+                const mappedTracks = tracksRes.data.data.map((item, idx) => ({
+                    id: `track-${idx + 1}`,
+                    title: item.track_name || 'Unknown Track',
+                    subtitle: item.artist_name || 'Unknown Artist',
+                    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80',
+                    color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
+                    ranks: Array.isArray(item.monthly_ranks) && item.monthly_ranks.length === 36 ? item.monthly_ranks : Array(36).fill(item.rank || (idx + 1)),
+                    plays: Array(36).fill(item.total_streams || 0)
+                }));
+                TRACKS_DATA.splice(0, TRACKS_DATA.length, ...mappedTracks);
+            }
+
+            if (artistsRes.ok && artistsRes.data && artistsRes.data.status === "ok" && Array.isArray(artistsRes.data.data) && artistsRes.data.data.length > 0) {
+                const mappedArtists = artistsRes.data.data.map((item, idx) => ({
+                    id: `artist-${idx + 1}`,
+                    title: item.artist_name || 'Unknown Artist',
+                    subtitle: `${item.total_streams || 0} streams`,
+                    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80',
+                    color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
+                    ranks: Array.isArray(item.monthly_ranks) && item.monthly_ranks.length === 36 ? item.monthly_ranks : Array(36).fill(item.rank || (idx + 1)),
+                    plays: Array(36).fill(item.total_streams || 0)
+                }));
+                ARTISTS_DATA.splice(0, ARTISTS_DATA.length, ...mappedArtists);
+            }
+
+            currentData = currentCategory === 'tracks' ? TRACKS_DATA : ARTISTS_DATA;
+            renderChart();
+            updateDisplay();
+        } catch (e) {
+            console.warn("Could not load backend rank data, using default view.", e);
+        }
+    }
 
     // Initialize on DOM Ready
     document.addEventListener('DOMContentLoaded', () => {
         renderChart();
         updateDisplay();
         startAnimationLoop();
+        fetchRankData();
+    });
+
+    window.addEventListener('rewind:data-updated', () => {
+        fetchRankData();
     });
 
 })();
+

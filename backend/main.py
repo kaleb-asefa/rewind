@@ -272,3 +272,165 @@ async def get_top_track(
         "total_streams": row.total_streams,
         "total_minutes": round(row.total_ms / (1000 * 60), 2),
     }
+
+
+@app.get("/api/metrics/artist-rank")
+async def get_artist_rank(
+    request: Request,
+    limit: int = 10,
+    conn: Connection = Depends(get_db),
+):
+    def query():
+        history = table_registry.get_history_table(request.app.state.engine)
+        stmt = (
+            select(
+                history.c.artist_name,
+                func.count().label("total_streams"),
+                func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
+            )
+            .where(history.c.artist_name.isnot(None))
+            .group_by(history.c.artist_name)
+            .order_by(func.coalesce(func.sum(history.c.ms_played), 0).desc(), func.count().desc())
+            .limit(limit)
+        )
+        rows = conn.execute(stmt).fetchall()
+
+        raw_con = conn.connection.driver_connection
+        try:
+            monthly_rows = raw_con.execute("""
+                SELECT 
+                    artist_name,
+                    date_trunc('month', ts) as month,
+                    SUM(ms_played) as ms
+                FROM history
+                WHERE artist_name IS NOT NULL AND ts IS NOT NULL
+                GROUP BY artist_name, month
+            """).fetchall()
+        except Exception:
+            monthly_rows = []
+
+        months_set = sorted({row[1] for row in monthly_rows})
+        artist_month_ms = {}
+        for artist, month, ms in monthly_rows:
+            if artist not in artist_month_ms:
+                artist_month_ms[artist] = {}
+            artist_month_ms[artist][month] = ms
+
+        result = []
+        for idx, row in enumerate(rows, start=1):
+            artist_name = row.artist_name
+            monthly_ranks = []
+            if months_set:
+                for month in months_set:
+                    m_scores = [(a, m_dict.get(month, 0)) for a, m_dict in artist_month_ms.items()]
+                    m_scores.sort(key=lambda x: x[1], reverse=True)
+                    m_rank = 8
+                    for r_idx, (a, score) in enumerate(m_scores, start=1):
+                        if a == artist_name:
+                            m_rank = r_idx
+                            break
+                    monthly_ranks.append(min(m_rank, 8))
+
+            if len(monthly_ranks) < 36:
+                if monthly_ranks:
+                    monthly_ranks = (monthly_ranks * (36 // len(monthly_ranks) + 1))[:36]
+                else:
+                    monthly_ranks = [idx] * 36
+
+            result.append({
+                "rank": idx,
+                "artist_name": artist_name,
+                "total_streams": row.total_streams,
+                "total_minutes": round(row.total_ms / (1000 * 60), 2),
+                "monthly_ranks": monthly_ranks,
+            })
+        return result
+
+    data = await run_in_threadpool(query)
+    return {
+        "status": "ok",
+        "data": data,
+    }
+
+
+@app.get("/api/metrics/track-rank")
+async def get_track_rank(
+    request: Request,
+    limit: int = 10,
+    conn: Connection = Depends(get_db),
+):
+    def query():
+        history = table_registry.get_history_table(request.app.state.engine)
+        stmt = (
+            select(
+                history.c.track_name,
+                history.c.artist_name,
+                func.count().label("total_streams"),
+                func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
+            )
+            .where(history.c.track_name.isnot(None))
+            .group_by(history.c.track_name, history.c.artist_name)
+            .order_by(func.coalesce(func.sum(history.c.ms_played), 0).desc(), func.count().desc())
+            .limit(limit)
+        )
+        rows = conn.execute(stmt).fetchall()
+
+        raw_con = conn.connection.driver_connection
+        try:
+            monthly_rows = raw_con.execute("""
+                SELECT 
+                    track_name,
+                    artist_name,
+                    date_trunc('month', ts) as month,
+                    SUM(ms_played) as ms
+                FROM history
+                WHERE track_name IS NOT NULL AND ts IS NOT NULL
+                GROUP BY track_name, artist_name, month
+            """).fetchall()
+        except Exception:
+            monthly_rows = []
+
+        months_set = sorted({row[2] for row in monthly_rows})
+        track_month_ms = {}
+        for track, artist, month, ms in monthly_rows:
+            key = (track, artist)
+            if key not in track_month_ms:
+                track_month_ms[key] = {}
+            track_month_ms[key][month] = ms
+
+        result = []
+        for idx, row in enumerate(rows, start=1):
+            t_key = (row.track_name, row.artist_name)
+            monthly_ranks = []
+            if months_set:
+                for month in months_set:
+                    m_scores = [(tk, m_dict.get(month, 0)) for tk, m_dict in track_month_ms.items()]
+                    m_scores.sort(key=lambda x: x[1], reverse=True)
+                    m_rank = 8
+                    for r_idx, (tk, score) in enumerate(m_scores, start=1):
+                        if tk == t_key:
+                            m_rank = r_idx
+                            break
+                    monthly_ranks.append(min(m_rank, 8))
+
+            if len(monthly_ranks) < 36:
+                if monthly_ranks:
+                    monthly_ranks = (monthly_ranks * (36 // len(monthly_ranks) + 1))[:36]
+                else:
+                    monthly_ranks = [idx] * 36
+
+            result.append({
+                "rank": idx,
+                "track_name": row.track_name,
+                "artist_name": row.artist_name,
+                "total_streams": row.total_streams,
+                "total_minutes": round(row.total_ms / (1000 * 60), 2),
+                "monthly_ranks": monthly_ranks,
+            })
+        return result
+
+    data = await run_in_threadpool(query)
+    return {
+        "status": "ok",
+        "data": data,
+    }
