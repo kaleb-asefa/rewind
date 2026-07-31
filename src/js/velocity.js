@@ -309,7 +309,9 @@
 
     const DEFAULT_COLORS = [
         '#53e076', '#00d2ff', '#b066fe', '#ff6b6b',
-        '#ffaa00', '#38f9d7', '#ff54b0', '#4d94ff'
+        '#ffaa00', '#38f9d7', '#ff54b0', '#4d94ff',
+        '#e8d44d', '#ff8a50', '#7c4dff', '#00e5a0',
+        '#ff4081', '#64ffda', '#ffd740', '#80d8ff'
     ];
 
     async function fetchRankData() {

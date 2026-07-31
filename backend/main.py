@@ -358,80 +358,65 @@ async def get_artist_rank(
         end_month = sorted_months[-1]
         full_months = _generate_month_sequence(start_month, end_month)
 
-        # Step 1: Pick the featured artists by OVERALL lifetime ms_played
-        # (not by first-seen order). This ensures we track the truly top artists.
-        history = table_registry.get_history_table(request.app.state.engine)
-        stmt = (
-            select(
-                history.c.artist_name,
-                func.count().label("total_streams"),
-                func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
-            )
-            .where(history.c.artist_name.isnot(None))
-            .group_by(history.c.artist_name)
-            .order_by(func.coalesce(func.sum(history.c.ms_played), 0).desc())
-            .limit(limit)
-        )
-        top_rows = conn.execute(stmt).fetchall()
-        all_featured = [r.artist_name for r in top_rows]
-        overall_stats = {r.artist_name: (r.total_streams, r.total_ms) for r in top_rows}
+        # Step 1: For each month, compute the TRUE top `limit` artists from
+        # ALL artists (not a fixed set). New artists can enter the chart.
+        # Months with no data carry forward the previous month's top list.
+        month_top_lists = {}  # m_key -> [(artist, ms, streams), ...]
+        prev_top = []
 
-        # Step 2: For each month, rank featured artists RELATIVE TO EACH OTHER.
-        # Active artists (with plays) get top ranks by ms_played.
-        # Inactive artists carry forward below them in previous order.
-        # This ensures the chart is ALWAYS populated — no empty gaps.
-        featured_set = set(all_featured)
-
-        # Build per-month ms lookup for featured artists only
-        month_featured_ms = {}  # m_key -> {artist_name: ms}
         for m_key in full_months:
-            featured_ms = {}
             if m_key in month_groups:
-                for a_name, ms, streams in month_groups[m_key]:
-                    if a_name in featured_set:
-                        featured_ms[a_name] = ms
-            month_featured_ms[m_key] = featured_ms
+                # Month has data — use actual top N sorted by ms DESC
+                month_top_lists[m_key] = month_groups[m_key][:limit]
+                prev_top = month_top_lists[m_key]
+            else:
+                # No data — carry forward previous month unchanged
+                month_top_lists[m_key] = list(prev_top)
 
-        # Assign ranks 1..limit every month — never off-chart
-        month_rank_map = {}  # m_key -> {artist_name: rank}
-        # Initialize previous ranks to overall lifetime order
-        prev_ranks = {a: i + 1 for i, a in enumerate(all_featured)}
-
+        # Step 2: Collect every unique artist that ever appeared in a monthly
+        # top list. Order them by overall lifetime ms_played for the response.
+        appearance_count = {}
         for m_key in full_months:
-            featured_ms = month_featured_ms[m_key]
-            # Split into active (had plays) and inactive (no plays)
-            active = [(a, featured_ms[a]) for a in all_featured
-                      if a in featured_ms and featured_ms[a] > 0]
-            inactive = [a for a in all_featured
-                        if a not in featured_ms or featured_ms.get(a, 0) <= 0]
+            for artist, ms, streams in month_top_lists[m_key]:
+                appearance_count[artist] = appearance_count.get(artist, 0) + 1
 
-            if not active:
-                # No featured artist had plays — carry forward all previous ranks
-                month_rank_map[m_key] = dict(prev_ranks)
-                continue
+        all_candidates = list(appearance_count.keys())
 
-            # Active artists rank at top sorted by ms_played DESC
-            active_sorted = sorted(active, key=lambda x: x[1], reverse=True)
-            # Inactive artists slot below, preserving their previous relative order
-            inactive_sorted = sorted(inactive, key=lambda a: prev_ranks.get(a, limit))
+        # Get overall stats for all candidates
+        history = table_registry.get_history_table(request.app.state.engine)
+        overall_stats = {}
+        if all_candidates:
+            stmt = (
+                select(
+                    history.c.artist_name,
+                    func.count().label("total_streams"),
+                    func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
+                )
+                .where(history.c.artist_name.in_(all_candidates))
+                .group_by(history.c.artist_name)
+            )
+            for r in conn.execute(stmt).fetchall():
+                overall_stats[r.artist_name] = (r.total_streams, r.total_ms)
 
-            new_ranks = {}
-            rank = 1
-            for a_name, _ in active_sorted:
-                new_ranks[a_name] = rank
-                rank += 1
-            for a_name in inactive_sorted:
-                new_ranks[a_name] = rank
-                rank += 1
+        # Order by overall lifetime ms DESC, cap at limit * 2
+        all_featured = sorted(
+            all_candidates,
+            key=lambda a: overall_stats.get(a, (0, 0))[1],
+            reverse=True,
+        )[:limit * 2]
 
-            month_rank_map[m_key] = new_ranks
-            prev_ranks = new_ranks
-
+        # Step 3: For each featured artist, compute monthly_ranks.
+        # Rank = position in that month's top list (1-N), or off-chart (limit+1).
+        off_chart = limit + 1
         result_data = []
         for idx, artist_name in enumerate(all_featured, start=1):
             monthly_ranks = []
             for m_key in full_months:
-                monthly_ranks.append(month_rank_map[m_key].get(artist_name, idx))
+                top_names = [a for a, ms, s in month_top_lists[m_key]]
+                if artist_name in top_names:
+                    monthly_ranks.append(top_names.index(artist_name) + 1)
+                else:
+                    monthly_ranks.append(off_chart)
 
             streams, total_ms = overall_stats.get(artist_name, (0, 0))
             result_data.append({
@@ -530,78 +515,64 @@ async def get_track_rank(
         end_month = sorted_months[-1]
         full_months = _generate_month_sequence(start_month, end_month)
 
-        # Step 1: Pick the featured tracks by OVERALL lifetime ms_played
-        history = table_registry.get_history_table(request.app.state.engine)
-        stmt = (
-            select(
-                history.c.track_name,
-                history.c.artist_name,
-                func.count().label("total_streams"),
-                func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
-            )
-            .where(history.c.track_name.isnot(None))
-            .group_by(history.c.track_name, history.c.artist_name)
-            .order_by(func.coalesce(func.sum(history.c.ms_played), 0).desc())
-            .limit(limit)
-        )
-        top_rows = conn.execute(stmt).fetchall()
-        all_featured = [(r.track_name, r.artist_name) for r in top_rows]
-        overall_stats = {
-            (r.track_name, r.artist_name): (r.total_streams, r.total_ms)
-            for r in top_rows
-        }
+        # Step 1: For each month, compute the TRUE top `limit` tracks from
+        # ALL tracks (not a fixed set). New tracks can enter the chart.
+        # Months with no data carry forward the previous month's top list.
+        month_top_lists = {}  # m_key -> [((track,artist), ms, streams), ...]
+        prev_top = []
 
-        # Step 2: For each month, rank featured tracks RELATIVE TO EACH OTHER.
-        # Active tracks (with plays) get top ranks by ms_played.
-        # Inactive tracks carry forward below them in previous order.
-        featured_set = set(all_featured)
-
-        # Build per-month ms lookup for featured tracks only
-        month_featured_ms = {}  # m_key -> {(track, artist): ms}
         for m_key in full_months:
-            featured_ms = {}
             if m_key in month_groups:
-                for t_pair, ms, streams in month_groups[m_key]:
-                    if t_pair in featured_set:
-                        featured_ms[t_pair] = ms
-            month_featured_ms[m_key] = featured_ms
+                month_top_lists[m_key] = month_groups[m_key][:limit]
+                prev_top = month_top_lists[m_key]
+            else:
+                month_top_lists[m_key] = list(prev_top)
 
-        # Assign ranks 1..limit every month — never off-chart
-        month_rank_map = {}  # m_key -> {(track, artist): rank}
-        prev_ranks = {p: i + 1 for i, p in enumerate(all_featured)}
-
+        # Step 2: Collect every unique track that ever appeared in a monthly
+        # top list. Order them by overall lifetime ms_played for the response.
+        appearance_count = {}
         for m_key in full_months:
-            featured_ms = month_featured_ms[m_key]
-            active = [(p, featured_ms[p]) for p in all_featured
-                      if p in featured_ms and featured_ms[p] > 0]
-            inactive = [p for p in all_featured
-                        if p not in featured_ms or featured_ms.get(p, 0) <= 0]
+            for pair, ms, streams in month_top_lists[m_key]:
+                appearance_count[pair] = appearance_count.get(pair, 0) + 1
 
-            if not active:
-                month_rank_map[m_key] = dict(prev_ranks)
-                continue
+        all_candidates = list(appearance_count.keys())
 
-            active_sorted = sorted(active, key=lambda x: x[1], reverse=True)
-            inactive_sorted = sorted(inactive, key=lambda p: prev_ranks.get(p, limit))
+        # Get overall stats for all candidates
+        history = table_registry.get_history_table(request.app.state.engine)
+        overall_stats = {}
+        for track_name, artist_name in all_candidates:
+            stmt = (
+                select(
+                    func.count().label("total_streams"),
+                    func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
+                )
+                .where(history.c.track_name == track_name)
+                .where(history.c.artist_name == artist_name)
+            )
+            r = conn.execute(stmt).first()
+            if r:
+                overall_stats[(track_name, artist_name)] = (r.total_streams, r.total_ms)
 
-            new_ranks = {}
-            rank = 1
-            for t_pair, _ in active_sorted:
-                new_ranks[t_pair] = rank
-                rank += 1
-            for t_pair in inactive_sorted:
-                new_ranks[t_pair] = rank
-                rank += 1
+        # Order by overall lifetime ms DESC, cap at limit * 2
+        all_featured = sorted(
+            all_candidates,
+            key=lambda p: overall_stats.get(p, (0, 0))[1],
+            reverse=True,
+        )[:limit * 2]
 
-            month_rank_map[m_key] = new_ranks
-            prev_ranks = new_ranks
-
+        # Step 3: For each featured track, compute monthly_ranks.
+        # Rank = position in that month's top list (1-N), or off-chart (limit+1).
+        off_chart = limit + 1
         result_data = []
         for idx, (track_name, artist_name) in enumerate(all_featured, start=1):
             pair = (track_name, artist_name)
             monthly_ranks = []
             for m_key in full_months:
-                monthly_ranks.append(month_rank_map[m_key].get(pair, idx))
+                top_pairs = [p for p, ms, s in month_top_lists[m_key]]
+                if pair in top_pairs:
+                    monthly_ranks.append(top_pairs.index(pair) + 1)
+                else:
+                    monthly_ranks.append(off_chart)
 
             streams, total_ms = overall_stats.get(pair, (0, 0))
             result_data.append({
