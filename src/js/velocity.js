@@ -227,7 +227,13 @@
         }
 
         // Draw Rank Trajectories & Position Tip Avatars
+        // Only render items currently on-chart (rank 1-8) for performance
+        const CHART_SLOTS = 8;
         currentData.forEach((item) => {
+            const currentRank = getInterpolatedRank(item.ranks, progress);
+            // Skip off-chart items (rank > 8) — they're invisible anyway
+            if (Math.round(currentRank) > CHART_SLOTS) return;
+
             const pathD = generatePathD(item.ranks, progress, winStart);
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', pathD);
@@ -237,7 +243,6 @@
 
             pathsGroup.appendChild(path);
 
-            const currentRank = getInterpolatedRank(item.ranks, progress);
             const tipX_svg = getMonthX(progress, winStart);
             const tipY_svg = getRankY(currentRank);
 

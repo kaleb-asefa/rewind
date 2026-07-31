@@ -143,8 +143,7 @@ def test_artist_rank_endpoint():
         assert "end_month" in data
         assert data["total_months"] > 0
         assert len(data["months"]) == data["total_months"]
-        assert len(data["data"]) >= 5  # may return up to limit*2 unique items
-        assert len(data["data"]) <= 10
+        assert len(data["data"]) >= 5  # includes all unique items across months
         first_item = data["data"][0]
         assert first_item["rank"] == 1
         assert "artist_name" in first_item
@@ -168,8 +167,7 @@ def test_track_rank_endpoint():
         assert "end_month" in data
         assert data["total_months"] > 0
         assert len(data["months"]) == data["total_months"]
-        assert len(data["data"]) >= 5  # may return up to limit*2 unique items
-        assert len(data["data"]) <= 10
+        assert len(data["data"]) >= 5  # includes all unique items across months
         first_item = data["data"][0]
         assert first_item["rank"] == 1
         assert "track_name" in first_item

@@ -398,12 +398,12 @@ async def get_artist_rank(
             for r in conn.execute(stmt).fetchall():
                 overall_stats[r.artist_name] = (r.total_streams, r.total_ms)
 
-        # Order by overall lifetime ms DESC, cap at limit * 2
+        # Order by overall lifetime ms DESC — include ALL candidates
         all_featured = sorted(
             all_candidates,
             key=lambda a: overall_stats.get(a, (0, 0))[1],
             reverse=True,
-        )[:limit * 2]
+        )
 
         # Step 3: For each featured artist, compute monthly_ranks.
         # Rank = position in that month's top list (1-N), or off-chart (limit+1).
@@ -553,12 +553,12 @@ async def get_track_rank(
             if r:
                 overall_stats[(track_name, artist_name)] = (r.total_streams, r.total_ms)
 
-        # Order by overall lifetime ms DESC, cap at limit * 2
+        # Order by overall lifetime ms DESC — include ALL candidates
         all_featured = sorted(
             all_candidates,
             key=lambda p: overall_stats.get(p, (0, 0))[1],
             reverse=True,
-        )[:limit * 2]
+        )
 
         # Step 3: For each featured track, compute monthly_ranks.
         # Rank = position in that month's top list (1-N), or off-chart (limit+1).
