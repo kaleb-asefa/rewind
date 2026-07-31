@@ -376,29 +376,42 @@ async def get_artist_rank(
         all_featured = [r.artist_name for r in top_rows]
         overall_stats = {r.artist_name: (r.total_streams, r.total_ms) for r in top_rows}
 
-        # Step 2: For each month independently, rank the featured artists
-        # by that month's ms_played only. If an artist has zero plays in a
-        # month, they drop off-chart (rank = limit + 1).
+        # Step 2: For each month, rank featured artists RELATIVE TO EACH OTHER
+        # by that month's ms_played. Artists with zero plays drop off-chart.
         off_chart = limit + 1
-        result_data = []
+        featured_set = set(all_featured)
 
+        # Build per-month ms lookup for featured artists only
+        month_featured_ms = {}  # m_key -> {artist_name: ms}
+        for m_key in full_months:
+            featured_ms = {}
+            if m_key in month_groups:
+                for a_name, ms, streams in month_groups[m_key]:
+                    if a_name in featured_set:
+                        featured_ms[a_name] = ms
+            month_featured_ms[m_key] = featured_ms
+
+        # For each month, sort featured artists by ms and assign relative ranks
+        month_rank_map = {}  # m_key -> {artist_name: rank}
+        for m_key in full_months:
+            featured_ms = month_featured_ms[m_key]
+            # Sort featured artists who had plays this month by ms DESC
+            active = sorted(
+                [(a, ms) for a, ms in featured_ms.items() if ms > 0],
+                key=lambda x: x[1],
+                reverse=True,
+            )
+            ranks = {}
+            for rank_pos, (a_name, _) in enumerate(active, start=1):
+                ranks[a_name] = rank_pos
+            month_rank_map[m_key] = ranks
+
+        result_data = []
         for idx, artist_name in enumerate(all_featured, start=1):
             monthly_ranks = []
             for m_key in full_months:
-                if m_key in month_groups:
-                    # Build this month's ranked list of ALL artists
-                    month_artists = month_groups[m_key]  # already sorted by ms DESC
-                    # Find this artist's position among ALL artists this month
-                    month_rank = off_chart
-                    for pos, (a_name, ms, streams) in enumerate(month_artists, start=1):
-                        if a_name == artist_name:
-                            month_rank = pos
-                            break
-                    # Cap at off_chart if they're way down the list
-                    monthly_ranks.append(min(month_rank, off_chart))
-                else:
-                    # No data for this month at all — off-chart
-                    monthly_ranks.append(off_chart)
+                ranks = month_rank_map[m_key]
+                monthly_ranks.append(ranks.get(artist_name, off_chart))
 
             streams, total_ms = overall_stats.get(artist_name, (0, 0))
             result_data.append({
@@ -518,29 +531,42 @@ async def get_track_rank(
             for r in top_rows
         }
 
-        # Step 2: For each month independently, rank the featured tracks
-        # by that month's ms_played only. If a track has zero plays in a
-        # month, it drops off-chart (rank = limit + 1).
+        # Step 2: For each month, rank featured tracks RELATIVE TO EACH OTHER
+        # by that month's ms_played. Tracks with zero plays drop off-chart.
         off_chart = limit + 1
-        result_data = []
+        featured_set = set(all_featured)
 
+        # Build per-month ms lookup for featured tracks only
+        month_featured_ms = {}  # m_key -> {(track, artist): ms}
+        for m_key in full_months:
+            featured_ms = {}
+            if m_key in month_groups:
+                for t_pair, ms, streams in month_groups[m_key]:
+                    if t_pair in featured_set:
+                        featured_ms[t_pair] = ms
+            month_featured_ms[m_key] = featured_ms
+
+        # For each month, sort featured tracks by ms and assign relative ranks
+        month_rank_map = {}  # m_key -> {(track, artist): rank}
+        for m_key in full_months:
+            featured_ms = month_featured_ms[m_key]
+            active = sorted(
+                [(p, ms) for p, ms in featured_ms.items() if ms > 0],
+                key=lambda x: x[1],
+                reverse=True,
+            )
+            ranks = {}
+            for rank_pos, (t_pair, _) in enumerate(active, start=1):
+                ranks[t_pair] = rank_pos
+            month_rank_map[m_key] = ranks
+
+        result_data = []
         for idx, (track_name, artist_name) in enumerate(all_featured, start=1):
             pair = (track_name, artist_name)
             monthly_ranks = []
             for m_key in full_months:
-                if m_key in month_groups:
-                    # Build this month's ranked list of ALL tracks
-                    month_tracks = month_groups[m_key]  # already sorted by ms DESC
-                    # Find this track's position among ALL tracks this month
-                    month_rank = off_chart
-                    for pos, (t_pair, ms, streams) in enumerate(month_tracks, start=1):
-                        if t_pair == pair:
-                            month_rank = pos
-                            break
-                    monthly_ranks.append(min(month_rank, off_chart))
-                else:
-                    # No data for this month at all — off-chart
-                    monthly_ranks.append(off_chart)
+                ranks = month_rank_map[m_key]
+                monthly_ranks.append(ranks.get(pair, off_chart))
 
             streams, total_ms = overall_stats.get(pair, (0, 0))
             result_data.append({
