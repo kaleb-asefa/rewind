@@ -26,221 +26,10 @@
         return `${month} '${String(year).slice(2)}`;
     }
 
-    // 36 Months Rank Data for 8 Tracks
-    const TRACKS_DATA = [
-        {
-            id: 'track-1',
-            title: 'Neon Drift',
-            subtitle: 'Solaris',
-            image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80',
-            color: '#53e076',
-            ranks: [
-                2, 2, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1,
-                1, 1, 2, 1, 3, 2, 1, 1, 2, 1, 1, 1,
-                1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1
-            ],
-            plays: Array.from({length: 36}, (_, i) => 1200 + i * 45)
-        },
-        {
-            id: 'track-2',
-            title: 'Obsidian Waves',
-            subtitle: 'Null Vector',
-            image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80',
-            color: '#00d2ff',
-            ranks: [
-                1, 1, 2, 2, 3, 1, 2, 3, 1, 2, 3, 2,
-                3, 2, 1, 2, 1, 1, 3, 2, 1, 2, 3, 2,
-                2, 1, 3, 2, 1, 2, 2, 1, 2, 3, 2, 2
-            ],
-            plays: Array.from({length: 36}, (_, i) => 1150 + i * 42)
-        },
-        {
-            id: 'track-3',
-            title: 'Midnight Protocol',
-            subtitle: 'Cyber Bloom',
-            image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=150&auto=format&fit=crop&q=80',
-            color: '#b066fe',
-            ranks: [
-                3, 4, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3,
-                2, 4, 3, 4, 2, 4, 2, 3, 4, 3, 2, 3,
-                4, 3, 2, 4, 3, 3, 3, 4, 3, 2, 3, 3
-            ],
-            plays: Array.from({length: 36}, (_, i) => 1100 + i * 40)
-        },
-        {
-            id: 'track-4',
-            title: 'Pulse Echo',
-            subtitle: 'Neon Queen',
-            image: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=150&auto=format&fit=crop&q=80',
-            color: '#ff6b6b',
-            ranks: [
-                4, 3, 5, 3, 4, 5, 3, 4, 5, 3, 4, 4,
-                5, 3, 5, 3, 5, 3, 4, 4, 3, 4, 4, 4,
-                3, 4, 4, 3, 4, 4, 4, 3, 4, 4, 4, 4
-            ],
-            plays: Array.from({length: 36}, (_, i) => 1050 + i * 38)
-        },
-        {
-            id: 'track-5',
-            title: 'Digital Rain',
-            subtitle: 'Frequence',
-            image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=150&auto=format&fit=crop&q=80',
-            color: '#ffaa00',
-            ranks: [
-                5, 5, 4, 5, 5, 4, 5, 5, 4, 5, 5, 5,
-                4, 5, 4, 5, 4, 5, 5, 5, 5, 5, 5, 5,
-                5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
-            ],
-            plays: Array.from({length: 36}, (_, i) => 1000 + i * 35)
-        },
-        {
-            id: 'track-6',
-            title: 'Synapse Drift',
-            subtitle: 'Echo Shift',
-            image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=150&auto=format&fit=crop&q=80',
-            color: '#38f9d7',
-            ranks: [
-                6, 6, 7, 6, 6, 7, 6, 6, 7, 6, 6, 6,
-                6, 7, 6, 6, 7, 6, 6, 7, 6, 6, 6, 6,
-                6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
-            ],
-            plays: Array.from({length: 36}, (_, i) => 900 + i * 32)
-        },
-        {
-            id: 'track-7',
-            title: 'Volt Horizon',
-            subtitle: 'Vortex',
-            image: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=150&auto=format&fit=crop&q=80',
-            color: '#ff54b0',
-            ranks: [
-                7, 7, 6, 7, 7, 6, 7, 7, 6, 7, 7, 7,
-                7, 6, 7, 8, 6, 7, 8, 6, 7, 7, 7, 7,
-                7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
-            ],
-            plays: Array.from({length: 36}, (_, i) => 850 + i * 30)
-        },
-        {
-            id: 'track-8',
-            title: 'Glitch Theory',
-            subtitle: 'Signal Zero',
-            image: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=150&auto=format&fit=crop&q=80',
-            color: '#4d94ff',
-            ranks: [
-                8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-                8, 8, 8, 7, 8, 8, 7, 8, 8, 8, 8, 8,
-                8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
-            ],
-            plays: Array.from({length: 36}, (_, i) => 800 + i * 28)
-        }
-    ];
+    // Dynamic Rank Data populated from FastAPI endpoints
+    const TRACKS_DATA = [];
+    const ARTISTS_DATA = [];
 
-    // 36 Months Rank Data for 8 Artists
-    const ARTISTS_DATA = [
-        {
-            id: 'artist-1',
-            title: 'Solaris',
-            subtitle: 'Synthwave',
-            image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80',
-            color: '#53e076',
-            ranks: [
-                1, 2, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1,
-                2, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1,
-                1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1
-            ],
-            plays: Array.from({length: 36}, (_, i) => 3500 + i * 110)
-        },
-        {
-            id: 'artist-2',
-            title: 'The Glitch',
-            subtitle: 'Cyberpunk',
-            image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80',
-            color: '#00d2ff',
-            ranks: [
-                2, 1, 2, 2, 1, 2, 2, 2, 2, 1, 2, 2,
-                1, 2, 2, 2, 1, 2, 2, 2, 2, 1, 2, 2,
-                2, 2, 2, 1, 2, 2, 2, 2, 1, 2, 2, 2
-            ],
-            plays: Array.from({length: 36}, (_, i) => 3400 + i * 105)
-        },
-        {
-            id: 'artist-3',
-            title: 'Null Vector',
-            subtitle: 'Darkwave',
-            image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=150&auto=format&fit=crop&q=80',
-            color: '#b066fe',
-            ranks: [
-                3, 3, 4, 3, 3, 3, 4, 3, 3, 3, 3, 3,
-                4, 3, 3, 4, 3, 3, 3, 4, 3, 3, 3, 3,
-                3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3
-            ],
-            plays: Array.from({length: 36}, (_, i) => 3100 + i * 95)
-        },
-        {
-            id: 'artist-4',
-            title: 'Neon Queen',
-            subtitle: 'Electropop',
-            image: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=150&auto=format&fit=crop&q=80',
-            color: '#ff6b6b',
-            ranks: [
-                4, 4, 3, 4, 4, 4, 3, 4, 4, 4, 4, 4,
-                3, 4, 4, 3, 4, 4, 4, 3, 4, 4, 4, 4,
-                4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
-            ],
-            plays: Array.from({length: 36}, (_, i) => 3000 + i * 90)
-        },
-        {
-            id: 'artist-5',
-            title: 'Frequence',
-            subtitle: 'Techno',
-            image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=150&auto=format&fit=crop&q=80',
-            color: '#ffaa00',
-            ranks: [
-                5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-                5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-                5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
-            ],
-            plays: Array.from({length: 36}, (_, i) => 2700 + i * 80)
-        },
-        {
-            id: 'artist-6',
-            title: 'Echo Shift',
-            subtitle: 'Lo-Fi',
-            image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=150&auto=format&fit=crop&q=80',
-            color: '#38f9d7',
-            ranks: [
-                6, 6, 6, 7, 6, 6, 7, 6, 6, 6, 6, 6,
-                7, 6, 6, 7, 6, 6, 7, 6, 6, 6, 6, 6,
-                6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
-            ],
-            plays: Array.from({length: 36}, (_, i) => 2400 + i * 75)
-        },
-        {
-            id: 'artist-7',
-            title: 'Vortex',
-            subtitle: 'Industrial',
-            image: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=150&auto=format&fit=crop&q=80',
-            color: '#ff54b0',
-            ranks: [
-                7, 7, 7, 6, 7, 7, 6, 7, 7, 7, 7, 7,
-                6, 7, 7, 6, 7, 7, 6, 7, 7, 7, 7, 7,
-                7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
-            ],
-            plays: Array.from({length: 36}, (_, i) => 2300 + i * 70)
-        },
-        {
-            id: 'artist-8',
-            title: 'Signal Zero',
-            subtitle: 'Glitch Hop',
-            image: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=150&auto=format&fit=crop&q=80',
-            color: '#4d94ff',
-            ranks: [
-                8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-                8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-                8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
-            ],
-            plays: Array.from({length: 36}, (_, i) => 2000 + i * 65)
-        }
-    ];
 
     // Module State
     let currentCategory = 'tracks';
@@ -411,8 +200,21 @@
             }
         }
 
+        if (!currentData || currentData.length === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.className = 'absolute inset-0 flex flex-col items-center justify-center text-on-surface-variant text-body-sm font-medium gap-2';
+            emptyMsg.innerHTML = `
+                <span class="material-symbols-outlined text-3xl text-primary opacity-80">info</span>
+                <span>No listening rank data loaded yet.</span>
+                <span class="text-xs opacity-60">Upload your Spotify listening data export to view rank velocity.</span>
+            `;
+            tipsOverlay.appendChild(emptyMsg);
+            return;
+        }
+
         // Draw Rank Trajectories & Position Tip Avatars
         currentData.forEach((item) => {
+
             const pathD = generatePathD(item.ranks, progress, winStart);
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', pathD);
