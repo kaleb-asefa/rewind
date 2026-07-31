@@ -1,3 +1,15 @@
+/**
+ * Rewind - Rank Velocity Chart Component (src/js/velocity.js)
+ * Dynamic multi-year rank trajectory renderer with smooth sliding timeline camera.
+ */
+
+(function () {
+    const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const SHORT_MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+    const MUSIC_NOTE_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23201f1f'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='%2353e076' font-family='sans-serif' font-size='40'>♪</text></svg>";
+    const ARTIST_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23201f1f'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='%2353e076' font-family='sans-serif' font-size='40'>👤</text></svg>";
+
     let dynamicMonthsList = [];
 
     function getFullDateString(monthIdx) {
@@ -243,7 +255,7 @@
             tipEl.innerHTML = `
                 <div class="tip-avatar-ring" style="border: 2px solid ${item.color};">
                     ${isRankOne ? '<div class="pulse-ring"></div>' : ''}
-                    <img src="${item.image}" alt="${item.title}" class="w-full h-full rounded-full object-cover" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23201f1f\\'/><text x=\\'50%\\' y=\\'55%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%2353e076\\' font-family=\\'sans-serif\\' font-size=\\'40\\'>♪</text></svg>'"/>
+                    <img src="${item.image}" alt="${item.title}" class="w-full h-full rounded-full object-cover"/>
                     <div class="rank-badge-pill" style="border-color: ${item.color}; color: ${isRankOne ? '#53e076' : '#ffffff'};">
                         #${Math.round(currentRank)}
                     </div>
@@ -342,7 +354,7 @@
                     id: `track-${idx + 1}`,
                     title: item.track_name || 'Unknown Track',
                     subtitle: item.artist_name || 'Unknown Artist',
-                    image: 'data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23201f1f\\'/><text x=\\'50%\\' y=\\'55%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%2353e076\\' font-family=\\'sans-serif\\' font-size=\\'40\\'>♪</text></svg>',
+                    image: MUSIC_NOTE_AVATAR,
                     color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
                     ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
                     plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
@@ -355,7 +367,7 @@
                     id: `artist-${idx + 1}`,
                     title: item.artist_name || 'Unknown Artist',
                     subtitle: `${item.total_streams || 0} streams`,
-                    image: 'data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23201f1f\\'/><text x=\\'50%\\' y=\\'55%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%2353e076\\' font-family=\\'sans-serif\\' font-size=\\'40\\'>👤</text></svg>',
+                    image: ARTIST_AVATAR,
                     color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
                     ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
                     plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
@@ -472,5 +484,3 @@
     });
 
 })();
-
-
