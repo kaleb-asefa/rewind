@@ -26,9 +26,9 @@ Backend implementation is active in `backend/` using **FastAPI**, **DuckDB**, an
 
 This stack is a deliberate choice, not an oversight: the current scope does not require a framework's state-management overhead. Do not suggest or introduce a framework "for best practices" or "scalability" without an explicit request.
 
-## Design — Locked to `design.md`
+## Design — Locked to `docs/design.md`
 
-All visual design must follow the Spotify-inspired design system in `design.md`. This includes:
+All visual design must follow the Spotify-inspired design system in `docs/design.md`. This includes:
 - Near-black surfaces (`#121212`–`#1f1f1f`), Spotify Green (`#1ed760`) as the **only** accent color, used functionally (CTAs, active states, play controls) — never decoratively
 - Pill/circle geometry on buttons and controls
 - Uppercase button labels with wide letter-spacing
@@ -67,10 +67,11 @@ These are common suggestions that are deliberately not being built yet. Do not i
 - `index.html` — landing page
 - `upload.html` — standalone upload page (legacy fallback)
 - `overview.html` — analytics dashboard & single-page application host
-- `design.md` — visual design system (source of truth for styling)
-- `BACKEND.md` — backend architecture and data-handling decisions
-- `SCHEMA.md` — data schema and column-by-column storage decisions
-- `AGENTS.md` — this file
+- `docs/` — all project documentation
+  - `design.md` — visual design system (source of truth for styling)
+  - `BACKEND.md` — backend architecture and data-handling decisions
+  - `SCHEMA.md` — data schema and column-by-column storage decisions
+  - `AGENTS.md` — this file
 - `src/` — Tailwind entry CSS and modular JavaScript source code
   - `js/api.js` — centralized API client with timeout support and error handling
   - `js/router.js` — single-page client-side router and view manager (`#view-overview`, `#view-upload`)
@@ -85,6 +86,7 @@ These are common suggestions that are deliberately not being built yet. Do not i
 - `backend/` — FastAPI backend implementation
   - `database.py` — Engine lifespan, TableRegistry, and `get_db` connection dependency
   - `main.py` — FastAPI application & API endpoints (`/api/upload`, `/api/metrics/total-time`, `/api/metrics/top-artist`, `/api/metrics/top-album`, `/api/metrics/top-track`)
+  - `load.py` — song metadata loading script
   - `test_main.py` — Pytest test suite covering upload and metric endpoints
   - `pyproject.toml` — dependencies managed via `uv`
 - `data/sessions/` — session-scoped DuckDB storage (.duckdb files)

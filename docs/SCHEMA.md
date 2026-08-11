@@ -62,8 +62,8 @@ CREATE TABLE history (
 );
 ```
 
-Ingestion selects all of the above from the raw JSON via explicit schema normalization (`TRY_CAST({col} AS {dtype})` for existing columns and `CAST(NULL AS {dtype})` for absent keys across multiple JSON export files; see `BACKEND.md` for the ingestion/query pattern). `ip_addr_decrypted` and `user_agent_decrypted` are the only two fields never read into memory as table columns in the first place.
+Ingestion selects all of the above from the raw JSON via explicit schema normalization (`TRY_CAST({col} AS {dtype})` for existing columns and `CAST(NULL AS {dtype})` for absent keys across multiple JSON export files; see [`BACKEND.md`](BACKEND.md) for the ingestion/query pattern). `ip_addr_decrypted` and `user_agent_decrypted` are the only two fields never read into memory as table columns in the first place.
 
 ## Future Growth
 
-This file currently covers Spotify listening data only. As the project grows to support user accounts, leaderboards, or other features, those will get their own schema sections here (or their own files, following the same pattern as `design.md` / `BACKEND.md`) — not bolted onto the `history` table.
+This file currently covers Spotify listening data only. As the project grows to support user accounts, leaderboards, or other features, those will get their own schema sections here (or their own files in `docs/`, following the same pattern as `design.md` / `BACKEND.md`) — not bolted onto the `history` table.

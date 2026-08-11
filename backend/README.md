@@ -31,6 +31,7 @@ uv run pytest
 
 - `main.py`: FastAPI entrypoint defining ingestion (`POST /api/upload`) and metric endpoints (`/api/metrics/*`). Uses `run_in_threadpool` for non-blocking DuckDB query execution.
 - `database.py`: Manages the FastAPI engine lifecycle (`app.state.engine`), lazy table reflection (`TableRegistry`), and connection dependency (`get_db`).
+- `load.py`: Song metadata loading script.
 - `test_main.py`: Integration test suite testing ingestion, multi-file uploads, and all active metric endpoints using pytest and FastAPI TestClient.
 - `pyproject.toml`: Dependency specification managed by `uv`.
 
@@ -38,5 +39,5 @@ uv run pytest
 
 ## Related Documentation
 
-- For backend architecture, ingestion workflow, and endpoint specifications, see [`BACKEND.md`](../BACKEND.md).
-- For the DuckDB table schema and column mapping decisions, see [`SCHEMA.md`](../SCHEMA.md).
+- For backend architecture, ingestion workflow, and endpoint specifications, see [`BACKEND.md`](../docs/BACKEND.md).
+- For the DuckDB table schema and column mapping decisions, see [`SCHEMA.md`](../docs/SCHEMA.md).
