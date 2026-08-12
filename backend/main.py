@@ -142,7 +142,13 @@ async def upload(
 
     # Auto-enrich metadata after successful upload
     try:
-        enrich_stats = await run_in_threadpool(_run_enrichment)
+        # Reuse the raw DuckDB driver connection from SQLAlchemy — opening a
+        # second duckdb.connect() to the same file conflicts with the existing
+        # engine connection's configuration.
+        raw_conn = conn.connection.driver_connection
+        enrich_stats = await run_in_threadpool(
+            _run_enrichment, raw_conn
+        )
         result["enrichment"] = enrich_stats
     except Exception as e:
         logger.error(f"Metadata enrichment failed (non-fatal): {e}")
@@ -151,13 +157,9 @@ async def upload(
     return result
 
 
-def _run_enrichment() -> dict:
-    """Run metadata enrichment using a direct DuckDB connection to session DB."""
-    session_conn = duckdb.connect(DB_PATH, read_only=True)
-    try:
-        return enrich_all(session_conn, hf_token=HF_TOKEN)
-    finally:
-        session_conn.close()
+def _run_enrichment(session_conn) -> dict:
+    """Run metadata enrichment using the existing session DB connection."""
+    return enrich_all(session_conn, hf_token=HF_TOKEN)
 
 
 @app.get("/api/enrichment-status")
