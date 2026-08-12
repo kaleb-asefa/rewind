@@ -106,9 +106,22 @@ The shared cache eliminates redundant external queries:
 - User B uploads → 8,000 overlap → only 2,000 new queries
 - Over time, query volume converges toward zero for popular music
 
-### Configuration
+### Configuration (`config.py` & `.env`)
 
-Set `HF_TOKEN` environment variable with a HuggingFace read token to enable Embeat queries:
+The backend uses `pydantic-settings` (`backend/config.py`) to automatically load environment variables from `backend/.env`.
+
+To set up environment variables:
+```bash
+cd backend
+cp .env.example .env
+```
+
+Edit `backend/.env`:
+```env
+HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx
+```
+
+Alternatively, pass it inline when running:
 ```bash
 HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx uv run fastapi dev main.py
 ```

@@ -2,3 +2,7 @@
 *.pyc
 __pycache__
 .vscode
+.venv
+.env
+.env.*
+!.env.example

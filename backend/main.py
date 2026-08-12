@@ -4,6 +4,7 @@ import shutil
 import tempfile
 
 import duckdb
+from config import settings
 from database import DB_PATH, get_db, lifespan, table_registry
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,8 +14,6 @@ from sqlalchemy.engine import Connection
 from starlette.concurrency import run_in_threadpool
 
 logger = logging.getLogger(__name__)
-
-HF_TOKEN = os.environ.get("HF_TOKEN")
 
 app = FastAPI(title="Rewind API", lifespan=lifespan)
 
@@ -159,7 +158,7 @@ async def upload(
 
 def _run_enrichment(session_conn) -> dict:
     """Run metadata enrichment using the existing session DB connection."""
-    return enrich_all(session_conn, hf_token=HF_TOKEN)
+    return enrich_all(session_conn, hf_token=settings.hf_token)
 
 
 @app.get("/api/enrichment-status")

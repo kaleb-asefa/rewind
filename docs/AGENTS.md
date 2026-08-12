@@ -85,8 +85,10 @@ These are common suggestions that are deliberately not being built yet. Do not i
   - `js/spotlight.js` — spotlight search and keyboard shortcuts handler
 - `backend/` — FastAPI backend implementation
   - `database.py` — Engine lifespan, TableRegistry, and `get_db` connection dependency
+  - `config.py` — Pydantic BaseSettings environment configuration (`.env` file loader)
   - `main.py` — FastAPI application & API endpoints (`/api/upload`, `/api/metrics/*`, `/api/enrichment-status`)
   - `load.py` — metadata enrichment pipeline (Embeat audio features, Spotify oEmbed images, Deezer release dates)
+  - `.env.example` / `.env` — Environment settings & secrets configuration
   - `test_main.py` — Pytest test suite covering upload and metric endpoints
   - `pyproject.toml` — dependencies managed via `uv`
 - `data/` — persistent data storage
