@@ -267,19 +267,31 @@ def enrich_audio_features(
 
     genre_map = _load_genre_map(hf_token)
 
-    try:
-        meta_conn.execute("INSTALL httpfs; LOAD httpfs;")
-        meta_conn.execute(f"""
-            CREATE SECRET IF NOT EXISTS hf_token (
-                TYPE HUGGINGFACE,
-                TOKEN '{hf_token}'
-            )
-        """)
-    except Exception as e:
-        logger.warning(f"Failed to configure DuckDB httpfs / secret: {e}")
+    # Resolve HuggingFace API URLs to signed CloudFront CDN URLs in Python.
+    # Python's urllib automatically handles the 302 redirect and strips the
+    # Authorization header when redirected to AWS CloudFront, avoiding the
+    # HTTP 400 / HTTP 0 error that DuckDB's httpfs experiences when forwarding headers.
+    resolved_sources = []
+    for url in EMBEAT_PARQUET_URLS:
+        try:
+            req = urllib.request.Request(url, headers={"Authorization": f"Bearer {hf_token}"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                resolved_sources.append(resp.geturl())
+        except Exception as e:
+            logger.warning(f"Failed to resolve HuggingFace parquet URL '{url}': {e}")
+
+    if not resolved_sources:
+        logger.warning("Could not resolve HuggingFace parquet CDN URLs. Skipping Embeat query.")
         return stats
 
-    parquet_sources = ", ".join(f"'{url}'" for url in EMBEAT_PARQUET_URLS)
+    try:
+        meta_conn.execute("INSTALL httpfs; LOAD httpfs;")
+        meta_conn.execute("SET allow_asterisks_in_http_paths = true;")
+    except Exception as e:
+        logger.warning(f"Failed to configure DuckDB httpfs: {e}")
+        return stats
+
+    parquet_sources = ", ".join(f"'{url}'" for url in resolved_sources)
     total_matched = 0
 
     for i in range(0, len(missing_ids), BATCH_SIZE):
