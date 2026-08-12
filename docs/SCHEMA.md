@@ -64,6 +64,60 @@ CREATE TABLE history (
 
 Ingestion selects all of the above from the raw JSON via explicit schema normalization (`TRY_CAST({col} AS {dtype})` for existing columns and `CAST(NULL AS {dtype})` for absent keys across multiple JSON export files; see [`BACKEND.md`](BACKEND.md) for the ingestion/query pattern). `ip_addr_decrypted` and `user_agent_decrypted` are the only two fields never read into memory as table columns in the first place.
 
+## Metadata Tables (in `data/metadata.duckdb`)
+
+These tables live in a **shared persistent cache** separate from per-session data. They grow across users — once a track's metadata is fetched, it's reused for every future user.
+
+### `track_metadata` — Enriched Track Data
+
+Populated from the Embeat 45M HuggingFace dataset (audio features, genre), Spotify oEmbed (images), and Deezer API (release dates).
+
+```sql
+CREATE TABLE track_metadata (
+    track_id           VARCHAR PRIMARY KEY,  -- Spotify track ID (stripped from track_uri)
+    track_name         VARCHAR,
+    artist_name        VARCHAR,
+    popularity         INTEGER,
+    duration_ms        BIGINT,
+    danceability       DOUBLE,
+    energy             DOUBLE,
+    valence            DOUBLE,
+    tempo              DOUBLE,
+    key                INTEGER,
+    mode               INTEGER,
+    acousticness       DOUBLE,
+    instrumentalness   DOUBLE,
+    liveness           DOUBLE,
+    loudness           DOUBLE,
+    speechiness        DOUBLE,
+    time_signature     INTEGER,
+    genre              VARCHAR,              -- resolved from artist_genre_map.json
+    image_url          VARCHAR,              -- from Spotify oEmbed API
+    release_date       VARCHAR               -- from Deezer API
+);
+```
+
+### `artist_metadata` — Artist Images
+
+```sql
+CREATE TABLE artist_metadata (
+    artist_name        VARCHAR PRIMARY KEY,
+    image_url          VARCHAR               -- from Spotify oEmbed API
+);
+```
+
+### `album_metadata` — Album Images and Release Dates
+
+```sql
+CREATE TABLE album_metadata (
+    album_name         VARCHAR,
+    artist_name        VARCHAR,
+    image_url          VARCHAR,              -- from Spotify oEmbed API
+    release_date       VARCHAR,              -- from Deezer API
+    PRIMARY KEY (album_name, artist_name)
+);
+```
+
 ## Future Growth
 
 This file currently covers Spotify listening data only. As the project grows to support user accounts, leaderboards, or other features, those will get their own schema sections here (or their own files in `docs/`, following the same pattern as `design.md` / `BACKEND.md`) — not bolted onto the `history` table.

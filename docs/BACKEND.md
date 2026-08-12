@@ -73,9 +73,52 @@ The frontend communicates with FastAPI endpoints via `src/js/api.js`:
 - Database stored in `data/sessions/rewind.duckdb`
 - Ephemeral session design
 
+## Metadata Enrichment Pipeline (`load.py`)
+
+After upload, the backend automatically enriches listening history with song metadata (duration, audio features, genre, images, release dates) from three external sources. Results are stored in a **shared persistent cache** (`data/metadata.duckdb`) that grows across users — popular tracks are fetched once and reused forever.
+
+### Data Sources
+
+| Source | Data Provided | Auth | Rate Limit |
+|--------|--------------|------|------------|
+| **Embeat 45M** (HuggingFace) | Audio features, duration, genre, popularity | HF token (`HF_TOKEN` env var) | N/A (bulk DuckDB query) |
+| **Spotify oEmbed API** | Track/artist/album images | None | ~10 req/sec (conservative) |
+| **Deezer API** | Album release dates | None | 50 req/5sec |
+
+### Two-Phase Enrichment
+
+**Phase 1 — Bulk metadata (fast, blocks):**
+1. Extract unique `track_id`s from `history.track_uri` (strip `spotify:track:` prefix)
+2. Check which IDs are already in `metadata.duckdb` (cache hit)
+3. Query Embeat Parquet files via DuckDB `httpfs` for cache misses only
+4. Resolve `artist_genre_idx` → genre name via `artist_genre_map.json`
+5. Insert into `track_metadata` table
+
+**Phase 2 — Images + dates (rate-limited):**
+1. Fetch track images via Spotify oEmbed for tracks missing `image_url`
+2. Fetch release dates via Deezer search for tracks missing `release_date`
+3. Populate `artist_metadata` and `album_metadata` tables
+
+### Cache Efficiency
+
+The shared cache eliminates redundant external queries:
+- User A uploads → 10,000 tracks queried, all cached
+- User B uploads → 8,000 overlap → only 2,000 new queries
+- Over time, query volume converges toward zero for popular music
+
+### Configuration
+
+Set `HF_TOKEN` environment variable with a HuggingFace read token to enable Embeat queries:
+```bash
+HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx uv run fastapi dev main.py
+```
+
+Without a token, Phase 1 (audio features + genre) is skipped; Phase 2 (images + dates) still works.
+
 ## Open Items
 
 - Session TTL and cleanup mechanism
 - Multi-session isolation / UUID per user session
 - Heatmap, most hated artist/track, active days, and unique songs metric endpoints
-
+- Background async Phase 2 enrichment (currently runs synchronously after upload)
+- Artist image enrichment (requires artist Spotify IDs, not available in history data)

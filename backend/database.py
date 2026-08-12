@@ -9,6 +9,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data", "sessions")
 os.makedirs(DATA_DIR, exist_ok=True)
 DB_PATH = os.path.join(DATA_DIR, "rewind.duckdb")
+METADATA_DB_PATH = os.path.join(BASE_DIR, "..", "data", "metadata.duckdb")
 
 metadata = MetaData()
 
@@ -50,6 +51,8 @@ async def lifespan(app: FastAPI):
     """Manage application-wide SQLAlchemy Engine lifecycle."""
     engine = create_engine(f"duckdb:///{DB_PATH}")
     app.state.engine = engine
+    app.state.session_db_path = DB_PATH
+    app.state.metadata_db_path = METADATA_DB_PATH
     yield
     engine.dispose()
 

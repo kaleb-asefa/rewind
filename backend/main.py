@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import tempfile
@@ -6,9 +7,14 @@ import duckdb
 from database import DB_PATH, get_db, lifespan, table_registry
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from load import enrich_all, get_metadata_conn
 from sqlalchemy import func, select
 from sqlalchemy.engine import Connection
 from starlette.concurrency import run_in_threadpool
+
+logger = logging.getLogger(__name__)
+
+HF_TOKEN = os.environ.get("HF_TOKEN")
 
 app = FastAPI(title="Rewind API", lifespan=lifespan)
 
@@ -126,13 +132,71 @@ async def upload(
             )
 
     try:
-        return await run_in_threadpool(_process_upload, conn, upload_list)
+        result = await run_in_threadpool(_process_upload, conn, upload_list)
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to ingest JSON into DuckDB: {str(e)}"
         )
+
+    # Auto-enrich metadata after successful upload
+    try:
+        enrich_stats = await run_in_threadpool(_run_enrichment)
+        result["enrichment"] = enrich_stats
+    except Exception as e:
+        logger.error(f"Metadata enrichment failed (non-fatal): {e}")
+        result["enrichment"] = {"status": "error", "detail": str(e)}
+
+    return result
+
+
+def _run_enrichment() -> dict:
+    """Run metadata enrichment using a direct DuckDB connection to session DB."""
+    session_conn = duckdb.connect(DB_PATH, read_only=True)
+    try:
+        return enrich_all(session_conn, hf_token=HF_TOKEN)
+    finally:
+        session_conn.close()
+
+
+@app.get("/api/enrichment-status")
+async def get_enrichment_status():
+    """Check metadata cache stats."""
+    def query():
+        meta_conn = get_metadata_conn()
+        try:
+            track_count = meta_conn.execute(
+                "SELECT count(*) FROM track_metadata"
+            ).fetchone()[0]
+            with_images = meta_conn.execute(
+                "SELECT count(*) FROM track_metadata WHERE image_url IS NOT NULL"
+            ).fetchone()[0]
+            with_dates = meta_conn.execute(
+                "SELECT count(*) FROM track_metadata WHERE release_date IS NOT NULL"
+            ).fetchone()[0]
+            with_genre = meta_conn.execute(
+                "SELECT count(*) FROM track_metadata WHERE genre IS NOT NULL"
+            ).fetchone()[0]
+            artist_count = meta_conn.execute(
+                "SELECT count(*) FROM artist_metadata"
+            ).fetchone()[0]
+            album_count = meta_conn.execute(
+                "SELECT count(*) FROM album_metadata"
+            ).fetchone()[0]
+            return {
+                "status": "ok",
+                "tracks_cached": track_count,
+                "tracks_with_images": with_images,
+                "tracks_with_release_dates": with_dates,
+                "tracks_with_genre": with_genre,
+                "artists_cached": artist_count,
+                "albums_cached": album_count,
+            }
+        finally:
+            meta_conn.close()
+
+    return await run_in_threadpool(query)
 
 
 @app.get("/api/metrics/total-time")

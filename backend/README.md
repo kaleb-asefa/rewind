@@ -13,6 +13,9 @@ To start the FastAPI backend server in development mode:
 ```bash
 cd backend
 uv run fastapi dev main.py
+
+# With metadata enrichment enabled (requires free HuggingFace token):
+HF_TOKEN=hf_your_token_here uv run fastapi dev main.py
 ```
 
 The server will start at `http://127.0.0.1:8000`. API documentation (Swagger UI) is available at `http://127.0.0.1:8000/docs`.
@@ -29,9 +32,9 @@ uv run pytest
 
 ## File Overview
 
-- `main.py`: FastAPI entrypoint defining ingestion (`POST /api/upload`) and metric endpoints (`/api/metrics/*`). Uses `run_in_threadpool` for non-blocking DuckDB query execution.
+- `main.py`: FastAPI entrypoint defining ingestion (`POST /api/upload`), metric endpoints (`/api/metrics/*`), and enrichment status (`/api/enrichment-status`). Auto-triggers metadata enrichment after upload.
 - `database.py`: Manages the FastAPI engine lifecycle (`app.state.engine`), lazy table reflection (`TableRegistry`), and connection dependency (`get_db`).
-- `load.py`: Song metadata loading script.
+- `load.py`: Metadata enrichment pipeline — fetches audio features/genre from Embeat (HuggingFace), images from Spotify oEmbed, and release dates from Deezer. Results cached in a shared persistent `data/metadata.duckdb`.
 - `test_main.py`: Integration test suite testing ingestion, multi-file uploads, and all active metric endpoints using pytest and FastAPI TestClient.
 - `pyproject.toml`: Dependency specification managed by `uv`.
 
