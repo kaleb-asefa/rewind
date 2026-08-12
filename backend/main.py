@@ -166,37 +166,43 @@ def _run_enrichment(session_conn) -> dict:
 async def get_enrichment_status():
     """Check metadata cache stats."""
     def query():
-        meta_conn = get_metadata_conn()
         try:
-            track_count = meta_conn.execute(
-                "SELECT count(*) FROM track_metadata"
-            ).fetchone()[0]
-            with_images = meta_conn.execute(
-                "SELECT count(*) FROM track_metadata WHERE image_url IS NOT NULL"
-            ).fetchone()[0]
-            with_dates = meta_conn.execute(
-                "SELECT count(*) FROM track_metadata WHERE release_date IS NOT NULL"
-            ).fetchone()[0]
-            with_genre = meta_conn.execute(
-                "SELECT count(*) FROM track_metadata WHERE genre IS NOT NULL"
-            ).fetchone()[0]
-            artist_count = meta_conn.execute(
-                "SELECT count(*) FROM artist_metadata"
-            ).fetchone()[0]
-            album_count = meta_conn.execute(
-                "SELECT count(*) FROM album_metadata"
-            ).fetchone()[0]
-            return {
-                "status": "ok",
-                "tracks_cached": track_count,
-                "tracks_with_images": with_images,
-                "tracks_with_release_dates": with_dates,
-                "tracks_with_genre": with_genre,
-                "artists_cached": artist_count,
-                "albums_cached": album_count,
-            }
-        finally:
-            meta_conn.close()
+            meta_conn = get_metadata_conn(read_only=True)
+            try:
+                track_count = meta_conn.execute(
+                    "SELECT count(*) FROM track_metadata"
+                ).fetchone()[0]
+                with_images = meta_conn.execute(
+                    "SELECT count(*) FROM track_metadata WHERE image_url IS NOT NULL"
+                ).fetchone()[0]
+                with_dates = meta_conn.execute(
+                    "SELECT count(*) FROM track_metadata WHERE release_date IS NOT NULL"
+                ).fetchone()[0]
+                with_genre = meta_conn.execute(
+                    "SELECT count(*) FROM track_metadata WHERE genre IS NOT NULL"
+                ).fetchone()[0]
+                artist_count = meta_conn.execute(
+                    "SELECT count(*) FROM artist_metadata"
+                ).fetchone()[0]
+                album_count = meta_conn.execute(
+                    "SELECT count(*) FROM album_metadata"
+                ).fetchone()[0]
+                return {
+                    "status": "ok",
+                    "tracks_cached": track_count,
+                    "tracks_with_images": with_images,
+                    "tracks_with_release_dates": with_dates,
+                    "tracks_with_genre": with_genre,
+                    "artists_cached": artist_count,
+                    "albums_cached": album_count,
+                }
+            finally:
+                meta_conn.close()
+        except Exception as e:
+            logger.error(f"Failed to get enrichment status: {e}", exc_info=True)
+            return {"status": "error", "message": str(e)}
+
+    return await run_in_threadpool(query)
 
     return await run_in_threadpool(query)
 
