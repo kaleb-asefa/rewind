@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import logging
+from multiprocessing import get_context
 import os
-from queue import Queue
+from queue import Empty, Queue
 import shutil
 import tempfile
 from threading import Event, Lock, Thread
@@ -11,15 +12,10 @@ from uuid import uuid4
 import duckdb
 from config import settings
 from database import DB_PATH, get_db, lifespan as database_lifespan, table_registry
+from enrichment_worker import run_metadata_enrichment
 from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from load import (
-    enrich_audio_features,
-    enrich_images,
-    enrich_release_dates,
-    get_metadata_conn,
-    seed_metadata_cache,
-)
+from load import get_metadata_conn, seed_metadata_cache
 from sqlalchemy import func, select
 from sqlalchemy.engine import Connection
 from starlette.concurrency import run_in_threadpool
@@ -35,6 +31,7 @@ async def lifespan(app: FastAPI):
         app.state.enrichment_lock = Lock()
         app.state.enrichment_queue = Queue()
         app.state.enrichment_stop = Event()
+        app.state.enrichment_process = None
         worker = Thread(
             target=_enrichment_worker_loop,
             args=(app,),
@@ -42,12 +39,17 @@ async def lifespan(app: FastAPI):
             daemon=True,
         )
         worker.start()
+        _queue_existing_session(app)
         try:
             yield
         finally:
             app.state.enrichment_stop.set()
             app.state.enrichment_queue.put(None)
-            worker.join(timeout=2)
+            worker.join(timeout=5)
+            process = app.state.enrichment_process
+            if process and process.is_alive():
+                process.terminate()
+                process.join(timeout=2)
 
 
 app = FastAPI(title="Rewind API", lifespan=lifespan)
@@ -102,29 +104,62 @@ def _latest_enrichment_job(app: FastAPI) -> dict | None:
         return dict(app.state.enrichment_jobs[job_id])
 
 
-def _metadata_cache_summary(meta_conn) -> dict:
-    row = meta_conn.execute("""
-        SELECT
-            count(*) AS tracks_cached,
-            count(image_url) AS tracks_with_images,
-            count(release_date) AS tracks_with_release_dates,
-            count(genre) AS tracks_with_genre
-        FROM track_metadata
-    """).fetchone()
-    artist_count = meta_conn.execute(
-        "SELECT count(*) FROM artist_metadata"
-    ).fetchone()[0]
-    album_count = meta_conn.execute(
-        "SELECT count(*) FROM album_metadata"
-    ).fetchone()[0]
-    return {
-        "tracks_cached": row[0],
-        "tracks_with_images": row[1],
-        "tracks_with_release_dates": row[2],
-        "tracks_with_genre": row[3],
-        "artists_cached": artist_count,
-        "albums_cached": album_count,
+def _queue_enrichment_job(
+    app: FastAPI,
+    *,
+    files_processed: int,
+    total_rows: int,
+    source: str,
+) -> str:
+    job_id = str(uuid4())
+    now = _utc_now()
+    job = {
+        "job_id": job_id,
+        "status": "queued",
+        "phase": "queued",
+        "source": source,
+        "files_processed": files_processed,
+        "total_rows": total_rows,
+        "created_at": now,
+        "updated_at": now,
+        "stats": {},
     }
+    with app.state.enrichment_lock:
+        app.state.enrichment_jobs[job_id] = job
+        app.state.latest_enrichment_job_id = job_id
+    app.state.enrichment_queue.put(job_id)
+    return job_id
+
+
+def _queue_existing_session(app: FastAPI) -> None:
+    try:
+        with app.state.engine.connect() as connection:
+            table_exists = connection.exec_driver_sql("""
+                SELECT count(*)
+                FROM information_schema.tables
+                WHERE table_name = 'history'
+            """).scalar()
+            if not table_exists:
+                return
+            total_rows = connection.exec_driver_sql(
+                "SELECT count(*) FROM history"
+            ).scalar()
+    except Exception:
+        logger.exception("Could not inspect the existing session for enrichment")
+        return
+
+    if total_rows:
+        _queue_enrichment_job(
+            app,
+            files_processed=0,
+            total_rows=total_rows,
+            source="startup_recovery",
+        )
+
+
+def _apply_enrichment_message(app: FastAPI, job_id: str, message: dict) -> None:
+    message.pop("job_id", None)
+    _update_enrichment_job(app, job_id, **message)
 
 
 def _run_enrichment_job(app: FastAPI, job_id: str) -> None:
@@ -143,50 +178,71 @@ def _run_enrichment_job(app: FastAPI, job_id: str) -> None:
             meta_conn = get_metadata_conn()
             try:
                 stats["seeded"] = seed_metadata_cache(session_conn, meta_conn)
-                _update_enrichment_job(
-                    app,
-                    job_id,
-                    phase="audio_features",
-                    stats=dict(stats),
-                )
-
-                stats["audio_features"] = enrich_audio_features(
-                    session_conn,
-                    meta_conn,
-                    settings.hf_token,
-                )
-                _update_enrichment_job(
-                    app,
-                    job_id,
-                    phase="images",
-                    stats=dict(stats),
-                )
-
-                stats["images"] = enrich_images(session_conn, meta_conn)
-                _update_enrichment_job(
-                    app,
-                    job_id,
-                    phase="release_dates",
-                    stats=dict(stats),
-                )
-
-                stats["release_dates"] = enrich_release_dates(
-                    session_conn,
-                    meta_conn,
-                )
-                cache = _metadata_cache_summary(meta_conn)
             finally:
                 meta_conn.close()
+
+        if app.state.enrichment_stop.is_set():
+            return
 
         _update_enrichment_job(
             app,
             job_id,
-            status="complete",
-            phase="complete",
-            stats=stats,
-            cache=cache,
-            completed_at=_utc_now(),
+            phase="audio_features",
+            stats=dict(stats),
         )
+
+        context = get_context("spawn")
+        status_queue = context.Queue()
+        process = context.Process(
+            target=run_metadata_enrichment,
+            args=(job_id, settings.hf_token, status_queue, stats),
+            name=f"rewind-enrichment-{job_id[:8]}",
+            daemon=True,
+        )
+        app.state.enrichment_process = process
+        process.start()
+
+        final_message_received = False
+        while process.is_alive():
+            if app.state.enrichment_stop.is_set():
+                process.terminate()
+                break
+            try:
+                message = status_queue.get(timeout=0.5)
+            except Empty:
+                continue
+            _apply_enrichment_message(app, job_id, message)
+            final_message_received = message.get("status") in {"complete", "error"}
+
+        process.join(timeout=2)
+        while True:
+            try:
+                message = status_queue.get_nowait()
+            except Empty:
+                break
+            _apply_enrichment_message(app, job_id, message)
+            final_message_received = message.get("status") in {"complete", "error"}
+
+        status_queue.close()
+        app.state.enrichment_process = None
+
+        if app.state.enrichment_stop.is_set():
+            _update_enrichment_job(
+                app,
+                job_id,
+                status="cancelled",
+                phase="cancelled",
+                completed_at=_utc_now(),
+            )
+        elif process.exitcode != 0 and not final_message_received:
+            _update_enrichment_job(
+                app,
+                job_id,
+                status="error",
+                phase="error",
+                error=f"Metadata worker exited unexpectedly with code {process.exitcode}.",
+                completed_at=_utc_now(),
+            )
     except Exception as exc:
         logger.exception("Metadata enrichment job %s failed", job_id)
         _update_enrichment_job(
@@ -198,6 +254,8 @@ def _run_enrichment_job(app: FastAPI, job_id: str) -> None:
             stats=stats,
             completed_at=_utc_now(),
         )
+    finally:
+        app.state.enrichment_process = None
 
 
 def _enrichment_worker_loop(app: FastAPI) -> None:
@@ -303,22 +361,12 @@ async def upload(
             status_code=500, detail=f"Failed to ingest JSON into DuckDB: {str(e)}"
         )
 
-    job_id = str(uuid4())
-    now = _utc_now()
-    job = {
-        "job_id": job_id,
-        "status": "queued",
-        "phase": "queued",
-        "files_processed": result["files_processed"],
-        "total_rows": result["total_rows"],
-        "created_at": now,
-        "updated_at": now,
-        "stats": {},
-    }
-    with request.app.state.enrichment_lock:
-        request.app.state.enrichment_jobs[job_id] = job
-        request.app.state.latest_enrichment_job_id = job_id
-    request.app.state.enrichment_queue.put(job_id)
+    job_id = _queue_enrichment_job(
+        request.app,
+        files_processed=result["files_processed"],
+        total_rows=result["total_rows"],
+        source="upload",
+    )
 
     result["enrichment"] = {
         "status": "queued",

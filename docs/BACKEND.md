@@ -12,7 +12,7 @@ Implementation active in `backend/`. FastAPI + DuckDB + SQLAlchemy Core engine s
 - **Engine Lifecycle:** FastAPI `lifespan` context manager manages engine instance (`app.state.engine`); request-scoped connections yielded via `Depends(get_db)`.
 - **Table Reflection:** Managed lazily by `TableRegistry` in `database.py` and reset post-upload (`table_registry.reset()`).
 - **Async Concurrency:** Blocking database query operations are offloaded to worker threads via FastAPI's `run_in_threadpool` to prevent event-loop blocking.
-- **Enrichment Queue:** A single daemon worker processes metadata jobs serially so uploads return after ingestion and concurrent jobs never compete for `metadata.duckdb` writes.
+- **Enrichment Queue:** A coordinator thread processes jobs serially and launches external metadata work in a spawned child process. Uploads return after ingestion, concurrent jobs never compete for `metadata.duckdb`, and memory pressure in an Embeat scan cannot terminate the API process.
 
 ### Ingestion & Schema Normalization
 
@@ -103,7 +103,7 @@ After upload, the backend automatically enriches listening history with song met
 2. Fetch release dates via Deezer search for tracks missing `release_date`
 3. Populate `artist_metadata` and `album_metadata` tables
 
-The Overview page polls `/api/ingestion-status` every two seconds while visible. Its compact ingestion monitor shows live session-table totals, recent streams, and the current enrichment phase without requiring DuckDB UI access.
+The Overview page polls `/api/ingestion-status` every two seconds during active enrichment and every ten seconds while idle. Its compact ingestion monitor shows live session-table totals, recent streams, and the current enrichment phase without requiring DuckDB UI access.
 
 ### Cache Efficiency
 

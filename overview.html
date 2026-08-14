@@ -231,12 +231,12 @@
 </div>
 </div>
 </section>
-<!-- Live Ingestion Monitor -->
+<!-- Live Pipeline Monitor -->
 <section id="ingestion-monitor" class="flex flex-col gap-3" aria-labelledby="ingestion-monitor-title">
 <div class="flex flex-wrap items-end justify-between gap-3">
 <div>
-<h2 id="ingestion-monitor-title" class="text-lg font-bold text-on-surface">Data Ingestion</h2>
-<p id="ingestion-summary" class="text-body-sm font-body-sm text-on-surface-variant">Checking session data...</p>
+<h2 id="ingestion-monitor-title" class="text-lg font-bold text-on-surface">Ingestion &amp; Metadata Pipeline</h2>
+<p id="ingestion-summary" class="text-body-sm font-body-sm text-on-surface-variant">Checking DuckDB pipeline...</p>
 </div>
 <div class="flex items-center gap-2 rounded-full bg-surface-container px-3 py-1.5" role="status" aria-live="polite">
 <span id="ingestion-status-dot" class="h-2 w-2 rounded-full bg-secondary"></span>
@@ -244,33 +244,60 @@
 </div>
 </div>
 <div class="glass-card overflow-hidden rounded-lg">
-<div class="grid grid-cols-1 divide-y divide-white/5 border-b border-white/5 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+<div class="grid grid-cols-2 divide-x divide-y divide-white/5 border-b border-white/5 lg:grid-cols-4 lg:divide-y-0">
 <div class="px-4 py-3">
-<div class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">History Rows</div>
+<div class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Rows Ingested</div>
 <div id="ingestion-total-rows" class="mt-1 text-lg font-bold text-on-surface">--</div>
+<div class="mt-1 text-[10px] text-on-surface-variant">Listening events in session DuckDB</div>
 </div>
 <div class="px-4 py-3">
-<div class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Unique Tracks</div>
+<div class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Tracks Detected</div>
 <div id="ingestion-unique-tracks" class="mt-1 text-lg font-bold text-on-surface">--</div>
+<div class="mt-1 text-[10px] text-on-surface-variant">Unique Spotify track IDs</div>
 </div>
 <div class="px-4 py-3">
-<div class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Latest Stream</div>
-<div id="ingestion-latest-stream" class="mt-1 text-sm font-bold text-on-surface">--</div>
+<div class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Features Loaded</div>
+<div id="ingestion-features-loaded" class="mt-1 text-lg font-bold text-on-surface">--</div>
+<div id="ingestion-features-detail" class="mt-1 text-[10px] text-on-surface-variant">Waiting for Embeat</div>
+</div>
+<div class="px-4 py-3">
+<div class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Background Stage</div>
+<div id="ingestion-stage" class="mt-1 text-sm font-bold text-on-surface">--</div>
+<div id="ingestion-stage-detail" class="mt-1 text-[10px] text-on-surface-variant">No active job</div>
 </div>
 </div>
-<div class="overflow-x-auto">
-<table class="w-full min-w-[640px] table-fixed text-left">
-<thead class="bg-surface-container-low text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+<div class="border-b border-white/5 px-4 py-3">
+<div class="mb-2 flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+<span id="ingestion-progress-label">Waiting for ingestion</span>
+<span id="ingestion-progress-value">0%</span>
+</div>
+<div class="h-1.5 overflow-hidden rounded-full bg-surface-container">
+<div id="ingestion-progress-bar" class="h-full w-0 bg-primary transition-[width] duration-500"></div>
+</div>
+</div>
+<div class="flex items-center justify-between gap-3 px-4 pb-2 pt-4">
+<div>
+<h3 class="text-sm font-bold text-on-surface">Loaded Track Features</h3>
+<p class="mt-0.5 text-[11px] text-on-surface-variant">Actual rows returned by Embeat and written to metadata.duckdb.</p>
+</div>
+<span id="ingestion-sample-count" class="shrink-0 text-[10px] font-bold uppercase tracking-wider text-primary">0 shown</span>
+</div>
+<div class="h-80 overflow-x-auto overflow-y-scroll overscroll-contain border-t border-white/5" tabindex="0" aria-label="Loaded track features table. Scroll vertically to inspect rows.">
+<table class="w-full min-w-[860px] table-fixed text-left">
+<thead class="sticky top-0 z-10 bg-surface-container-low text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
 <tr>
-<th class="w-40 px-4 py-2.5">Played</th>
-<th class="px-4 py-2.5">Track</th>
-<th class="px-4 py-2.5">Artist</th>
-<th class="w-28 px-4 py-2.5 text-right">Listening</th>
+<th class="w-56 px-4 py-2.5">Track</th>
+<th class="w-40 px-4 py-2.5">Genre</th>
+<th class="w-20 px-3 py-2.5 text-right">Pop.</th>
+<th class="w-24 px-3 py-2.5 text-right">Dance</th>
+<th class="w-24 px-3 py-2.5 text-right">Energy</th>
+<th class="w-24 px-3 py-2.5 text-right">Valence</th>
+<th class="w-24 px-4 py-2.5 text-right">Tempo</th>
 </tr>
 </thead>
-<tbody id="ingestion-recent-rows" class="divide-y divide-white/5 text-body-sm font-body-sm text-on-surface">
+<tbody id="ingestion-feature-rows" class="divide-y divide-white/5 text-body-sm font-body-sm text-on-surface">
 <tr>
-<td colspan="4" class="h-12 px-4 text-center text-on-surface-variant">Waiting for session data...</td>
+<td colspan="7" class="h-20 px-4 text-center text-on-surface-variant">Track features will appear here as Embeat batches are committed.</td>
 </tr>
 </tbody>
 </table>

@@ -2,11 +2,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const monitor = document.getElementById("ingestion-monitor");
   const totalRows = document.getElementById("ingestion-total-rows");
   const uniqueTracks = document.getElementById("ingestion-unique-tracks");
-  const latestStream = document.getElementById("ingestion-latest-stream");
+  const featuresLoaded = document.getElementById("ingestion-features-loaded");
+  const featuresDetail = document.getElementById("ingestion-features-detail");
+  const stage = document.getElementById("ingestion-stage");
+  const stageDetail = document.getElementById("ingestion-stage-detail");
   const summary = document.getElementById("ingestion-summary");
   const statusDot = document.getElementById("ingestion-status-dot");
   const statusText = document.getElementById("ingestion-status-text");
-  const recentRows = document.getElementById("ingestion-recent-rows");
+  const progressLabel = document.getElementById("ingestion-progress-label");
+  const progressValue = document.getElementById("ingestion-progress-value");
+  const progressBar = document.getElementById("ingestion-progress-bar");
+  const sampleCount = document.getElementById("ingestion-sample-count");
+  const featureRows = document.getElementById("ingestion-feature-rows");
 
   if (!monitor || !window.fetchWithTimeout) return;
 
@@ -18,9 +25,12 @@ document.addEventListener("DOMContentLoaded", () => {
     release_dates: "Loading release dates",
     complete: "Up to date",
     error: "Enrichment error",
+    cancelled: "Enrichment cancelled",
   };
 
   let requestInFlight = false;
+  let refreshTimer = null;
+  let refreshDelay = 10000;
 
   function setStatus(label, tone) {
     statusText.textContent = label;
@@ -45,24 +55,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }).format(date);
   }
 
-  function formatListeningTime(milliseconds) {
-    const totalSeconds = Math.max(0, Math.round((milliseconds || 0) / 1000));
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  function formatFeature(value) {
+    if (value === null || value === undefined) return "--";
+    return Number(value).toFixed(2);
   }
 
   function renderRows(rows) {
-    recentRows.replaceChildren();
+    featureRows.replaceChildren();
+    sampleCount.textContent = `${rows.length} shown`;
 
     if (!rows.length) {
       const row = document.createElement("tr");
       const cell = document.createElement("td");
-      cell.colSpan = 4;
-      cell.className = "h-12 px-4 text-center text-on-surface-variant";
-      cell.textContent = "No ingested tracks yet.";
+      cell.colSpan = 7;
+      cell.className = "h-20 px-4 text-center text-on-surface-variant";
+      cell.textContent = "Track features will appear here as Embeat batches are committed.";
       row.appendChild(cell);
-      recentRows.appendChild(row);
+      featureRows.appendChild(row);
       return;
     }
 
@@ -71,33 +80,67 @@ document.addEventListener("DOMContentLoaded", () => {
       row.className = "h-12 hover:bg-white/[0.02]";
 
       const values = [
-        formatTimestamp(item.ts),
         item.track_name || "Unknown track",
-        item.artist_name || "Unknown artist",
-        formatListeningTime(item.ms_played),
+        item.genre || "Unclassified",
+        item.popularity ?? "--",
+        formatFeature(item.danceability),
+        formatFeature(item.energy),
+        formatFeature(item.valence),
+        item.tempo === null || item.tempo === undefined
+          ? "--"
+          : `${Math.round(item.tempo)} BPM`,
       ];
 
       values.forEach((value, index) => {
         const cell = document.createElement("td");
-        cell.className = "truncate px-4 py-2.5";
-        if (index === 0) cell.classList.add("text-on-surface-variant");
-        if (index === 3) cell.classList.add("text-right", "font-bold");
+        cell.className = index < 2 ? "truncate px-4 py-2.5" : "px-3 py-2.5 text-right tabular-nums";
+        if (index === 0) cell.classList.add("font-bold");
+        if (index === 1) cell.classList.add("text-on-surface-variant");
         cell.textContent = value;
         cell.title = value;
         row.appendChild(cell);
       });
 
-      recentRows.appendChild(row);
+      featureRows.appendChild(row);
     });
+  }
+
+  function renderProgress(job, totalTrackCount) {
+    const audio = job?.stats?.audio_features || {};
+    const matched = Number(audio.matched || 0);
+    const processed = Number(audio.processed || 0);
+    const queried = Number(audio.queried || totalTrackCount || 0);
+    const percent = queried > 0 ? Math.min(100, Math.round((processed / queried) * 100)) : 0;
+
+    featuresLoaded.textContent = matched.toLocaleString();
+    featuresDetail.textContent = queried
+      ? `${processed.toLocaleString()} of ${queried.toLocaleString()} checked`
+      : "Waiting for Embeat";
+    progressBar.style.width = `${percent}%`;
+    progressValue.textContent = `${percent}%`;
+    progressLabel.textContent = queried
+      ? `Audio features: ${matched.toLocaleString()} matches`
+      : "Waiting for feature scan";
+
+    if (!job) {
+      stage.textContent = "Idle";
+      stageDetail.textContent = "No background job";
+    } else {
+      stage.textContent = phaseLabels[job.phase] || job.phase;
+      stageDetail.textContent = job.status === "error"
+        ? job.error || "Worker stopped"
+        : `Job ${job.job_id.slice(0, 8)}`;
+    }
+
+    renderRows(job?.feature_samples || []);
   }
 
   function renderStatus(data) {
     totalRows.textContent = Number(data.total_rows || 0).toLocaleString();
     uniqueTracks.textContent = Number(data.unique_tracks || 0).toLocaleString();
-    latestStream.textContent = formatTimestamp(data.latest_stream);
 
-    if (data.first_stream && data.latest_stream) {
-      summary.textContent = `${formatTimestamp(data.first_stream)} to ${formatTimestamp(data.latest_stream)}`;
+    if (data.total_rows) {
+      summary.textContent = `${Number(data.total_rows).toLocaleString()} listening rows are available for analytics. Metadata continues in the background.`;
     } else {
       summary.textContent = "Session database is ready for an upload.";
     }
@@ -105,15 +148,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const job = data.enrichment;
     if (!job) {
       setStatus(data.status === "ok" ? "Ingestion ready" : "Waiting for data", "success");
+      refreshDelay = 10000;
     } else if (job.status === "error") {
       setStatus(phaseLabels.error, "error");
+      refreshDelay = 10000;
     } else if (job.status === "complete") {
       setStatus(phaseLabels.complete, "success");
+      refreshDelay = 10000;
     } else {
       setStatus(phaseLabels[job.phase] || "Enriching metadata", "pending");
+      refreshDelay = 2000;
     }
 
-    renderRows(data.recent_rows || []);
+    renderProgress(job, data.unique_tracks);
   }
 
   async function refresh() {
@@ -135,18 +182,25 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } finally {
       requestInFlight = false;
+      scheduleRefresh();
     }
+  }
+
+  function scheduleRefresh(delay = refreshDelay) {
+    window.clearTimeout(refreshTimer);
+    refreshTimer = window.setTimeout(refreshWhenVisible, delay);
   }
 
   function refreshWhenVisible() {
     const overview = document.getElementById("view-overview");
     if (!document.hidden && (!overview || !overview.classList.contains("hidden"))) {
       refresh();
+    } else {
+      scheduleRefresh();
     }
   }
 
   refreshWhenVisible();
-  window.setInterval(refreshWhenVisible, 2000);
-  window.addEventListener("rewind:data-updated", refreshWhenVisible);
-  document.addEventListener("visibilitychange", refreshWhenVisible);
+  window.addEventListener("rewind:data-updated", () => scheduleRefresh(0));
+  document.addEventListener("visibilitychange", () => scheduleRefresh(0));
 });

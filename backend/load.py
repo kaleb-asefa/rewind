@@ -45,8 +45,8 @@ DEEZER_ALBUM_URL = "https://api.deezer.com/album"
 OEMBED_DELAY = 0.1  # 10 req/sec
 DEEZER_DELAY = 0.1  # 10 req/sec (official: 50/5s)
 
-# Batch size for DuckDB IN clause
-BATCH_SIZE = 500
+# A larger batch avoids repeatedly scanning the 45M-row remote dataset.
+BATCH_SIZE = 5000
 
 
 # ---------------------------------------------------------------------------
@@ -122,69 +122,55 @@ def seed_metadata_cache(
     from session history so that all tracks/artists/albums are registered even if
     external API calls fail or are skipped.
     """
-    stats = {"tracks_seeded": 0, "artists_seeded": 0, "albums_seeded": 0}
+    tracks = session_conn.execute("""
+        SELECT DISTINCT
+            REPLACE(track_uri, 'spotify:track:', '') AS track_id,
+            track_name,
+            artist_name
+        FROM history
+        WHERE track_uri LIKE 'spotify:track:%'
+          AND track_name IS NOT NULL
+    """).fetchall()
+    artists = session_conn.execute("""
+        SELECT DISTINCT artist_name
+        FROM history
+        WHERE artist_name IS NOT NULL
+    """).fetchall()
+    albums = session_conn.execute("""
+        SELECT DISTINCT album_name, artist_name
+        FROM history
+        WHERE album_name IS NOT NULL AND artist_name IS NOT NULL
+    """).fetchall()
 
-    # 1. Seed tracks
     try:
-        tracks = session_conn.execute("""
-            SELECT DISTINCT
-                REPLACE(track_uri, 'spotify:track:', '') AS track_id,
-                track_name,
-                artist_name
-            FROM history
-            WHERE track_uri LIKE 'spotify:track:%'
-              AND track_name IS NOT NULL
-        """).fetchall()
+        meta_conn.execute("BEGIN TRANSACTION")
+        meta_conn.executemany("""
+            INSERT INTO track_metadata (track_id, track_name, artist_name)
+            VALUES (?, ?, ?)
+            ON CONFLICT (track_id) DO UPDATE SET
+                track_name = COALESCE(track_metadata.track_name, EXCLUDED.track_name),
+                artist_name = COALESCE(track_metadata.artist_name, EXCLUDED.artist_name)
+        """, tracks)
+        meta_conn.executemany("""
+            INSERT INTO artist_metadata (artist_name)
+            VALUES (?)
+            ON CONFLICT (artist_name) DO NOTHING
+        """, artists)
+        meta_conn.executemany("""
+            INSERT INTO album_metadata (album_name, artist_name)
+            VALUES (?, ?)
+            ON CONFLICT (album_name, artist_name) DO NOTHING
+        """, albums)
+        meta_conn.execute("COMMIT")
+    except Exception:
+        meta_conn.execute("ROLLBACK")
+        raise
 
-        for track_id, track_name, artist_name in tracks:
-            res = meta_conn.execute("""
-                INSERT INTO track_metadata (track_id, track_name, artist_name)
-                VALUES (?, ?, ?)
-                ON CONFLICT (track_id) DO UPDATE SET
-                    track_name = COALESCE(track_metadata.track_name, EXCLUDED.track_name),
-                    artist_name = COALESCE(track_metadata.artist_name, EXCLUDED.artist_name)
-            """, [track_id, track_name, artist_name])
-            stats["tracks_seeded"] += 1
-    except Exception as e:
-        logger.error(f"Error seeding track_metadata: {e}")
-
-    # 2. Seed artists
-    try:
-        artists = session_conn.execute("""
-            SELECT DISTINCT artist_name
-            FROM history
-            WHERE artist_name IS NOT NULL
-        """).fetchall()
-
-        for (artist_name,) in artists:
-            meta_conn.execute("""
-                INSERT INTO artist_metadata (artist_name)
-                VALUES (?)
-                ON CONFLICT (artist_name) DO NOTHING
-            """, [artist_name])
-            stats["artists_seeded"] += 1
-    except Exception as e:
-        logger.error(f"Error seeding artist_metadata: {e}")
-
-    # 3. Seed albums
-    try:
-        albums = session_conn.execute("""
-            SELECT DISTINCT album_name, artist_name
-            FROM history
-            WHERE album_name IS NOT NULL AND artist_name IS NOT NULL
-        """).fetchall()
-
-        for album_name, artist_name in albums:
-            meta_conn.execute("""
-                INSERT INTO album_metadata (album_name, artist_name)
-                VALUES (?, ?)
-                ON CONFLICT (album_name, artist_name) DO NOTHING
-            """, [album_name, artist_name])
-            stats["albums_seeded"] += 1
-    except Exception as e:
-        logger.error(f"Error seeding album_metadata: {e}")
-
-    return stats
+    return {
+        "tracks_seeded": len(tracks),
+        "artists_seeded": len(artists),
+        "albums_seeded": len(albums),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -222,9 +208,9 @@ def _load_genre_map(hf_token: str | None = None) -> dict[int, str]:
 
 
 def enrich_audio_features(
-    session_conn: duckdb.DuckDBPyConnection,
     meta_conn: duckdb.DuckDBPyConnection,
     hf_token: str | None = None,
+    progress_callback=None,
 ) -> dict:
     """
     Phase 1: Query Embeat dataset via httpfs for audio features, duration, genre.
@@ -287,12 +273,16 @@ def enrich_audio_features(
     try:
         meta_conn.execute("INSTALL httpfs; LOAD httpfs;")
         meta_conn.execute("SET allow_asterisks_in_http_paths = true;")
+        meta_conn.execute("SET memory_limit = '768MB';")
+        meta_conn.execute("SET threads = 2;")
+        meta_conn.execute("SET preserve_insertion_order = false;")
     except Exception as e:
         logger.warning(f"Failed to configure DuckDB httpfs: {e}")
         return stats
 
     parquet_sources = ", ".join(f"'{url}'" for url in resolved_sources)
     total_matched = 0
+    feature_samples = []
 
     for i in range(0, len(missing_ids), BATCH_SIZE):
         batch = missing_ids[i : i + BATCH_SIZE]
@@ -366,13 +356,28 @@ def enrich_audio_features(
                 genre, track_id
             ])
             total_matched += 1
+            if len(feature_samples) < 50:
+                feature_samples.append({
+                    "track_name": track_name,
+                    "genre": genre,
+                    "popularity": popularity,
+                    "duration_ms": duration_ms,
+                    "danceability": danceability,
+                    "energy": energy,
+                    "valence": valence,
+                    "tempo": tempo,
+                })
+
+        stats["matched"] = total_matched
+        stats["processed"] = min(i + len(batch), len(missing_ids))
+        if progress_callback:
+            progress_callback(dict(stats), list(feature_samples))
 
         logger.info(
             f"Embeat batch {i // BATCH_SIZE + 1}: "
             f"queried {len(batch)}, matched {len(rows)}"
         )
 
-    stats["matched"] = total_matched
     return stats
 
 
@@ -424,7 +429,6 @@ def _fetch_deezer_artist_image(artist_name: str) -> str | None:
 
 
 def enrich_images(
-    session_conn: duckdb.DuckDBPyConnection,
     meta_conn: duckdb.DuckDBPyConnection,
 ) -> dict:
     """
@@ -526,7 +530,6 @@ def _fetch_deezer_release_date(
 
 
 def enrich_release_dates(
-    session_conn: duckdb.DuckDBPyConnection,
     meta_conn: duckdb.DuckDBPyConnection,
 ) -> dict:
     """
@@ -599,15 +602,15 @@ def enrich_all(
 
         # Phase 1: Bulk audio features from Embeat (fast)
         logger.info("Phase 1: Enriching audio features from Embeat...")
-        audio_stats = enrich_audio_features(session_conn, meta_conn, hf_token)
+        audio_stats = enrich_audio_features(meta_conn, hf_token)
 
         # Phase 2a: Images from Spotify oEmbed & Deezer Artist API
         logger.info("Phase 2a: Enriching images...")
-        image_stats = enrich_images(session_conn, meta_conn)
+        image_stats = enrich_images(meta_conn)
 
         # Phase 2b: Release dates from Deezer
         logger.info("Phase 2b: Enriching release dates...")
-        date_stats = enrich_release_dates(session_conn, meta_conn)
+        date_stats = enrich_release_dates(meta_conn)
 
         return {
             "seeded": seed_stats,

@@ -9,6 +9,9 @@ import main
 from database import table_registry
 from main import app
 
+run_enrichment_job = main._run_enrichment_job
+
+
 @pytest.fixture(autouse=True)
 def setup_and_teardown(tmp_path, monkeypatch):
     session_db_path = str(tmp_path / "rewind.duckdb")
@@ -106,6 +109,53 @@ def test_upload_queues_enrichment_and_exposes_live_ingestion_status():
         assert status_data["unique_tracks"] > 0
         assert len(status_data["recent_rows"]) == 5
         assert status_data["enrichment"]["job_id"] == upload_data["enrichment"]["job_id"]
+
+
+def test_enrichment_process_failure_does_not_stop_api(monkeypatch):
+    class FailedProcess:
+        exitcode = -9
+
+        def start(self):
+            pass
+
+        def is_alive(self):
+            return False
+
+        def join(self, timeout=None):
+            pass
+
+    class EmptyStatusQueue:
+        def get_nowait(self):
+            raise main.Empty
+
+        def close(self):
+            pass
+
+    class FailedProcessContext:
+        def Queue(self):
+            return EmptyStatusQueue()
+
+        def Process(self, **kwargs):
+            return FailedProcess()
+
+    monkeypatch.setattr(main, "get_context", lambda method: FailedProcessContext())
+
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            response = client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        job_id = response.json()["enrichment"]["job_id"]
+        run_enrichment_job(app, job_id)
+
+        enrichment_response = client.get("/api/enrichment-status")
+        assert enrichment_response.status_code == 200
+        assert enrichment_response.json()["status"] == "error"
+        assert "code -9" in enrichment_response.json()["job"]["error"]
+
+        ingestion_response = client.get("/api/ingestion-status?limit=1")
+        assert ingestion_response.status_code == 200
+        assert ingestion_response.json()["total_rows"] == 1480
 
 
 def test_top_artist_endpoint():
