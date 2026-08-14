@@ -88,6 +88,7 @@
     <link href="src/styles/main.css" rel="stylesheet"/>
     <script src="src/js/theme.js"></script>
     <script src="src/js/api.js" defer></script>
+    <script src="src/js/ingestion_status.js" defer></script>
     <script src="src/js/router.js" defer></script>
     <script src="src/js/spotlight.js" defer></script>
     <script src="src/js/heatmap.js" defer></script>
@@ -227,6 +228,52 @@
 <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
 <span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">play_circle</span>
 </div>
+</div>
+</div>
+</section>
+<!-- Live Ingestion Monitor -->
+<section id="ingestion-monitor" class="flex flex-col gap-3" aria-labelledby="ingestion-monitor-title">
+<div class="flex flex-wrap items-end justify-between gap-3">
+<div>
+<h2 id="ingestion-monitor-title" class="text-lg font-bold text-on-surface">Data Ingestion</h2>
+<p id="ingestion-summary" class="text-body-sm font-body-sm text-on-surface-variant">Checking session data...</p>
+</div>
+<div class="flex items-center gap-2 rounded-full bg-surface-container px-3 py-1.5" role="status" aria-live="polite">
+<span id="ingestion-status-dot" class="h-2 w-2 rounded-full bg-secondary"></span>
+<span id="ingestion-status-text" class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Connecting</span>
+</div>
+</div>
+<div class="glass-card overflow-hidden rounded-lg">
+<div class="grid grid-cols-1 divide-y divide-white/5 border-b border-white/5 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+<div class="px-4 py-3">
+<div class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">History Rows</div>
+<div id="ingestion-total-rows" class="mt-1 text-lg font-bold text-on-surface">--</div>
+</div>
+<div class="px-4 py-3">
+<div class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Unique Tracks</div>
+<div id="ingestion-unique-tracks" class="mt-1 text-lg font-bold text-on-surface">--</div>
+</div>
+<div class="px-4 py-3">
+<div class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Latest Stream</div>
+<div id="ingestion-latest-stream" class="mt-1 text-sm font-bold text-on-surface">--</div>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full min-w-[640px] table-fixed text-left">
+<thead class="bg-surface-container-low text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+<tr>
+<th class="w-40 px-4 py-2.5">Played</th>
+<th class="px-4 py-2.5">Track</th>
+<th class="px-4 py-2.5">Artist</th>
+<th class="w-28 px-4 py-2.5 text-right">Listening</th>
+</tr>
+</thead>
+<tbody id="ingestion-recent-rows" class="divide-y divide-white/5 text-body-sm font-body-sm text-on-surface">
+<tr>
+<td colspan="4" class="h-12 px-4 text-center text-on-surface-variant">Waiting for session data...</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </section>

@@ -3,18 +3,23 @@ import duckdb
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select, func
+import database
+import load
+import main
 from database import table_registry
-from main import app, DB_PATH
+from main import app
 
 @pytest.fixture(autouse=True)
-def setup_and_teardown():
+def setup_and_teardown(tmp_path, monkeypatch):
+    session_db_path = str(tmp_path / "rewind.duckdb")
+    metadata_db_path = str(tmp_path / "metadata.duckdb")
+    monkeypatch.setattr(database, "DB_PATH", session_db_path)
+    monkeypatch.setattr(main, "DB_PATH", session_db_path)
+    monkeypatch.setattr(load, "METADATA_DB_PATH", metadata_db_path)
+    monkeypatch.setattr(main, "_run_enrichment_job", lambda app, job_id: None)
     table_registry.reset()
-    if os.path.exists(DB_PATH):
-        os.remove(DB_PATH)
     yield
     table_registry.reset()
-    if os.path.exists(DB_PATH):
-        os.remove(DB_PATH)
 
 def test_upload_and_sqlalchemy_core_query():
     with TestClient(app) as client:
@@ -80,6 +85,27 @@ def test_multi_file_upload():
         assert res_data["status"] == "ok"
         assert res_data["files_processed"] == 2
         assert res_data["total_rows"] == 17648
+
+
+def test_upload_queues_enrichment_and_exposes_live_ingestion_status():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            response = client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        assert response.status_code == 200
+        upload_data = response.json()
+        assert upload_data["enrichment"]["status"] == "queued"
+        assert upload_data["enrichment"]["job_id"]
+
+        status_response = client.get("/api/ingestion-status?limit=5")
+        assert status_response.status_code == 200
+        status_data = status_response.json()
+        assert status_data["status"] == "ok"
+        assert status_data["total_rows"] == 1480
+        assert status_data["unique_tracks"] > 0
+        assert len(status_data["recent_rows"]) == 5
+        assert status_data["enrichment"]["job_id"] == upload_data["enrichment"]["job_id"]
 
 
 def test_top_artist_endpoint():

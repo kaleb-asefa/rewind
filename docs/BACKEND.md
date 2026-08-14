@@ -12,6 +12,7 @@ Implementation active in `backend/`. FastAPI + DuckDB + SQLAlchemy Core engine s
 - **Engine Lifecycle:** FastAPI `lifespan` context manager manages engine instance (`app.state.engine`); request-scoped connections yielded via `Depends(get_db)`.
 - **Table Reflection:** Managed lazily by `TableRegistry` in `database.py` and reset post-upload (`table_registry.reset()`).
 - **Async Concurrency:** Blocking database query operations are offloaded to worker threads via FastAPI's `run_in_threadpool` to prevent event-loop blocking.
+- **Enrichment Queue:** A single daemon worker processes metadata jobs serially so uploads return after ingestion and concurrent jobs never compete for `metadata.duckdb` writes.
 
 ### Ingestion & Schema Normalization
 
@@ -21,12 +22,15 @@ On upload (`POST /api/upload`), the backend ingests single or multiple Spotify E
 3. Fields present in the export are safely converted via `TRY_CAST({col} AS {dtype})`, while missing schema fields default to `CAST(NULL AS {dtype})`.
 4. The schema-normalized dataset is appended into the `history` table.
 5. `table_registry.reset()` is invoked so reflected tables pick up new data cleanly.
+6. A metadata job is queued and processed after the upload response is returned.
 
 ### Querying & Active Metric Endpoints
 
 Everything after ingestion — column selection, filters, dashboard queries — goes through SQLAlchemy Core against the reflected `history` table, executed asynchronously via `run_in_threadpool`:
 
-- **`POST /api/upload`**: Accepts single (`file`) or multiple (`files`) JSON exports; ingests data and returns total row count.
+- **`POST /api/upload`**: Accepts single (`file`) or multiple (`files`) JSON exports; ingests data, queues metadata enrichment, and immediately returns the total row count plus an enrichment job ID.
+- **`GET /api/ingestion-status`**: Returns live `history` row totals, unique-track count, stream date range, recent rows, and the latest enrichment job state.
+- **`GET /api/enrichment-status`**: Returns the current background phase while a job is active and cache totals after it finishes.
 - **`GET /api/metrics/total-time`**: Sums `ms_played` and converts to total minutes listening time.
 - **`GET /api/metrics/top-artist`**: Aggregates streams and total listened minutes grouped by `artist_name`, returning top artist.
 - **`GET /api/metrics/top-album`**: Aggregates streams and total listened minutes grouped by `album_name` & `artist_name`, returning top album.
@@ -75,7 +79,7 @@ The frontend communicates with FastAPI endpoints via `src/js/api.js`:
 
 ## Metadata Enrichment Pipeline (`load.py`)
 
-After upload, the backend automatically enriches listening history with song metadata (duration, audio features, genre, images, release dates) from three external sources. Results are stored in a **shared persistent cache** (`data/metadata.duckdb`) that grows across users — popular tracks are fetched once and reused forever.
+After upload, the backend automatically enriches listening history with song metadata (duration, audio features, genre, images, release dates) from three external sources. Enrichment runs in a serialized background queue, so the dashboard is available as soon as ingestion finishes. Results are stored in a **shared persistent cache** (`data/metadata.duckdb`) that grows across users — popular tracks are fetched once and reused forever.
 
 ### Data Sources
 
@@ -85,19 +89,21 @@ After upload, the backend automatically enriches listening history with song met
 | **Spotify oEmbed API** | Track/artist/album images | None | ~10 req/sec (conservative) |
 | **Deezer API** | Album release dates | None | 50 req/5sec |
 
-### Two-Phase Enrichment
+### Background Enrichment Order
 
-**Phase 1 — Bulk metadata (fast, blocks):**
+**Phase 1 — Bulk metadata (highest priority):**
 1. Extract unique `track_id`s from `history.track_uri` (strip `spotify:track:` prefix)
 2. Check which IDs are already in `metadata.duckdb` (cache hit)
 3. Query Embeat Parquet files via DuckDB `httpfs` for cache misses only
 4. Resolve `artist_genre_idx` → genre name via `artist_genre_map.json`
 5. Insert into `track_metadata` table
 
-**Phase 2 — Images + dates (rate-limited):**
+**Phase 2 — Images + dates (lower priority, rate-limited):**
 1. Fetch track images via Spotify oEmbed for tracks missing `image_url`
 2. Fetch release dates via Deezer search for tracks missing `release_date`
 3. Populate `artist_metadata` and `album_metadata` tables
+
+The Overview page polls `/api/ingestion-status` every two seconds while visible. Its compact ingestion monitor shows live session-table totals, recent streams, and the current enrichment phase without requiring DuckDB UI access.
 
 ### Cache Efficiency
 
@@ -133,5 +139,5 @@ Without a token, Phase 1 (audio features + genre) is skipped; Phase 2 (images + 
 - Session TTL and cleanup mechanism
 - Multi-session isolation / UUID per user session
 - Heatmap, most hated artist/track, active days, and unique songs metric endpoints
-- Background async Phase 2 enrichment (currently runs synchronously after upload)
+- Persist enrichment jobs across backend restarts (job state is currently process-local)
 - Artist image enrichment (requires artist Spotify IDs, not available in history data)

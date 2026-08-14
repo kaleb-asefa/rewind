@@ -1,19 +1,54 @@
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 import logging
 import os
+from queue import Queue
 import shutil
 import tempfile
+from threading import Event, Lock, Thread
+from uuid import uuid4
 
 import duckdb
 from config import settings
-from database import DB_PATH, get_db, lifespan, table_registry
-from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
+from database import DB_PATH, get_db, lifespan as database_lifespan, table_registry
+from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from load import enrich_all, get_metadata_conn
+from load import (
+    enrich_audio_features,
+    enrich_images,
+    enrich_release_dates,
+    get_metadata_conn,
+    seed_metadata_cache,
+)
 from sqlalchemy import func, select
 from sqlalchemy.engine import Connection
 from starlette.concurrency import run_in_threadpool
 
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with database_lifespan(app):
+        app.state.enrichment_jobs = {}
+        app.state.latest_enrichment_job_id = None
+        app.state.enrichment_lock = Lock()
+        app.state.enrichment_queue = Queue()
+        app.state.enrichment_stop = Event()
+        worker = Thread(
+            target=_enrichment_worker_loop,
+            args=(app,),
+            name="rewind-enrichment",
+            daemon=True,
+        )
+        worker.start()
+        try:
+            yield
+        finally:
+            app.state.enrichment_stop.set()
+            app.state.enrichment_queue.put(None)
+            worker.join(timeout=2)
+
 
 app = FastAPI(title="Rewind API", lifespan=lifespan)
 
@@ -46,6 +81,134 @@ MAPPING = [
     ("offline_timestamp", "offline_timestamp", "TIMESTAMP"),
     ("incognito_mode", "incognito_mode", "BOOLEAN"),
 ]
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _update_enrichment_job(app: FastAPI, job_id: str, **updates) -> None:
+    with app.state.enrichment_lock:
+        job = app.state.enrichment_jobs[job_id]
+        job.update(updates)
+        job["updated_at"] = _utc_now()
+
+
+def _latest_enrichment_job(app: FastAPI) -> dict | None:
+    with app.state.enrichment_lock:
+        job_id = app.state.latest_enrichment_job_id
+        if not job_id:
+            return None
+        return dict(app.state.enrichment_jobs[job_id])
+
+
+def _metadata_cache_summary(meta_conn) -> dict:
+    row = meta_conn.execute("""
+        SELECT
+            count(*) AS tracks_cached,
+            count(image_url) AS tracks_with_images,
+            count(release_date) AS tracks_with_release_dates,
+            count(genre) AS tracks_with_genre
+        FROM track_metadata
+    """).fetchone()
+    artist_count = meta_conn.execute(
+        "SELECT count(*) FROM artist_metadata"
+    ).fetchone()[0]
+    album_count = meta_conn.execute(
+        "SELECT count(*) FROM album_metadata"
+    ).fetchone()[0]
+    return {
+        "tracks_cached": row[0],
+        "tracks_with_images": row[1],
+        "tracks_with_release_dates": row[2],
+        "tracks_with_genre": row[3],
+        "artists_cached": artist_count,
+        "albums_cached": album_count,
+    }
+
+
+def _run_enrichment_job(app: FastAPI, job_id: str) -> None:
+    stats = {}
+    try:
+        _update_enrichment_job(
+            app,
+            job_id,
+            status="processing",
+            phase="seeding_cache",
+            started_at=_utc_now(),
+        )
+
+        with app.state.engine.connect() as connection:
+            session_conn = connection.connection.driver_connection
+            meta_conn = get_metadata_conn()
+            try:
+                stats["seeded"] = seed_metadata_cache(session_conn, meta_conn)
+                _update_enrichment_job(
+                    app,
+                    job_id,
+                    phase="audio_features",
+                    stats=dict(stats),
+                )
+
+                stats["audio_features"] = enrich_audio_features(
+                    session_conn,
+                    meta_conn,
+                    settings.hf_token,
+                )
+                _update_enrichment_job(
+                    app,
+                    job_id,
+                    phase="images",
+                    stats=dict(stats),
+                )
+
+                stats["images"] = enrich_images(session_conn, meta_conn)
+                _update_enrichment_job(
+                    app,
+                    job_id,
+                    phase="release_dates",
+                    stats=dict(stats),
+                )
+
+                stats["release_dates"] = enrich_release_dates(
+                    session_conn,
+                    meta_conn,
+                )
+                cache = _metadata_cache_summary(meta_conn)
+            finally:
+                meta_conn.close()
+
+        _update_enrichment_job(
+            app,
+            job_id,
+            status="complete",
+            phase="complete",
+            stats=stats,
+            cache=cache,
+            completed_at=_utc_now(),
+        )
+    except Exception as exc:
+        logger.exception("Metadata enrichment job %s failed", job_id)
+        _update_enrichment_job(
+            app,
+            job_id,
+            status="error",
+            phase="error",
+            error=str(exc),
+            stats=stats,
+            completed_at=_utc_now(),
+        )
+
+
+def _enrichment_worker_loop(app: FastAPI) -> None:
+    while not app.state.enrichment_stop.is_set():
+        job_id = app.state.enrichment_queue.get()
+        try:
+            if job_id is None:
+                return
+            _run_enrichment_job(app, job_id)
+        finally:
+            app.state.enrichment_queue.task_done()
 
 
 def _process_upload(conn: Connection, upload_list: list[UploadFile]):
@@ -108,6 +271,7 @@ def _process_upload(conn: Connection, upload_list: list[UploadFile]):
 
 @app.post("/api/upload")
 async def upload(
+    request: Request,
     file: UploadFile = File(None),
     files: list[UploadFile] = File(None),
     conn: Connection = Depends(get_db),
@@ -139,71 +303,113 @@ async def upload(
             status_code=500, detail=f"Failed to ingest JSON into DuckDB: {str(e)}"
         )
 
-    # Auto-enrich metadata after successful upload
-    try:
-        # Reuse the raw DuckDB driver connection from SQLAlchemy — opening a
-        # second duckdb.connect() to the same file conflicts with the existing
-        # engine connection's configuration.
-        raw_conn = conn.connection.driver_connection
-        enrich_stats = await run_in_threadpool(
-            _run_enrichment, raw_conn
-        )
-        result["enrichment"] = enrich_stats
-    except Exception as e:
-        logger.error(f"Metadata enrichment failed (non-fatal): {e}")
-        result["enrichment"] = {"status": "error", "detail": str(e)}
+    job_id = str(uuid4())
+    now = _utc_now()
+    job = {
+        "job_id": job_id,
+        "status": "queued",
+        "phase": "queued",
+        "files_processed": result["files_processed"],
+        "total_rows": result["total_rows"],
+        "created_at": now,
+        "updated_at": now,
+        "stats": {},
+    }
+    with request.app.state.enrichment_lock:
+        request.app.state.enrichment_jobs[job_id] = job
+        request.app.state.latest_enrichment_job_id = job_id
+    request.app.state.enrichment_queue.put(job_id)
+
+    result["enrichment"] = {
+        "status": "queued",
+        "job_id": job_id,
+    }
 
     return result
 
 
-def _run_enrichment(session_conn) -> dict:
-    """Run metadata enrichment using the existing session DB connection."""
-    return enrich_all(session_conn, hf_token=settings.hf_token)
-
-
 @app.get("/api/enrichment-status")
-async def get_enrichment_status():
-    """Check metadata cache stats."""
+async def get_enrichment_status(request: Request):
+    """Return the latest in-process enrichment state without locking the cache."""
+    job = _latest_enrichment_job(request.app)
+    if not job:
+        return {"status": "idle", "job": None}
+
+    return {
+        "status": job["status"],
+        **job.get("cache", {}),
+        "job": job,
+    }
+
+
+@app.get("/api/ingestion-status")
+async def get_ingestion_status(
+    request: Request,
+    limit: int = Query(default=5, ge=1, le=20),
+    conn: Connection = Depends(get_db),
+):
+    """Return live history-table totals and the latest ingested rows."""
     def query():
         try:
-            meta_conn = get_metadata_conn(read_only=True)
-            try:
-                track_count = meta_conn.execute(
-                    "SELECT count(*) FROM track_metadata"
-                ).fetchone()[0]
-                with_images = meta_conn.execute(
-                    "SELECT count(*) FROM track_metadata WHERE image_url IS NOT NULL"
-                ).fetchone()[0]
-                with_dates = meta_conn.execute(
-                    "SELECT count(*) FROM track_metadata WHERE release_date IS NOT NULL"
-                ).fetchone()[0]
-                with_genre = meta_conn.execute(
-                    "SELECT count(*) FROM track_metadata WHERE genre IS NOT NULL"
-                ).fetchone()[0]
-                artist_count = meta_conn.execute(
-                    "SELECT count(*) FROM artist_metadata"
-                ).fetchone()[0]
-                album_count = meta_conn.execute(
-                    "SELECT count(*) FROM album_metadata"
-                ).fetchone()[0]
+            history = table_registry.get_history_table(request.app.state.engine)
+        except HTTPException as exc:
+            if exc.status_code == 400:
                 return {
-                    "status": "ok",
-                    "tracks_cached": track_count,
-                    "tracks_with_images": with_images,
-                    "tracks_with_release_dates": with_dates,
-                    "tracks_with_genre": with_genre,
-                    "artists_cached": artist_count,
-                    "albums_cached": album_count,
+                    "status": "empty",
+                    "total_rows": 0,
+                    "unique_tracks": 0,
+                    "first_stream": None,
+                    "latest_stream": None,
+                    "recent_rows": [],
                 }
-            finally:
-                meta_conn.close()
-        except Exception as e:
-            logger.error(f"Failed to get enrichment status: {e}", exc_info=True)
-            return {"status": "error", "message": str(e)}
+            raise
 
-    return await run_in_threadpool(query)
+        summary = conn.execute(
+            select(
+                func.count().label("total_rows"),
+                func.count(func.distinct(history.c.track_uri)).label(
+                    "unique_tracks"
+                ),
+                func.min(history.c.ts).label("first_stream"),
+                func.max(history.c.ts).label("latest_stream"),
+            )
+        ).mappings().one()
 
-    return await run_in_threadpool(query)
+        rows = conn.execute(
+            select(
+                history.c.ts,
+                history.c.track_name,
+                history.c.artist_name,
+                history.c.ms_played,
+            )
+            .where(history.c.track_name.isnot(None))
+            .order_by(history.c.ts.desc().nulls_last())
+            .limit(limit)
+        ).mappings().all()
+
+        def serialize_timestamp(value):
+            return value.isoformat() if value else None
+
+        return {
+            "status": "ok",
+            "total_rows": summary["total_rows"],
+            "unique_tracks": summary["unique_tracks"],
+            "first_stream": serialize_timestamp(summary["first_stream"]),
+            "latest_stream": serialize_timestamp(summary["latest_stream"]),
+            "recent_rows": [
+                {
+                    "ts": serialize_timestamp(row["ts"]),
+                    "track_name": row["track_name"],
+                    "artist_name": row["artist_name"],
+                    "ms_played": row["ms_played"],
+                }
+                for row in rows
+            ],
+        }
+
+    result = await run_in_threadpool(query)
+    result["enrichment"] = _latest_enrichment_job(request.app)
+    return result
 
 
 @app.get("/api/metrics/total-time")
