@@ -303,8 +303,8 @@ def enrich_audio_features(
                 SELECT
                     track_id,
                     track_name,
-                    popularity,
-                    duration_ms,
+                    CAST(ROUND(popularity * 100) AS INTEGER) AS popularity,
+                    CAST(duration AS BIGINT) * 1000 AS duration_ms,
                     danceability,
                     energy,
                     valence,
