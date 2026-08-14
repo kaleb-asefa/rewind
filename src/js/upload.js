@@ -186,11 +186,6 @@ document.addEventListener("DOMContentLoaded", () => {
         formData.append("files", file);
       });
 
-      // ZERO RELOAD: Instantly switch view to Overview dashboard showing pulse skeletons
-      if (window.switchView) {
-        window.switchView("overview");
-      }
-
       try {
         let response;
         try {
@@ -208,10 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (response.ok) {
           // Dispatch custom event to trigger metric re-fetch across dashboard cards
           window.dispatchEvent(new Event("rewind:data-updated"));
-
-          if (!window.switchView) {
-            window.location.href = "overview.html?view=overview";
-          }
+          window.location.href = "overview.html?view=overview";
         } else {
           const errData = await response.json().catch(() => ({}));
           showStatus(
