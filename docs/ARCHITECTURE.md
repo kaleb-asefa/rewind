@@ -49,9 +49,13 @@ Three storage layers, each doing the job it's best at:
 ## 3. The 45M metadata catalog
 
 ### 3.1 What we have (verified)
-- Location: `data/metadata/train-0000{0,1,2}-of-00003.parquet`
-- **45,059,660 rows**, **8.9 GB**, 3 files (~15M rows each), ~15,020 row groups/file (~1,000 rows each).
-- Source: HuggingFace `GD-Studio/embeat_45m_spotify_tracks`.
+- **Working catalog (in repo):** `data/metadata/catalog_sorted.parquet` — single file, **7.5 GB**,
+  **45,059,660 rows**, `track_id`-ordered, 367 non-overlapping row groups. This is what the app reads.
+- **Original source (backup):** the 3-part `train-0000{0,1,2}-of-00003.parquet` (8.9 GB, popularity-ordered)
+  now lives off-repo at `/mnt/C/rewind_build/` as the cold rebuild source.
+- One consolidated file is fine — HuggingFace's 3-way split is just download sharding; DuckDB reads one
+  file or many identically, and the **367 row groups (not files)** drive parallelism + pruning.
+- Source dataset: HuggingFace `GD-Studio/embeat_45m_spotify_tracks`.
 - Columns:
   `track_id, track_name, isrc, popularity, explicit, artist_idx, artist_id, artist_name,
    artist_popularity, artist_genres, artist_genre_idx, album_id, album_name, release_year,
@@ -68,9 +72,10 @@ Three storage layers, each doing the job it's best at:
   (This means we do **not** need `artist_genre_map.json` anymore.)
 - Has `album_id`, `artist_id`, `isrc` → enough to fetch images later.
 
-### 3.3 The efficiency gotcha ⚠️
-The parquet is **sorted by `popularity` descending, NOT by `track_id`**. So a `track_id` lookup
-can't skip any row groups and ends up **scanning the full 8.9 GB every query**. That's the thing to fix.
+### 3.3 The efficiency gotcha ⚠️ (resolved)
+The **original** parquet was **sorted by `popularity` descending, NOT by `track_id`**, so a `track_id`
+lookup couldn't skip any row groups and scanned the full 8.9 GB every query.
+✅ **Resolved** — the working catalog above is now `track_id`-ordered (see §9 step 1), so lookups prune.
 
 ### 3.4 The fix — build the catalog once, offline
 Re-materialize the catalog **physically ordered by `track_id`** so DuckDB's per-row-group min/max
@@ -201,7 +206,7 @@ session** (no shared-writer contention, cleanup = delete file). Swap to Postgres
 
 ## 9. Build roadmap (suggested order)
 
-1. ✅ **Catalog build (DONE)** — `notebooks/build_catalog.ipynb` re-sorts the 45M parquet by `track_id`, memory-safe (`memory_limit=2GB`, `threads=2`, spill + output on `/mnt/C`). Output: **`/mnt/C/rewind_build/catalog_sorted.parquet`** (7.5 GB, 367 non-overlapping row groups, ~11.5 min build). Point lookup ≈ 187 ms. This machine has ~2 GB free RAM / no swap / 13 GB free on `/home`, so the big NTFS mount `/mnt/C` (was 37 GB free) is used for scratch + output.
+1. ✅ **Catalog build (DONE)** — `notebooks/build_catalog.ipynb` re-sorts the 45M parquet by `track_id`, memory-safe (`memory_limit=2GB`, `threads=2`, spill on `/mnt/C`, never RAM or `/tmp`). Output now lives in-repo at **`data/metadata/catalog_sorted.parquet`** (single file, 7.5 GB, 45,059,660 rows, 367 non-overlapping row groups; ~11.5 min build; cold point lookup ≈ 187 ms). The original 3-part source is preserved at `/mnt/C/rewind_build/` as the rebuild backup. (Machine limits: ~2 GB free RAM, no swap, ~13 GB free on `/home`, so scratch spilled to the big NTFS mount `/mnt/C`.)
 2. **Enrichment on upload**: distinct track_ids → one catalog lookup → store per-user enriched slice.
 3. **Session model**: guest ticket + TTL cleanup (MVP: per-session DuckDB, or go straight to Postgres).
 4. **Image cache**: lazy fetch (Spotify API primary), shared tables, keyed by album/artist id.
@@ -220,4 +225,4 @@ session** (no shared-writer contention, cleanup = delete file). Swap to Postgres
 - User-data store now: **Postgres** (target) vs **per-session DuckDB** (MVP shortcut)?
 - Auth: email/password vs OAuth (e.g., Google/Spotify login)?
 - Guest TTL: how long before auto-delete (e.g., 24h inactivity)?
-- Catalog: keep as re-sorted **DuckDB table** vs re-sorted **Parquet** (both allow pruning)?
+- Catalog: **currently a single re-sorted Parquet** (`data/metadata/catalog_sorted.parquet`). Later, optionally promote to an indexed DuckDB table (`PRIMARY KEY (track_id)`) for faster scattered bulk lookups — best on a box with more RAM.
