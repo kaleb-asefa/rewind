@@ -201,7 +201,7 @@ session** (no shared-writer contention, cleanup = delete file). Swap to Postgres
 
 ## 9. Build roadmap (suggested order)
 
-1. **Catalog build script** (offline): parquet → `track_id`-ordered DuckDB, memory-safe (`memory_limit` + `temp_directory`). Verify a few `track_id` lookups are fast.
+1. ✅ **Catalog build (DONE)** — `notebooks/build_catalog.ipynb` re-sorts the 45M parquet by `track_id`, memory-safe (`memory_limit=2GB`, `threads=2`, spill + output on `/mnt/C`). Output: **`/mnt/C/rewind_build/catalog_sorted.parquet`** (7.5 GB, 367 non-overlapping row groups, ~11.5 min build). Point lookup ≈ 187 ms. This machine has ~2 GB free RAM / no swap / 13 GB free on `/home`, so the big NTFS mount `/mnt/C` (was 37 GB free) is used for scratch + output.
 2. **Enrichment on upload**: distinct track_ids → one catalog lookup → store per-user enriched slice.
 3. **Session model**: guest ticket + TTL cleanup (MVP: per-session DuckDB, or go straight to Postgres).
 4. **Image cache**: lazy fetch (Spotify API primary), shared tables, keyed by album/artist id.
