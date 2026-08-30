@@ -104,7 +104,9 @@
     <!-- Modular Custom CSS & Scripts -->
     <link href="src/styles/main.css" rel="stylesheet"/>
     <script src="src/js/theme.js"></script>
+    <script src="src/js/api.js" defer></script>
     <script src="src/js/velocity.js" defer></script>
+    <script src="src/js/bar_race.js" defer></script>
 </head>
 <body class="bg-background text-on-background antialiased min-h-screen flex flex-col">
 
@@ -239,6 +241,78 @@
                 <!-- HTML Overlaid Round Avatar Tips Container -->
                 <div id="tips-overlay" class="absolute inset-0 pointer-events-none">
                     <!-- Tip Avatars will be dynamically injected here -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- All-Time Bar Race Header Row -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4">
+            <div>
+                <h2 class="text-headline-md font-headline-md font-bold tracking-tight text-on-surface">
+                    All-Time Bar Race
+                </h2>
+                <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">
+                    Cumulative listening time — the final frame is your all-time #1.
+                </p>
+            </div>
+
+            <!-- Entity Switcher Pills -->
+            <div class="flex items-center p-1 bg-surface-container-high rounded-full border border-white/5 self-start sm:self-auto">
+                <button id="race-tab-artists" onclick="switchRaceEntity('artist')" class="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold transition-all bg-primary text-on-primary shadow-sm">
+                    <span class="material-symbols-outlined text-sm">artist</span>
+                    Artists
+                </button>
+                <button id="race-tab-tracks" onclick="switchRaceEntity('track')" class="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold transition-all text-on-surface-variant hover:text-on-surface">
+                    <span class="material-symbols-outlined text-sm">music_note</span>
+                    Tracks
+                </button>
+                <button id="race-tab-albums" onclick="switchRaceEntity('album')" class="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold transition-all text-on-surface-variant hover:text-on-surface">
+                    <span class="material-symbols-outlined text-sm">album</span>
+                    Albums
+                </button>
+            </div>
+        </div>
+
+        <!-- Bar Race Card -->
+        <div id="race-card" class="glass-card rounded-2xl p-4 md:p-6 relative overflow-hidden shadow-xl">
+
+            <!-- Slim Controls Bar -->
+            <div class="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-white/5 text-body-sm font-body-sm">
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <button id="race-play-btn" onclick="toggleRacePlay()" class="w-8 h-8 rounded-full bg-primary hover:bg-primary-container text-on-primary flex items-center justify-center transition-all shadow hover:scale-105" title="Play/Pause">
+                        <span id="race-play-icon" class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">pause</span>
+                    </button>
+                    <button onclick="resetRace()" class="w-7 h-7 rounded-full text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-all" title="Replay">
+                        <span class="material-symbols-outlined text-sm">restart_alt</span>
+                    </button>
+                    <div id="race-month-display" class="text-body-sm font-label-bold tracking-tight text-on-surface font-mono uppercase bg-surface-container-high px-3 py-1 rounded-full border border-white/5">
+                        ----
+                    </div>
+                </div>
+
+                <div class="flex-grow max-w-md flex items-center gap-2 mx-2">
+                    <span id="race-start-year" class="font-mono text-label-bold text-on-surface-variant">----</span>
+                    <input id="race-scrubber" type="range" min="0" max="0" step="0.02" value="0" class="w-full cursor-pointer velocity-scrubber" oninput="onRaceScrub(this.value)"/>
+                    <span id="race-end-year" class="font-mono text-label-bold text-on-surface-variant">----</span>
+                </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <div class="flex items-center gap-0.5 bg-surface-container-high p-0.5 rounded-full border border-white/5 text-label-bold font-mono">
+                        <button onclick="setRaceSpeed(0.5)" id="race-speed-05" class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface transition-colors">0.5x</button>
+                        <button onclick="setRaceSpeed(1)" id="race-speed-10" class="px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold">1.0x</button>
+                        <button onclick="setRaceSpeed(2)" id="race-speed-20" class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface transition-colors">2.0x</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Race Rows Viewport -->
+            <div id="race-viewport" class="relative w-full select-none">
+                <div id="race-rows" class="relative w-full"></div>
+                <div id="race-empty" class="hidden py-16 flex flex-col items-center justify-center text-on-surface-variant text-body-sm font-medium gap-2">
+                    <span class="material-symbols-outlined text-3xl text-primary opacity-80">info</span>
+                    <span>No listening data loaded yet.</span>
+                    <span class="text-xs opacity-60">Upload your Spotify listening data export to view the bar race.</span>
                 </div>
             </div>
 

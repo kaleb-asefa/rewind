@@ -369,6 +369,130 @@ def _generate_month_sequence(start_str: str, end_str: str) -> list[str]:
     return months
 
 
+def _hysteresis_reorder(prev_order: list, scores: dict, margin: float) -> list:
+    """Re-sort by score but only swap neighbours when the lower-positioned item
+    beats the higher by more than ``margin`` (relative). Suppresses near-tie flicker."""
+    order = list(prev_order)
+    swapped = True
+    while swapped:
+        swapped = False
+        for i in range(len(order) - 1):
+            hi, lo = order[i], order[i + 1]
+            if scores[lo] > scores[hi] * (1 + margin):
+                order[i], order[i + 1] = lo, hi
+                swapped = True
+    return order
+
+
+def _smoothed_rank_frames(
+    monthly_rows: list,
+    key_len: int,
+    limit: int,
+    alpha: float = 0.3,
+    hysteresis: float = 0.12,
+):
+    """Rank Velocity signal: EWMA score + fixed Top-N cohort + hysteresis.
+
+    ``monthly_rows`` are ``(month, *key_cols, ms, streams)``. Returns
+    ``(full_months, featured)`` where ``featured`` is ordered by lifetime ms and
+    each item is ``{key, total_ms, total_streams, monthly_ranks}``.
+    """
+    month_map: dict[str, dict] = {}
+    lifetime: dict[tuple, list] = {}
+    for row in monthly_rows:
+        m_key = str(row[0])[:7]
+        key = tuple(row[1 : 1 + key_len])
+        ms = row[1 + key_len] or 0
+        streams = row[2 + key_len] or 0
+        slot = month_map.setdefault(m_key, {}).setdefault(key, [0, 0])
+        slot[0] += ms
+        slot[1] += streams
+        life = lifetime.setdefault(key, [0, 0])
+        life[0] += ms
+        life[1] += streams
+
+    if not month_map:
+        return [], []
+
+    sorted_months = sorted(month_map.keys())
+    full_months = (
+        _generate_month_sequence(sorted_months[0], sorted_months[-1]) or sorted_months
+    )
+
+    # Fixed Top-N cohort chosen once over the whole period (by lifetime ms).
+    cohort = sorted(lifetime, key=lambda k: lifetime[k][0], reverse=True)[:limit]
+
+    ewma = {k: 0.0 for k in cohort}
+    monthly_ranks: dict[tuple, list] = {k: [] for k in cohort}
+    order = None
+    for m_key in full_months:
+        month_data = month_map.get(m_key, {})
+        for k in cohort:
+            ms = month_data.get(k, (0, 0))[0]
+            ewma[k] = alpha * ms + (1 - alpha) * ewma[k]
+        if order is None:
+            order = sorted(cohort, key=lambda k: (ewma[k], lifetime[k][0]), reverse=True)
+        else:
+            order = _hysteresis_reorder(order, ewma, hysteresis)
+        for pos, k in enumerate(order, start=1):
+            monthly_ranks[k].append(pos)
+
+    featured = sorted(cohort, key=lambda k: lifetime[k][0], reverse=True)
+    return full_months, [
+        {
+            "key": k,
+            "total_ms": lifetime[k][0],
+            "total_streams": lifetime[k][1],
+            "monthly_ranks": monthly_ranks[k],
+        }
+        for k in featured
+    ]
+
+
+def _compute_bar_race(monthly_rows: list, key_len: int, limit: int):
+    """All-time bar race signal: running SUM(ms) per entity across months.
+
+    ``monthly_rows`` are ``(month, *key_cols, ms)``. Returns
+    ``(full_months, featured)`` where ``featured`` holds every entity that ever
+    reaches the top ``limit`` in any frame, ordered by final cumulative total,
+    each ``{key, total_ms, cumulative_ms}``.
+    """
+    month_map: dict[str, dict] = {}
+    lifetime: dict[tuple, int] = {}
+    for row in monthly_rows:
+        m_key = str(row[0])[:7]
+        key = tuple(row[1 : 1 + key_len])
+        ms = row[1 + key_len] or 0
+        mm = month_map.setdefault(m_key, {})
+        mm[key] = mm.get(key, 0) + ms
+        lifetime[key] = lifetime.get(key, 0) + ms
+
+    if not month_map:
+        return [], []
+
+    sorted_months = sorted(month_map.keys())
+    full_months = (
+        _generate_month_sequence(sorted_months[0], sorted_months[-1]) or sorted_months
+    )
+
+    cumulative: dict[tuple, list] = {k: [] for k in lifetime}
+    running: dict[tuple, int] = {k: 0 for k in lifetime}
+    featured: set = set()
+    for m_key in full_months:
+        month_data = month_map.get(m_key, {})
+        for k in lifetime:
+            running[k] += month_data.get(k, 0)
+            cumulative[k].append(running[k])
+        frame_top = sorted(lifetime, key=lambda k: running[k], reverse=True)[:limit]
+        featured.update(frame_top)
+
+    ordered = sorted(featured, key=lambda k: lifetime[k], reverse=True)
+    return full_months, [
+        {"key": k, "total_ms": lifetime[k], "cumulative_ms": cumulative[k]}
+        for k in ordered
+    ]
+
+
 @app.get("/api/metrics/artist-rank")
 async def get_artist_rank(
     request: Request,
@@ -392,125 +516,25 @@ async def get_artist_rank(
         except Exception:
             monthly_data = []
 
-        if not monthly_data:
-            history = table_registry.get_history_table(request.app.state.engine)
-            stmt = (
-                select(
-                    history.c.artist_name,
-                    func.count().label("total_streams"),
-                    func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
-                )
-                .where(history.c.artist_name.isnot(None))
-                .group_by(history.c.artist_name)
-                .order_by(func.coalesce(func.sum(history.c.ms_played), 0).desc(), func.count().desc())
-                .limit(limit)
-            )
-            rows = conn.execute(stmt).fetchall()
-            return {
-                "start_month": None,
-                "end_month": None,
-                "total_months": 0,
-                "months": [],
-                "data": [
-                    {
-                        "rank": idx,
-                        "artist_name": row.artist_name,
-                        "total_streams": row.total_streams,
-                        "total_minutes": round(row.total_ms / 60000, 2),
-                        "monthly_ranks": [],
-                    }
-                    for idx, row in enumerate(rows, start=1)
-                ],
-            }
-
-        # Group raw data by month
-        month_groups = {}
-        for month, artist, ms, streams in monthly_data:
-            m_key = str(month)[:7]
-            if m_key not in month_groups:
-                month_groups[m_key] = []
-            month_groups[m_key].append((artist, ms, streams))
-
-        sorted_months = sorted(month_groups.keys())
-        start_month = sorted_months[0]
-        end_month = sorted_months[-1]
-        full_months = _generate_month_sequence(start_month, end_month)
-
-        # Step 1: For each month, compute the TRUE top `limit` artists from
-        # ALL artists (not a fixed set). New artists can enter the chart.
-        # Months with no data carry forward the previous month's top list.
-        month_top_lists = {}  # m_key -> [(artist, ms, streams), ...]
-        prev_top = []
-
-        for m_key in full_months:
-            if m_key in month_groups:
-                # Month has data — use actual top N sorted by ms DESC
-                month_top_lists[m_key] = month_groups[m_key][:limit]
-                prev_top = month_top_lists[m_key]
-            else:
-                # No data — carry forward previous month unchanged
-                month_top_lists[m_key] = list(prev_top)
-
-        # Step 2: Collect every unique artist that ever appeared in a monthly
-        # top list. Order them by overall lifetime ms_played for the response.
-        appearance_count = {}
-        for m_key in full_months:
-            for artist, ms, streams in month_top_lists[m_key]:
-                appearance_count[artist] = appearance_count.get(artist, 0) + 1
-
-        all_candidates = list(appearance_count.keys())
-
-        # Get overall stats for all candidates
-        history = table_registry.get_history_table(request.app.state.engine)
-        overall_stats = {}
-        if all_candidates:
-            stmt = (
-                select(
-                    history.c.artist_name,
-                    func.count().label("total_streams"),
-                    func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
-                )
-                .where(history.c.artist_name.in_(all_candidates))
-                .group_by(history.c.artist_name)
-            )
-            for r in conn.execute(stmt).fetchall():
-                overall_stats[r.artist_name] = (r.total_streams, r.total_ms)
-
-        # Order by overall lifetime ms DESC — include ALL candidates
-        all_featured = sorted(
-            all_candidates,
-            key=lambda a: overall_stats.get(a, (0, 0))[1],
-            reverse=True,
+        full_months, featured = _smoothed_rank_frames(
+            monthly_data, key_len=1, limit=limit
         )
-
-        # Step 3: For each featured artist, compute monthly_ranks.
-        # Rank = position in that month's top list (1-N), or off-chart (limit+1).
-        off_chart = limit + 1
-        result_data = []
-        for idx, artist_name in enumerate(all_featured, start=1):
-            monthly_ranks = []
-            for m_key in full_months:
-                top_names = [a for a, ms, s in month_top_lists[m_key]]
-                if artist_name in top_names:
-                    monthly_ranks.append(top_names.index(artist_name) + 1)
-                else:
-                    monthly_ranks.append(off_chart)
-
-            streams, total_ms = overall_stats.get(artist_name, (0, 0))
-            result_data.append({
+        data = [
+            {
                 "rank": idx,
-                "artist_name": artist_name,
-                "total_streams": streams,
-                "total_minutes": round(total_ms / 60000, 2),
-                "monthly_ranks": monthly_ranks,
-            })
-
+                "artist_name": f["key"][0],
+                "total_streams": f["total_streams"],
+                "total_minutes": round(f["total_ms"] / 60000, 2),
+                "monthly_ranks": f["monthly_ranks"],
+            }
+            for idx, f in enumerate(featured, start=1)
+        ]
         return {
-            "start_month": start_month,
-            "end_month": end_month,
+            "start_month": full_months[0] if full_months else None,
+            "end_month": full_months[-1] if full_months else None,
             "total_months": len(full_months),
             "months": full_months,
-            "data": result_data,
+            "data": data,
         }
 
     res = await run_in_threadpool(query)
@@ -548,126 +572,26 @@ async def get_track_rank(
         except Exception:
             monthly_data = []
 
-        if not monthly_data:
-            history = table_registry.get_history_table(request.app.state.engine)
-            stmt = (
-                select(
-                    history.c.track_name,
-                    history.c.artist_name,
-                    func.count().label("total_streams"),
-                    func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
-                )
-                .where(history.c.track_name.isnot(None))
-                .group_by(history.c.track_name, history.c.artist_name)
-                .order_by(func.coalesce(func.sum(history.c.ms_played), 0).desc(), func.count().desc())
-                .limit(limit)
-            )
-            rows = conn.execute(stmt).fetchall()
-            return {
-                "start_month": None,
-                "end_month": None,
-                "total_months": 0,
-                "months": [],
-                "data": [
-                    {
-                        "rank": idx,
-                        "track_name": row.track_name,
-                        "artist_name": row.artist_name,
-                        "total_streams": row.total_streams,
-                        "total_minutes": round(row.total_ms / 60000, 2),
-                        "monthly_ranks": [],
-                    }
-                    for idx, row in enumerate(rows, start=1)
-                ],
-            }
-
-        month_groups = {}
-        for month, track, artist, ms, streams in monthly_data:
-            m_key = str(month)[:7]
-            if m_key not in month_groups:
-                month_groups[m_key] = []
-            month_groups[m_key].append(((track, artist), ms, streams))
-
-        sorted_months = sorted(month_groups.keys())
-        start_month = sorted_months[0]
-        end_month = sorted_months[-1]
-        full_months = _generate_month_sequence(start_month, end_month)
-
-        # Step 1: For each month, compute the TRUE top `limit` tracks from
-        # ALL tracks (not a fixed set). New tracks can enter the chart.
-        # Months with no data carry forward the previous month's top list.
-        month_top_lists = {}  # m_key -> [((track,artist), ms, streams), ...]
-        prev_top = []
-
-        for m_key in full_months:
-            if m_key in month_groups:
-                month_top_lists[m_key] = month_groups[m_key][:limit]
-                prev_top = month_top_lists[m_key]
-            else:
-                month_top_lists[m_key] = list(prev_top)
-
-        # Step 2: Collect every unique track that ever appeared in a monthly
-        # top list. Order them by overall lifetime ms_played for the response.
-        appearance_count = {}
-        for m_key in full_months:
-            for pair, ms, streams in month_top_lists[m_key]:
-                appearance_count[pair] = appearance_count.get(pair, 0) + 1
-
-        all_candidates = list(appearance_count.keys())
-
-        # Get overall stats for all candidates
-        history = table_registry.get_history_table(request.app.state.engine)
-        overall_stats = {}
-        for track_name, artist_name in all_candidates:
-            stmt = (
-                select(
-                    func.count().label("total_streams"),
-                    func.coalesce(func.sum(history.c.ms_played), 0).label("total_ms"),
-                )
-                .where(history.c.track_name == track_name)
-                .where(history.c.artist_name == artist_name)
-            )
-            r = conn.execute(stmt).first()
-            if r:
-                overall_stats[(track_name, artist_name)] = (r.total_streams, r.total_ms)
-
-        # Order by overall lifetime ms DESC — include ALL candidates
-        all_featured = sorted(
-            all_candidates,
-            key=lambda p: overall_stats.get(p, (0, 0))[1],
-            reverse=True,
+        full_months, featured = _smoothed_rank_frames(
+            monthly_data, key_len=2, limit=limit
         )
-
-        # Step 3: For each featured track, compute monthly_ranks.
-        # Rank = position in that month's top list (1-N), or off-chart (limit+1).
-        off_chart = limit + 1
-        result_data = []
-        for idx, (track_name, artist_name) in enumerate(all_featured, start=1):
-            pair = (track_name, artist_name)
-            monthly_ranks = []
-            for m_key in full_months:
-                top_pairs = [p for p, ms, s in month_top_lists[m_key]]
-                if pair in top_pairs:
-                    monthly_ranks.append(top_pairs.index(pair) + 1)
-                else:
-                    monthly_ranks.append(off_chart)
-
-            streams, total_ms = overall_stats.get(pair, (0, 0))
-            result_data.append({
+        data = [
+            {
                 "rank": idx,
-                "track_name": track_name,
-                "artist_name": artist_name,
-                "total_streams": streams,
-                "total_minutes": round(total_ms / 60000, 2),
-                "monthly_ranks": monthly_ranks,
-            })
-
+                "track_name": f["key"][0],
+                "artist_name": f["key"][1],
+                "total_streams": f["total_streams"],
+                "total_minutes": round(f["total_ms"] / 60000, 2),
+                "monthly_ranks": f["monthly_ranks"],
+            }
+            for idx, f in enumerate(featured, start=1)
+        ]
         return {
-            "start_month": start_month,
-            "end_month": end_month,
+            "start_month": full_months[0] if full_months else None,
+            "end_month": full_months[-1] if full_months else None,
             "total_months": len(full_months),
             "months": full_months,
-            "data": result_data,
+            "data": data,
         }
 
     res = await run_in_threadpool(query)
@@ -679,3 +603,63 @@ async def get_track_rank(
         "months": res["months"],
         "data": res["data"],
     }
+
+
+@app.get("/api/metrics/bar-race")
+async def get_bar_race(
+    request: Request,
+    entity: str = "artist",
+    limit: int = 12,
+    conn: Connection = Depends(get_db),
+):
+    """Cumulative-listening bar race frames for artist / track / album."""
+    entity = entity.lower()
+    specs = {
+        "artist": ("artist_name", 1),
+        "track": ("track_name, artist_name", 2),
+        "album": ("album_name, artist_name", 2),
+    }
+    if entity not in specs:
+        raise HTTPException(status_code=400, detail="Invalid entity for bar race.")
+    cols, key_len = specs[entity]
+    name_col = cols.split(",")[0].strip()
+
+    def query():
+        raw_con = conn.connection.driver_connection
+        try:
+            rows = raw_con.execute(
+                f"""
+                SELECT date_trunc('month', ts) AS month, {cols}, SUM(ms_played) AS ms
+                FROM history
+                WHERE {name_col} IS NOT NULL AND ts IS NOT NULL
+                GROUP BY date_trunc('month', ts), {cols}
+                """
+            ).fetchall()
+        except Exception:
+            rows = []
+
+        full_months, featured = _compute_bar_race(rows, key_len, limit)
+        data = []
+        for idx, f in enumerate(featured, start=1):
+            item = {
+                "rank": idx,
+                "name": f["key"][0],
+                "total_minutes": round(f["total_ms"] / 60000, 2),
+                "cumulative_minutes": [
+                    round(v / 60000, 2) for v in f["cumulative_ms"]
+                ],
+            }
+            if key_len == 2:
+                item["artist_name"] = f["key"][1]
+            data.append(item)
+
+        return {
+            "start_month": full_months[0] if full_months else None,
+            "end_month": full_months[-1] if full_months else None,
+            "total_months": len(full_months),
+            "months": full_months,
+            "data": data,
+        }
+
+    res = await run_in_threadpool(query)
+    return {"status": "ok", "entity": entity, "unit": "minutes", **res}

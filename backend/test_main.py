@@ -280,6 +280,81 @@ def test_image_endpoint_fetches_and_caches(monkeypatch):
         assert bad.status_code == 400
 
 
+def test_artist_rank_uses_fixed_cohort():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")})
+
+        res = client.get("/api/metrics/artist-rank?limit=8")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+
+        # Fixed Top-N cohort: exactly `limit` artists, every one ranked in every
+        # month (1..N), and no artist ever falls "off-chart" (limit+1). This is
+        # what removes the entering/leaving churn.
+        assert len(data["data"]) == 8
+        n = len(data["months"])
+        for item in data["data"]:
+            assert len(item["monthly_ranks"]) == n
+            assert all(1 <= r <= 8 for r in item["monthly_ranks"])
+        # Every rank slot 1..8 is occupied in every frame (a true ranking).
+        for m in range(n):
+            slots = sorted(item["monthly_ranks"][m] for item in data["data"])
+            assert slots == list(range(1, 9))
+
+
+def test_bar_race_endpoint():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")})
+
+        res = client.get("/api/metrics/bar-race?entity=artist&limit=10")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+        assert data["entity"] == "artist"
+        assert data["unit"] == "minutes"
+        n = data["total_months"]
+        assert n > 0
+        assert len(data["months"]) == n
+        assert len(data["data"]) >= 1
+
+        first = data["data"][0]
+        assert first["rank"] == 1
+        assert "name" in first
+        assert len(first["cumulative_minutes"]) == n
+
+        # Cumulative series is monotonically non-decreasing (bars only grow).
+        for item in data["data"]:
+            cum = item["cumulative_minutes"]
+            assert all(cum[i] <= cum[i + 1] + 1e-9 for i in range(len(cum) - 1))
+
+        # Final frame == all-time leaderboard: rank 1's last value is the max.
+        finals = [item["cumulative_minutes"][-1] for item in data["data"]]
+        assert first["cumulative_minutes"][-1] == max(finals)
+
+
+def test_bar_race_track_and_album_and_invalid():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        track = client.get("/api/metrics/bar-race?entity=track&limit=5").json()
+        assert track["status"] == "ok"
+        assert "artist_name" in track["data"][0]
+
+        album = client.get("/api/metrics/bar-race?entity=album&limit=5").json()
+        assert album["status"] == "ok"
+        assert "artist_name" in album["data"][0]
+
+        bad = client.get("/api/metrics/bar-race?entity=bogus")
+        assert bad.status_code == 400
+
+
 
 
 
