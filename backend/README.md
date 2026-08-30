@@ -31,6 +31,7 @@ uv run pytest
 
 - `main.py`: FastAPI entrypoint defining ingestion (`POST /api/upload`) and metric endpoints (`/api/metrics/*`). Upload also builds the per-session `track_features` slice.
 - `catalog.py`: Enrichment module — joins the session `history` against the read-only 45M-track catalog (`data/metadata/catalog_sorted.parquet`) into a small `track_features` table, memory-capped.
+- `images.py`: Cover-art cache — fetches Spotify oEmbed thumbnails on demand (no auth) and caches them in a session `images` table.
 - `database.py`: Manages the FastAPI engine lifecycle (`app.state.engine`), lazy table reflection (`TableRegistry`), and connection dependency (`get_db`).
 - `test_main.py`: Integration test suite testing ingestion, multi-file uploads, and all active metric endpoints using pytest and FastAPI TestClient.
 - `pyproject.toml`: Dependency specification managed by `uv`.

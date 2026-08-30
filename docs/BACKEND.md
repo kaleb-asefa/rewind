@@ -32,6 +32,7 @@ Everything after ingestion — column selection, filters, dashboard queries — 
 - **`GET /api/metrics/top-artist`**: Aggregates streams and total listened minutes grouped by `artist_name`, returning top artist.
 - **`GET /api/metrics/top-album`**: Aggregates streams and total listened minutes grouped by `album_name` & `artist_name`, returning top album.
 - **`GET /api/metrics/top-track`**: Aggregates streams and total listened minutes grouped by `track_name` & `artist_name`, returning top track.
+- **`GET /api/image?kind=&id=`**: Returns a cached Spotify cover URL (oEmbed) for an `artist`/`album`/`track` id; fetches once and caches in the session `images` table. The `top-artist/album/track` endpoints also return the entity's Spotify id so the frontend can lazy-load covers.
 
 Example Endpoint Implementation:
 ```python

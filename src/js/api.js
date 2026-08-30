@@ -67,3 +67,26 @@ async function fetchWithTimeout(endpoint, options = {}, timeoutMs = 5000) {
 }
 
 window.fetchWithTimeout = fetchWithTimeout;
+
+/**
+ * Lazily load a Spotify cover into an <img>, revealing it only once it loads.
+ * Best-effort: silently does nothing if the id is missing or the fetch fails.
+ */
+async function loadCover(imgEl, kind, id) {
+    if (!imgEl || !id) return;
+    try {
+        const res = await fetchWithTimeout(
+            `/api/image?kind=${encodeURIComponent(kind)}&id=${encodeURIComponent(id)}`,
+            {},
+            8000,
+        );
+        if (res.ok && res.data && res.data.image_url) {
+            imgEl.onload = () => imgEl.classList.remove("hidden");
+            imgEl.src = res.data.image_url;
+        }
+    } catch (_) {
+        /* covers are non-critical */
+    }
+}
+
+window.loadCover = loadCover;

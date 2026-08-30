@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select, func
 import catalog
 import database
+import images
 import main
 from database import table_registry
 from main import app
@@ -240,6 +241,44 @@ def test_enrichment_builds_track_features_from_catalog(tmp_path, monkeypatch):
             assert n == 3
             cols = {r[0] for r in raw.execute("DESCRIBE track_features").fetchall()}
             assert {"track_id", "track_name", "energy"}.issubset(cols)
+
+
+def test_top_track_returns_track_id():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        res = client.get("/api/metrics/top-track")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+        assert data["track_name"] is not None
+        # track_id comes straight from history's track_uri (Spotify base62 = 22 chars)
+        assert data["track_id"] and len(data["track_id"]) == 22
+
+
+def test_image_endpoint_fetches_and_caches(monkeypatch):
+    calls = {"n": 0}
+
+    def fake_fetch(kind, sid):
+        calls["n"] += 1
+        return f"https://img/{kind}/{sid}.jpg"
+
+    monkeypatch.setattr(images, "_fetch_thumbnail", fake_fetch)
+
+    with TestClient(app) as client:
+        r1 = client.get("/api/image?kind=artist&id=ABC123")
+        assert r1.status_code == 200
+        assert r1.json()["image_url"] == "https://img/artist/ABC123.jpg"
+
+        r2 = client.get("/api/image?kind=artist&id=ABC123")
+        assert r2.json()["image_url"] == "https://img/artist/ABC123.jpg"
+        assert calls["n"] == 1  # second hit served from cache, no refetch
+
+        bad = client.get("/api/image?kind=bogus&id=X")
+        assert bad.status_code == 400
+
 
 
 

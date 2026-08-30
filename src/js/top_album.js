@@ -48,6 +48,9 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const res = await fetcher("/api/metrics/top-album", {}, 5000);
 
+            const imgEl = document.getElementById("top-album-image");
+            if (imgEl) imgEl.classList.add("hidden");
+
             if (res.ok && res.data && res.data.status === "ok") {
                 if (res.data.album_name) {
                     albumNameEl.textContent = res.data.album_name;
@@ -56,6 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const artistInfo = res.data.artist_name ? `by ${res.data.artist_name}` : "";
                         albumSubtextEl.textContent = `${artistInfo} • ${streamsFormatted} streams`.trim();
                     }
+                    if (imgEl && window.loadCover) window.loadCover(imgEl, "album", res.data.album_id);
                 } else {
                     albumNameEl.textContent = "No Data";
                     if (albumSubtextEl) albumSubtextEl.textContent = "Upload data export to view top album";

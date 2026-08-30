@@ -48,6 +48,9 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const res = await fetcher("/api/metrics/top-artist", {}, 5000);
 
+            const imgEl = document.getElementById("top-artist-image");
+            if (imgEl) imgEl.classList.add("hidden");
+
             if (res.ok && res.data && res.data.status === "ok") {
                 if (res.data.artist_name) {
                     nameEl.textContent = res.data.artist_name;
@@ -55,6 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const streamsFormatted = Number(res.data.total_streams).toLocaleString();
                         streamsEl.textContent = `${streamsFormatted} total streams`;
                     }
+                    if (imgEl && window.loadCover) window.loadCover(imgEl, "artist", res.data.artist_id);
                 } else {
                     nameEl.textContent = "No Data";
                     if (streamsEl) streamsEl.textContent = "Upload data export to view top artist";

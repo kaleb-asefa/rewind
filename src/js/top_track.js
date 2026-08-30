@@ -48,6 +48,9 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const res = await fetcher("/api/metrics/top-track", {}, 5000);
 
+            const imgEl = document.getElementById("top-track-image");
+            if (imgEl) imgEl.classList.add("hidden");
+
             if (res.ok && res.data && res.data.status === "ok") {
                 if (res.data.track_name) {
                     trackNameEl.textContent = res.data.track_name;
@@ -56,6 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const artistInfo = res.data.artist_name ? `by ${res.data.artist_name}` : "";
                         trackSubtextEl.textContent = `${artistInfo} • ${streamsFormatted} streams`.trim();
                     }
+                    if (imgEl && window.loadCover) window.loadCover(imgEl, "track", res.data.track_id);
                 } else {
                     trackNameEl.textContent = "No Data";
                     if (trackSubtextEl) trackSubtextEl.textContent = "Upload data export to view top track";

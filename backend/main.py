@@ -3,6 +3,7 @@ import shutil
 import tempfile
 
 import catalog
+import images
 from database import get_db, lifespan as database_lifespan, table_registry
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -108,6 +109,15 @@ def _enrich_session(conn: Connection) -> dict:
     return result
 
 
+def _lookup_scalar(conn: Connection, sql: str, params: list) -> str | None:
+    """Best-effort single-value lookup on the raw connection; None on any failure."""
+    try:
+        row = conn.connection.driver_connection.execute(sql, params).fetchone()
+        return row[0] if row and row[0] else None
+    except Exception:
+        return None
+
+
 @app.post("/api/upload")
 async def upload(
     file: UploadFile = File(None),
@@ -150,6 +160,25 @@ async def upload(
     return result
 
 
+@app.get("/api/image")
+async def get_image(
+    kind: str,
+    id: str,
+    conn: Connection = Depends(get_db),
+):
+    """Return a cached Spotify cover URL for an artist/album/track id."""
+    if kind not in {"artist", "album", "track"}:
+        raise HTTPException(status_code=400, detail="Invalid image kind.")
+
+    def work():
+        url = images.get_or_fetch(conn.connection.driver_connection, kind, id)
+        conn.commit()
+        return url
+
+    url = await run_in_threadpool(work)
+    return {"status": "ok", "image_url": url}
+
+
 @app.get("/api/metrics/total-time")
 async def get_total_time(
     request: Request,
@@ -187,9 +216,18 @@ async def get_top_artist(
             .order_by(func.count().desc())
             .limit(1)
         )
-        return conn.execute(stmt).first()
+        row = conn.execute(stmt).first()
+        artist_id = None
+        if row and row.artist_name:
+            artist_id = _lookup_scalar(
+                conn,
+                "SELECT artist_id FROM track_features "
+                "WHERE artist_name = ? AND artist_id IS NOT NULL LIMIT 1",
+                [row.artist_name],
+            )
+        return row, artist_id
 
-    row = await run_in_threadpool(query)
+    row, artist_id = await run_in_threadpool(query)
 
     if not row:
         return {
@@ -197,6 +235,7 @@ async def get_top_artist(
             "artist_name": None,
             "total_streams": 0,
             "total_minutes": 0,
+            "artist_id": None,
         }
 
     return {
@@ -204,6 +243,7 @@ async def get_top_artist(
         "artist_name": row.artist_name,
         "total_streams": row.total_streams,
         "total_minutes": round(row.total_ms / (1000 * 60), 2),
+        "artist_id": artist_id,
     }
 
 
@@ -226,9 +266,18 @@ async def get_top_album(
             .order_by(func.count().desc())
             .limit(1)
         )
-        return conn.execute(stmt).first()
+        row = conn.execute(stmt).first()
+        album_id = None
+        if row and row.album_name:
+            album_id = _lookup_scalar(
+                conn,
+                "SELECT album_id FROM track_features "
+                "WHERE album_name = ? AND artist_name = ? AND album_id IS NOT NULL LIMIT 1",
+                [row.album_name, row.artist_name],
+            )
+        return row, album_id
 
-    row = await run_in_threadpool(query)
+    row, album_id = await run_in_threadpool(query)
 
     if not row:
         return {
@@ -237,6 +286,7 @@ async def get_top_album(
             "artist_name": None,
             "total_streams": 0,
             "total_minutes": 0,
+            "album_id": None,
         }
 
     return {
@@ -245,6 +295,7 @@ async def get_top_album(
         "artist_name": row.artist_name,
         "total_streams": row.total_streams,
         "total_minutes": round(row.total_ms / (1000 * 60), 2),
+        "album_id": album_id,
     }
 
 
@@ -267,9 +318,19 @@ async def get_top_track(
             .order_by(func.count().desc())
             .limit(1)
         )
-        return conn.execute(stmt).first()
+        row = conn.execute(stmt).first()
+        track_id = None
+        if row and row.track_name:
+            track_id = _lookup_scalar(
+                conn,
+                "SELECT replace(track_uri, 'spotify:track:', '') FROM history "
+                "WHERE track_name = ? AND artist_name = ? "
+                "AND track_uri LIKE 'spotify:track:%' LIMIT 1",
+                [row.track_name, row.artist_name],
+            )
+        return row, track_id
 
-    row = await run_in_threadpool(query)
+    row, track_id = await run_in_threadpool(query)
 
     if not row:
         return {
@@ -278,6 +339,7 @@ async def get_top_track(
             "artist_name": None,
             "total_streams": 0,
             "total_minutes": 0,
+            "track_id": None,
         }
 
     return {
@@ -286,6 +348,7 @@ async def get_top_track(
         "artist_name": row.artist_name,
         "total_streams": row.total_streams,
         "total_minutes": round(row.total_ms / (1000 * 60), 2),
+        "track_id": track_id,
     }
 
 

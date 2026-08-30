@@ -201,9 +201,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (response.ok) {
-          // Dispatch custom event to trigger metric re-fetch across dashboard cards
-          window.dispatchEvent(new Event("rewind:data-updated"));
-          window.location.href = "overview.html?view=overview";
+          const overviewView = document.getElementById("view-overview");
+          if (overviewView && window.switchView) {
+            // On overview.html: switch to the overview instantly and refresh cards.
+            window.switchView("overview");
+            window.dispatchEvent(new Event("rewind:data-updated"));
+          } else {
+            // Standalone upload page: navigate to the overview page.
+            window.location.href = "overview.html?view=overview";
+          }
         } else {
           const errData = await response.json().catch(() => ({}));
           showStatus(
