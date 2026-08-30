@@ -32,13 +32,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    async function fetchTopArtist() {
+    async function fetchTopArtist(attempt = 0) {
         const now = Date.now();
         if (isFetching || (now - lastFetchTime < 300)) return;
         isFetching = true;
         lastFetchTime = now;
 
-        showSkeleton();
+        if (attempt === 0) showSkeleton();
         const fetcher = window.fetchWithTimeout || (async (ep) => {
             const res = await fetch(`http://127.0.0.1:8000${ep}`);
             const data = await res.json();
@@ -49,7 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const res = await fetcher("/api/metrics/top-artist", {}, 5000);
 
             const imgEl = document.getElementById("top-artist-image");
-            if (imgEl) imgEl.classList.add("hidden");
 
             if (res.ok && res.data && res.data.status === "ok") {
                 if (res.data.artist_name) {
@@ -58,12 +57,19 @@ document.addEventListener("DOMContentLoaded", () => {
                         const streamsFormatted = Number(res.data.total_streams).toLocaleString();
                         streamsEl.textContent = `${streamsFormatted} total streams`;
                     }
-                    if (imgEl && window.loadCover) window.loadCover(imgEl, "artist", res.data.artist_id);
+                    showContent();
+                    if (res.data.artist_id) {
+                        if (imgEl && window.loadCover) window.loadCover(imgEl, "artist", res.data.artist_id);
+                    } else if (attempt < 6) {
+                        // Cover id not ready yet (enrichment still running) — retry shortly.
+                        setTimeout(() => fetchTopArtist(attempt + 1), 3000);
+                    }
                 } else {
                     nameEl.textContent = "No Data";
                     if (streamsEl) streamsEl.textContent = "Upload data export to view top artist";
+                    if (imgEl) imgEl.classList.add("hidden");
+                    showContent();
                 }
-                showContent();
             } else {
                 const note = res.timedOut
                     ? "Server connection timed out (5s limit)."

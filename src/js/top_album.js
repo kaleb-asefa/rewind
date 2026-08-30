@@ -32,13 +32,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    async function fetchTopAlbum() {
+    async function fetchTopAlbum(attempt = 0) {
         const now = Date.now();
         if (isFetching || (now - lastFetchTime < 300)) return;
         isFetching = true;
         lastFetchTime = now;
 
-        showSkeleton();
+        if (attempt === 0) showSkeleton();
         const fetcher = window.fetchWithTimeout || (async (ep) => {
             const res = await fetch(`http://127.0.0.1:8000${ep}`);
             const data = await res.json();
@@ -49,7 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const res = await fetcher("/api/metrics/top-album", {}, 5000);
 
             const imgEl = document.getElementById("top-album-image");
-            if (imgEl) imgEl.classList.add("hidden");
 
             if (res.ok && res.data && res.data.status === "ok") {
                 if (res.data.album_name) {
@@ -59,12 +58,19 @@ document.addEventListener("DOMContentLoaded", () => {
                         const artistInfo = res.data.artist_name ? `by ${res.data.artist_name}` : "";
                         albumSubtextEl.textContent = `${artistInfo} • ${streamsFormatted} streams`.trim();
                     }
-                    if (imgEl && window.loadCover) window.loadCover(imgEl, "album", res.data.album_id);
+                    showContent();
+                    if (res.data.album_id) {
+                        if (imgEl && window.loadCover) window.loadCover(imgEl, "album", res.data.album_id);
+                    } else if (attempt < 6) {
+                        // Cover id not ready yet (enrichment still running) — retry shortly.
+                        setTimeout(() => fetchTopAlbum(attempt + 1), 3000);
+                    }
                 } else {
                     albumNameEl.textContent = "No Data";
                     if (albumSubtextEl) albumSubtextEl.textContent = "Upload data export to view top album";
+                    if (imgEl) imgEl.classList.add("hidden");
+                    showContent();
                 }
-                showContent();
             } else {
                 const note = res.timedOut
                     ? "Server connection timed out (5s limit)."
