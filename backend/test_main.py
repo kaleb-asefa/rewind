@@ -280,7 +280,7 @@ def test_image_endpoint_fetches_and_caches(monkeypatch):
         assert bad.status_code == 400
 
 
-def test_artist_rank_uses_fixed_cohort():
+def test_artist_rank_trends_allow_enter_leave():
     with TestClient(app) as client:
         sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
         with open(sample_json_path, "rb") as f:
@@ -291,18 +291,31 @@ def test_artist_rank_uses_fixed_cohort():
         data = res.json()
         assert data["status"] == "ok"
 
-        # Fixed Top-N cohort: exactly `limit` artists, every one ranked in every
-        # month (1..N), and no artist ever falls "off-chart" (limit+1). This is
-        # what removes the entering/leaving churn.
-        assert len(data["data"]) == 8
         n = len(data["months"])
+        assert n > 0
+        off_chart = 9  # limit + 1
+
+        # Featured = union of everyone who ever reached the top 8 across months,
+        # so a multi-year history yields more than the 8 all-time leaders.
+        assert len(data["data"]) > 8
+
         for item in data["data"]:
             assert len(item["monthly_ranks"]) == n
-            assert all(1 <= r <= 8 for r in item["monthly_ranks"])
-        # Every rank slot 1..8 is occupied in every frame (a true ranking).
+            assert all(1 <= r <= off_chart for r in item["monthly_ranks"])
+
+        # Visible ranks each month are a contiguous 1..k prefix (k <= 8); the rest
+        # are off-chart. This is the enter/leave that shows artists rise and flop.
         for m in range(n):
-            slots = sorted(item["monthly_ranks"][m] for item in data["data"])
-            assert slots == list(range(1, 9))
+            visible = sorted(
+                item["monthly_ranks"][m]
+                for item in data["data"]
+                if item["monthly_ranks"][m] <= 8
+            )
+            assert visible == list(range(1, len(visible) + 1))
+            assert len(visible) <= 8
+
+        # At least one artist is off-chart at some point (a genuine flop / not-yet).
+        assert any(off_chart in item["monthly_ranks"] for item in data["data"])
 
 
 def test_bar_race_endpoint():

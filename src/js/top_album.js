@@ -54,9 +54,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (res.data.album_name) {
                     albumNameEl.textContent = res.data.album_name;
                     if (albumSubtextEl) {
-                        const streamsFormatted = Number(res.data.total_streams).toLocaleString();
+                        const mins = Number(res.data.total_minutes) || 0;
+                        const timeStr = mins >= 60
+                            ? `${(mins / 60).toLocaleString(undefined, { maximumFractionDigits: 1 })} hrs`
+                            : `${Math.round(mins)} min`;
                         const artistInfo = res.data.artist_name ? `by ${res.data.artist_name}` : "";
-                        albumSubtextEl.textContent = `${artistInfo} • ${streamsFormatted} streams`.trim();
+                        albumSubtextEl.textContent = `${artistInfo} • ${timeStr}`.trim();
                     }
                     showContent();
                     if (res.data.album_id) {

@@ -11,21 +11,24 @@
     const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"];
 
-    const COLORS = [
-        "#53e076", "#00d2ff", "#b066fe", "#ff6b6b", "#ffaa00", "#38f9d7",
-        "#ff54b0", "#4d94ff", "#e8d44d", "#ff8a50", "#7c4dff", "#00e5a0",
-        "#ff4081", "#64ffda", "#ffd740", "#80d8ff",
-    ];
-
     const VISIBLE_N = 10;
     const ROW_GAP = 44;          // px between row tops
-    const SECONDS_PER_MONTH = 0.8;
+    const SECONDS_PER_MONTH = 0.9;
+    const EASE_TAU = 0.22;       // vertical glide time constant (s) — smaller = snappier
+
+    // Monochrome green ramp (theme): brighter at the top, deeper toward the bottom.
+    function greenShade(pos) {
+        const t = VISIBLE_N > 1 ? Math.min(pos, VISIBLE_N - 1) / (VISIBLE_N - 1) : 0;
+        return `hsl(145, 63%, ${58 - t * 30}%)`;
+    }
 
     // Module state
     let entity = "artist";
     let months = [];
-    let items = [];              // [{ name, artist_name?, cumulative: number[], color }]
+    let items = [];              // [{ name, artist_name?, cumulative: number[] }]
     let rowEls = [];             // DOM row per item, index-aligned with `items`
+    let curY = [];               // eased vertical position per row
+    let curOp = [];              // eased opacity per row
     let progress = 0;            // 0 .. months.length-1
     let isPlaying = true;
     let speed = 1.0;
@@ -60,16 +63,16 @@
         if (!container) return;
         container.innerHTML = "";
         rowEls = [];
+        curY = [];
+        curOp = [];
         container.style.height = `${VISIBLE_N * ROW_GAP}px`;
 
-        items.forEach((item, idx) => {
+        items.forEach((item) => {
             const row = document.createElement("div");
             row.className = "race-row";
             row.style.cssText =
                 "position:absolute;left:0;right:0;top:0;opacity:0;" +
-                "transform:translateY(0px);" +
-                "transition:transform .5s cubic-bezier(.22,1,.36,1),opacity .3s ease;" +
-                "will-change:transform,opacity;";
+                "transform:translateY(0px);will-change:transform,opacity;";
             const sub = item.artist_name
                 ? `<span class="text-on-surface-variant font-normal opacity-70"> · ${item.artist_name}</span>`
                 : "";
@@ -77,17 +80,19 @@
                 <div class="flex items-center gap-2 h-10">
                     <div class="race-rank w-6 text-right font-mono text-label-bold text-on-surface-variant"></div>
                     <div class="race-name w-28 md:w-44 truncate text-body-sm font-bold text-on-surface" title="${item.name}">${item.name}${sub}</div>
-                    <div class="flex-1 h-6 rounded-full bg-surface-container-high/50 overflow-hidden">
-                        <div class="race-bar h-full rounded-full" style="width:0%;background:${item.color};transition:width .12s linear;"></div>
+                    <div class="flex-1 h-6 rounded-full bg-surface-container-high/40 overflow-hidden">
+                        <div class="race-bar h-full rounded-full" style="width:0%;"></div>
                     </div>
                     <div class="race-value w-16 text-right font-mono text-label-bold text-on-surface"></div>
                 </div>`;
             container.appendChild(row);
             rowEls.push(row);
+            curY.push(VISIBLE_N * ROW_GAP);
+            curOp.push(0);
         });
     }
 
-    function render() {
+    function render(dt) {
         const empty = document.getElementById("race-empty");
         const container = document.getElementById("race-rows");
         if (!container) return;
@@ -109,19 +114,28 @@
         const slotOf = new Array(items.length).fill(-1);
         order.forEach((itemIdx, pos) => { slotOf[itemIdx] = pos; });
 
+        // Frame-rate independent easing. dt === null snaps (used for scrubbing).
+        const k = dt == null ? 1 : 1 - Math.exp(-dt / EASE_TAU);
+
         items.forEach((item, i) => {
             const row = rowEls[i];
             if (!row) return;
             const pos = slotOf[i];
             const onChart = pos < VISIBLE_N;
+            const targetY = (onChart ? pos : VISIBLE_N) * ROW_GAP;
 
-            row.style.transform = `translateY(${(onChart ? pos : VISIBLE_N) * ROW_GAP}px)`;
-            row.style.opacity = onChart ? "1" : "0";
+            curY[i] += (targetY - curY[i]) * k;
+            curOp[i] += ((onChart ? 1 : 0) - curOp[i]) * k;
+            row.style.transform = `translateY(${curY[i].toFixed(2)}px)`;
+            row.style.opacity = curOp[i].toFixed(3);
 
             const bar = row.querySelector(".race-bar");
             const rankEl = row.querySelector(".race-rank");
             const valEl = row.querySelector(".race-value");
-            if (bar) bar.style.width = `${Math.max(0, (values[i] / maxVal) * 100)}%`;
+            if (bar) {
+                bar.style.width = `${Math.max(0, (values[i] / maxVal) * 100)}%`;
+                if (onChart) bar.style.background = greenShade(pos);
+            }
             if (rankEl) rankEl.textContent = `${pos + 1}`;
             if (valEl) valEl.textContent = fmtValue(values[i]);
         });
@@ -153,8 +167,9 @@
                 isPlaying = false;
                 setPlayIcon();
             }
-            render();
         }
+        // Always render so the eased motion keeps settling even while paused.
+        render(Math.min(dt, 0.05));
         rafId = requestAnimationFrame(loop);
     }
 
@@ -173,11 +188,10 @@
         }
 
         months = Array.isArray(res.data.months) ? res.data.months : [];
-        items = (res.data.data || []).map((d, idx) => ({
+        items = (res.data.data || []).map((d) => ({
             name: d.name || "Unknown",
             artist_name: d.artist_name || null,
             cumulative: Array.isArray(d.cumulative_minutes) ? d.cumulative_minutes : [],
-            color: COLORS[idx % COLORS.length],
         }));
 
         progress = 0;
@@ -190,7 +204,7 @@
         if (endEl && months.length) endEl.textContent = months[months.length - 1].slice(0, 4);
 
         buildRows();
-        render();
+        render(null);
     }
 
     // ---- Exposed controls (wired from time.html) ----
@@ -218,12 +232,12 @@
         progress = 0;
         isPlaying = true;
         setPlayIcon();
-        render();
+        render(null);
     };
 
     window.onRaceScrub = function (val) {
         progress = parseFloat(val);
-        render();
+        render(null);
     };
 
     window.setRaceSpeed = function (spd) {
@@ -237,7 +251,7 @@
     };
 
     document.addEventListener("DOMContentLoaded", () => {
-        render();
+        render(null);
         rafId = requestAnimationFrame(loop);
         fetchRace();
     });

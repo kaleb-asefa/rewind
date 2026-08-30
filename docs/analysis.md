@@ -111,27 +111,29 @@ loads without waiting on catalog enrichment.
 
 **Endpoint:** `GET /api/metrics/top-album`
 
-**Measures:** the album the user played the most times.
+**Measures:** the album the user spent the most *time* listening to.
 
-**Computation:** group non-null rows by the pair (`album_name`, `artist_name`), count rows as
-`total_streams` and sum `ms_played`, order by stream count descending, take the top row. The
-`album_id` is looked up from `track_features` for the cover image.
+**Computation:** group non-null rows by the pair (`album_name`, `artist_name`), sum
+`ms_played` and count rows, order by **total listening time** descending, take the top row.
+The `album_id` is looked up from `track_features` for the cover image.
 
-**Displayed as:** album name + artist + stream count.
+**Displayed as:** album name + artist + total listening time (hours).
 
 **Notes and caveats:**
 
-- Aggregates play events across all tracks on the album, so a large album has more chances to
-  accumulate streams than a single — album length is a confounding factor when comparing.
+- **Ranked by time, not streams** (unlike Top Artist / Top Track). Time is the more honest
+  "which record did I actually live in" measure, and it makes the album card agree with the
+  all-time bar race, whose #1 album is also time-ranked.
+- Aggregates listening across all tracks on the album, so a long album has more room to
+  accumulate time than a single — album length is still a confounding factor when comparing.
 - Singles are their own "album", and deluxe/compilation editions are distinct albums whenever
   their `album_name` differs, even for the same underlying songs.
-- Same streams-vs-minutes ranking behavior as the other top cards.
 
 ## Known limitations (shared)
 
-- **Streams reward frequency, not depth.** All three "top" metrics rank by play-event count.
-  A time-weighted variant (rank by `total_ms`) is available from the same query fields and may
-  be offered as a toggle later.
+- **Streams vs. time.** Top Artist and Top Track rank by play count (frequency); Top Album
+  ranks by listening time (depth). Every endpoint returns both figures, so any card could
+  expose a toggle later.
 - **Name-based grouping.** Top Track and Top Album group on display names, which favors
   readability over the stricter uniqueness `track_uri` would give. Edge cases (remasters,
   re-releases, capitalization differences) are the price of that choice.
@@ -264,33 +266,41 @@ construction.
 
 ### Rank Velocity — smoothing approach (chosen)
 
-**Question:** how does an artist's *standing* rise and fall over time?
+**Question:** which artists (or tracks) were *trending* at each point in time — including the
+ones you binged for a few months and then abandoned?
 
-**Problem with the old version:** rank was computed from a single calendar month's plays.
-Sparse months swung wildly, artists fell to zero the moment they weren't played, and the
-top-N membership churned every frame — far too much motion to read as a trend.
+**Problem with the naive version:** rank was computed from a single calendar month's plays.
+Sparse months swung wildly and lines snapped between the top and the floor every frame — pure
+jitter, not a readable trend.
 
-**Chosen method — three layers that attack both root causes (spiky score *and* churn):**
+**The tension:** a *fixed* all-time Top-N is perfectly stable but a poor insight — it can only
+ever show your all-time leaders, never the artist you obsessed over for three months and then
+dropped. The chart *must* let entities **enter and leave** to tell that story; the job of the
+maths is to make those entrances and exits smooth and meaningful rather than jittery.
 
-1. **EWMA score (smooths the signal).** Rank each artist by an exponentially weighted moving
-   average of monthly plays rather than the raw monthly count:
+**Chosen method:**
 
-   $$S_t = \alpha \cdot p_t + (1-\alpha)\,S_{t-1}$$
+1. **EWMA score (smooths the signal).** Score each entity by an exponentially weighted moving
+   average of monthly listening time:
 
-   where $p_t$ is plays in month $t$ and $\alpha \approx 0.3$ (default; lower = smoother,
-   higher = more responsive). Fading memory means one quiet month no longer drops an artist to
-   zero, and there are no window-edge step artifacts.
+   $$S_t = \alpha \cdot m_t + (1-\alpha)\,S_{t-1}$$
 
-2. **Fixed Top-N cohort (kills membership churn).** Choose the top N artists over the *whole*
-   period once, and only animate those N. This removes the constant "new ones appear and shove
-   others out" motion, which was the single biggest source of visual disturbance.
+   where $m_t$ is minutes listened in month $t$ and $\alpha \approx 0.35$ (lower = smoother,
+   higher = more responsive). Fading memory means a few heavy months build a peak that then
+   *decays* once you stop — so an obsession rises smoothly and later **flops** off-chart
+   instead of vanishing in a single frame.
 
-3. **Hysteresis / dead-band (stops flicker).** Only change a displayed rank when the score gap
-   to the neighbouring artist exceeds a small threshold, so near-ties don't swap positions
-   every frame.
+2. **Per-month Top-N (genuine enter/leave).** Each month keeps the top $N$ by that smoothed
+   score; everyone else is off-chart (rank $N+1$). An entity appears only **after its first
+   listen** ($S_t > 0$) and drops off when others out-score it — capturing rise and fall.
 
-**Defaults to start from:** $\alpha = 0.3$, $N = 10$, monthly frames, small hysteresis band.
-All three are tunable. Ranking is by artist first; the same machinery extends to tracks/albums.
+3. **Relegation hysteresis (stops boundary flicker).** A newcomer only displaces the incumbent
+   in the last slot if it clears them by a small margin, so lines don't blink in and out for a
+   single month at the edge.
+
+**Defaults:** $\alpha = 0.35$, $N = 8$, monthly frames, relegation margin $\approx 0.1$. All
+tunable. Works for artists and tracks; the frontend interpolates between monthly ranks so the
+lines glide.
 
 ### All-time bar race (new)
 
@@ -299,18 +309,23 @@ All three are tunable. Ranking is by artist first; the same machinery extends to
 **Idea:** a horizontal **bar-chart race**. The timeline plays forward from the first play to
 the last; each artist's (or track's, or album's) bar grows as its *cumulative* listening time
 accumulates, and bars re-sort as leaders overtake each other. At the final frame the bars
-equal the all-time totals — so the #1 bar **matches the Top Artist / Top Track / Top Album
-card exactly**. The animation and the headline metric agree by construction.
+equal the all-time totals. Because the race ranks by **time**, its final #1 matches the
+**Top Album** card exactly (also time-ranked); the Top Artist / Top Track cards rank by
+streams, so their #1 can differ from the race's time-based leader.
 
 **Metric:** cumulative **time spent listening** (running sum of `ms_played`, shown as
 minutes/hours), grouped by the chosen entity. A stream-count variant is possible but time is
 the more honest "who did I actually spend my life on" measure.
 
-**Why it's smooth by construction:** the value is cumulative, so bars only ever **grow, never
-shrink**. There is no month-to-month collapse and no smoothing math required — the only motion
-is bars lengthening and occasionally overtaking, which is exactly the satisfying part. This is
-the key contrast with Rank Velocity above, which needs EWMA + cohort + hysteresis precisely
-because its per-period value can fall.
+**Why it's smooth:** the value is cumulative, so bars only ever **grow, never shrink** — no
+month-to-month collapse and no score-smoothing maths needed. Growth is continuous (values are
+interpolated between monthly keyframes each animation frame) and the vertical re-ordering is
+**eased** (each row glides toward its new slot instead of snapping), giving the fluid
+overtaking motion of a classic bar-chart race. This is the key contrast with Rank Velocity
+above, whose per-period value can fall and therefore needs EWMA + hysteresis.
+
+**Style:** a single monochrome **green** ramp (theme colour) — brighter at the top, deeper
+toward the bottom — rather than one colour per entity.
 
 **Shape of the data:** for each time step (monthly or weekly frame), compute the running
 `SUM(ms_played)` per entity up to that step and keep the top N for the frame. Toggle entity

@@ -263,7 +263,7 @@ async def get_top_album(
             )
             .where(history.c.album_name.isnot(None))
             .group_by(history.c.album_name, history.c.artist_name)
-            .order_by(func.count().desc())
+            .order_by(func.coalesce(func.sum(history.c.ms_played), 0).desc())
             .limit(1)
         )
         row = conn.execute(stmt).first()
@@ -369,33 +369,26 @@ def _generate_month_sequence(start_str: str, end_str: str) -> list[str]:
     return months
 
 
-def _hysteresis_reorder(prev_order: list, scores: dict, margin: float) -> list:
-    """Re-sort by score but only swap neighbours when the lower-positioned item
-    beats the higher by more than ``margin`` (relative). Suppresses near-tie flicker."""
-    order = list(prev_order)
-    swapped = True
-    while swapped:
-        swapped = False
-        for i in range(len(order) - 1):
-            hi, lo = order[i], order[i + 1]
-            if scores[lo] > scores[hi] * (1 + margin):
-                order[i], order[i + 1] = lo, hi
-                swapped = True
-    return order
-
-
 def _smoothed_rank_frames(
     monthly_rows: list,
     key_len: int,
     limit: int,
-    alpha: float = 0.3,
-    hysteresis: float = 0.12,
+    alpha: float = 0.35,
+    hysteresis: float = 0.1,
 ):
-    """Rank Velocity signal: EWMA score + fixed Top-N cohort + hysteresis.
+    """Rank Velocity signal: EWMA-smoothed monthly score with genuine enter/leave.
+
+    Each entity's score is an exponentially weighted moving average of monthly
+    listening time, so a few heavy months build a peak that then fades once
+    listening stops — capturing the rise and *flop* of temporary obsessions
+    rather than only the all-time top N. Every month keeps the top ``limit`` by
+    that smoothed score (entities below fall "off-chart" at rank ``limit + 1``);
+    a small relegation margin stops a line blinking in and out at the boundary.
 
     ``monthly_rows`` are ``(month, *key_cols, ms, streams)``. Returns
-    ``(full_months, featured)`` where ``featured`` is ordered by lifetime ms and
-    each item is ``{key, total_ms, total_streams, monthly_ranks}``.
+    ``(full_months, featured)`` where ``featured`` is every entity that ever
+    reaches the top ``limit``, ordered by lifetime ms, each
+    ``{key, total_ms, total_streams, monthly_ranks}``.
     """
     month_map: dict[str, dict] = {}
     lifetime: dict[tuple, list] = {}
@@ -419,34 +412,55 @@ def _smoothed_rank_frames(
         _generate_month_sequence(sorted_months[0], sorted_months[-1]) or sorted_months
     )
 
-    # Fixed Top-N cohort chosen once over the whole period (by lifetime ms).
-    cohort = sorted(lifetime, key=lambda k: lifetime[k][0], reverse=True)[:limit]
+    entities = list(lifetime.keys())
+    ewma = {k: 0.0 for k in entities}
+    off_chart = limit + 1
+    monthly_top: list[list] = []  # ordered top-`limit` keys per month
+    featured_set: set = set()
+    prev_visible: set = set()
 
-    ewma = {k: 0.0 for k in cohort}
-    monthly_ranks: dict[tuple, list] = {k: [] for k in cohort}
-    order = None
     for m_key in full_months:
         month_data = month_map.get(m_key, {})
-        for k in cohort:
-            ms = month_data.get(k, (0, 0))[0]
-            ewma[k] = alpha * ms + (1 - alpha) * ewma[k]
-        if order is None:
-            order = sorted(cohort, key=lambda k: (ewma[k], lifetime[k][0]), reverse=True)
-        else:
-            order = _hysteresis_reorder(order, ewma, hysteresis)
-        for pos, k in enumerate(order, start=1):
-            monthly_ranks[k].append(pos)
+        for k in entities:
+            ewma[k] = alpha * month_data.get(k, (0, 0))[0] + (1 - alpha) * ewma[k]
 
-    featured = sorted(cohort, key=lambda k: lifetime[k][0], reverse=True)
-    return full_months, [
-        {
-            "key": k,
-            "total_ms": lifetime[k][0],
-            "total_streams": lifetime[k][1],
-            "monthly_ranks": monthly_ranks[k],
-        }
-        for k in featured
-    ]
+        # Only entities actually played by now compete; EWMA carries (decaying)
+        # memory forward, so an artist stays eligible after their first listen and
+        # only drops off when others outrank them.
+        active = [k for k in entities if ewma[k] > 1e-9]
+        ranked = sorted(active, key=lambda k: (ewma[k], lifetime[k][0]), reverse=True)
+        top = ranked[:limit]
+
+        # Relegation hysteresis: if the weakest newcomer only barely edged out an
+        # incumbent sitting right below the line, keep the incumbent instead.
+        if prev_visible and len(ranked) > limit:
+            weakest_in = ranked[limit - 1]
+            strongest_out = ranked[limit]
+            if (
+                strongest_out in prev_visible
+                and weakest_in not in prev_visible
+                and ewma[weakest_in] < ewma[strongest_out] * (1 + hysteresis)
+            ):
+                top[limit - 1] = strongest_out
+                top.sort(key=lambda k: (ewma[k], lifetime[k][0]), reverse=True)
+
+        prev_visible = set(top)
+        monthly_top.append(top)
+        featured_set.update(top)
+
+    featured = sorted(featured_set, key=lambda k: lifetime[k][0], reverse=True)
+    result = []
+    for k in featured:
+        ranks = [top.index(k) + 1 if k in top else off_chart for top in monthly_top]
+        result.append(
+            {
+                "key": k,
+                "total_ms": lifetime[k][0],
+                "total_streams": lifetime[k][1],
+                "monthly_ranks": ranks,
+            }
+        )
+    return full_months, result
 
 
 def _compute_bar_race(monthly_rows: list, key_len: int, limit: int):
