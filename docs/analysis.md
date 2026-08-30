@@ -17,9 +17,10 @@ headline metric cards.
 3. Top Track
 4. Top Album
 
-> **Rank Velocity is intentionally left out for now.** The current month-over-month
-> artist-rank computation needs to be reworked before it can be trusted and documented. It
-> will get its own section once the improved version lands.
+> **Rank Velocity is being reworked, not removed.** The old month-over-month artist-rank
+> jittered too hard — artists dropped to zero and new ones jumped in every frame. The chosen
+> smoothing approach is now specified under [Animated visualizations](#animated-visualizations)
+> below. It is a decided design, not yet implemented in the endpoint.
 
 ## Foundational concepts
 
@@ -254,3 +255,67 @@ Two data sources drive everything:
 - **Popularity is a 0–1 snapshot**, not historical — "mainstream score" is approximate.
 - **Define "skip" consistently** — flag vs `< 30s` vs `fwdbtn`; pick one and note it.
 - **Audio-feature coverage ~94%** — always surface the coverage figure alongside [C] metrics.
+
+## Animated visualizations
+
+Two time-based animations live here. They answer different questions and, importantly, have
+different motion characteristics — one needs deliberate smoothing, the other is smooth by
+construction.
+
+### Rank Velocity — smoothing approach (chosen)
+
+**Question:** how does an artist's *standing* rise and fall over time?
+
+**Problem with the old version:** rank was computed from a single calendar month's plays.
+Sparse months swung wildly, artists fell to zero the moment they weren't played, and the
+top-N membership churned every frame — far too much motion to read as a trend.
+
+**Chosen method — three layers that attack both root causes (spiky score *and* churn):**
+
+1. **EWMA score (smooths the signal).** Rank each artist by an exponentially weighted moving
+   average of monthly plays rather than the raw monthly count:
+
+   $$S_t = \alpha \cdot p_t + (1-\alpha)\,S_{t-1}$$
+
+   where $p_t$ is plays in month $t$ and $\alpha \approx 0.3$ (default; lower = smoother,
+   higher = more responsive). Fading memory means one quiet month no longer drops an artist to
+   zero, and there are no window-edge step artifacts.
+
+2. **Fixed Top-N cohort (kills membership churn).** Choose the top N artists over the *whole*
+   period once, and only animate those N. This removes the constant "new ones appear and shove
+   others out" motion, which was the single biggest source of visual disturbance.
+
+3. **Hysteresis / dead-band (stops flicker).** Only change a displayed rank when the score gap
+   to the neighbouring artist exceeds a small threshold, so near-ties don't swap positions
+   every frame.
+
+**Defaults to start from:** $\alpha = 0.3$, $N = 10$, monthly frames, small hysteresis band.
+All three are tunable. Ranking is by artist first; the same machinery extends to tracks/albums.
+
+### All-time bar race (new)
+
+**Question:** how did cumulative listening pile up over time, and who ends up on top?
+
+**Idea:** a horizontal **bar-chart race**. The timeline plays forward from the first play to
+the last; each artist's (or track's, or album's) bar grows as its *cumulative* listening time
+accumulates, and bars re-sort as leaders overtake each other. At the final frame the bars
+equal the all-time totals — so the #1 bar **matches the Top Artist / Top Track / Top Album
+card exactly**. The animation and the headline metric agree by construction.
+
+**Metric:** cumulative **time spent listening** (running sum of `ms_played`, shown as
+minutes/hours), grouped by the chosen entity. A stream-count variant is possible but time is
+the more honest "who did I actually spend my life on" measure.
+
+**Why it's smooth by construction:** the value is cumulative, so bars only ever **grow, never
+shrink**. There is no month-to-month collapse and no smoothing math required — the only motion
+is bars lengthening and occasionally overtaking, which is exactly the satisfying part. This is
+the key contrast with Rank Velocity above, which needs EWMA + cohort + hysteresis precisely
+because its per-period value can fall.
+
+**Shape of the data:** for each time step (monthly or weekly frame), compute the running
+`SUM(ms_played)` per entity up to that step and keep the top N for the frame. Toggle entity
+(artist / track / album). The final frame is just the all-time top-N leaderboard.
+
+**Caveats:** entities that peak early then go quiet still keep their bar length (cumulative
+never drops) — that's correct for "all-time", but it means the race shows *accumulated* love,
+not *current* momentum. Rank Velocity is the companion view for momentum.
