@@ -19,7 +19,6 @@
     const TIP_RESERVE = 0.80;    // longest bar uses this fraction of the width (room for tip)
     const SECONDS_PER_MONTH = 0.9;
     const EASE_TAU = 0.30;       // vertical glide time constant (s) — smaller = snappier
-    const PLACEHOLDER_ICON = { artist: "person", track: "music_note", album: "album" };
 
     // Monochrome green ramp (theme): brighter at the top, deeper toward the bottom.
     function greenShade(pos) {
@@ -71,7 +70,6 @@
         curY = [];
         curOp = [];
         container.style.height = `${VISIBLE_N * LANE}px`;
-        const icon = PLACEHOLDER_ICON[entity] || "music_note";
 
         items.forEach((item) => {
             const row = document.createElement("div");
@@ -82,11 +80,12 @@
             const sub = item.artist_name
                 ? ` <span style="opacity:.7;font-weight:400;">· ${item.artist_name}</span>`
                 : "";
+            const initial = (item.name || "?").trim().charAt(0).toUpperCase() || "?";
             row.innerHTML = `
                 <div class="race-bar" style="position:absolute;left:0;top:${(LANE - BAR_H) / 2}px;height:${BAR_H}px;width:0;border-radius:9999px;"></div>
                 <div class="race-name" style="position:absolute;left:0;top:0;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-shadow:0 1px 3px rgba(0,0,0,.7);">${item.name}${sub}</div>
-                <div class="race-avatar" style="position:absolute;top:${(LANE - AVATAR) / 2}px;width:${AVATAR}px;height:${AVATAR}px;border-radius:9999px;overflow:hidden;border:2px solid rgba(255,255,255,.18);background:#201f1f;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.4);">
-                    <span class="material-symbols-outlined" style="font-size:18px;color:#53e076;">${icon}</span>
+                <div class="race-avatar" style="position:absolute;top:${(LANE - AVATAR) / 2}px;width:${AVATAR}px;height:${AVATAR}px;border-radius:9999px;overflow:hidden;border:2px solid rgba(255,255,255,.18);background:linear-gradient(135deg,#2f6b43,#1db954);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.4);">
+                    <span style="font-size:15px;font-weight:800;color:#eafff0;">${initial}</span>
                     <img class="race-cover hidden" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt=""/>
                 </div>
                 <div class="race-value" style="position:absolute;top:0;height:${LANE}px;display:flex;align-items:center;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#e5e2e1;white-space:nowrap;"></div>`;
@@ -277,7 +276,7 @@
         document.querySelectorAll('[id^="race-speed-"]').forEach((btn) => {
             btn.className = "px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface transition-colors";
         });
-        const id = `race-speed-${spd === 0.5 ? "05" : spd === 1 ? "10" : "20"}`;
+        const id = `race-speed-${spd === 0.25 ? "025" : spd === 0.5 ? "05" : "10"}`;
         const active = document.getElementById(id);
         if (active) active.className = "px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold";
     };

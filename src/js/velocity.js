@@ -434,7 +434,7 @@
     window.setSpeed = function (spd) {
         playSpeed = spd;
         document.querySelectorAll('[id^="speed-"]').forEach(btn => btn.className = 'px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface transition-colors');
-        const activeBtn = document.getElementById(`speed-${spd === 0.5 ? '05' : spd === 1 ? '10' : '20'}`);
+        const activeBtn = document.getElementById(`speed-${spd === 0.25 ? '025' : spd === 0.5 ? '05' : '10'}`);
         if (activeBtn) activeBtn.className = 'px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold';
     };
 
