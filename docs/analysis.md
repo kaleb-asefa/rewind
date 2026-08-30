@@ -136,3 +136,121 @@ loads without waiting on catalog enrichment.
   re-releases, capitalization differences) are the price of that choice.
 - **No skip/short-play filtering.** A future refinement could discount plays under a threshold
   (e.g. < 30s) so accidental taps don't inflate stream counts.
+
+## Analysis backlog
+
+The Overview cards above are the foundation. This section is the **catalog of analyses we
+want to build** on top of the same data — a reviewed backlog, not a commitment to order.
+Items are tagged by what they need:
+
+- **[H]** — pure `history` table (available today).
+- **[C]** — needs the catalog slice (`track_features`): audio features, genres, popularity,
+  release year, duration, explicit. Covers ~94% of tracks; the obscure ~6% stay unmatched.
+- **[D]** — derived/composite score built from the above.
+
+### What the data makes possible
+
+Two data sources drive everything:
+
+- **`history`** — every play event with timestamp, `ms_played`, platform, `conn_country`,
+  track/artist/album names + `track_uri`, and behavior flags (`shuffle`, `skipped`,
+  `reason_start`, `reason_end`, `offline`, `incognito_mode`).
+- **`track_features`** (catalog enrichment) — per track: full **audio features**
+  (danceability, energy, valence, tempo, key, mode, acousticness, instrumentalness,
+  loudness, speechiness, liveness, time_signature), plus **popularity**,
+  **artist_popularity**, **artist_genres**, **release_year**, **duration**, **isrc**,
+  **explicit**. The audio features are the key unlock — they exist locally even though
+  Spotify's audio-features API is deprecated.
+
+### A. Time, rhythm & consistency [H]
+
+1. **Listening clock** — 24-hour radial of when you listen; peak hour.
+2. **Weekday vs weekend** patterns and per-weekday totals.
+3. **Seasonal / month-of-year** curve across the full history.
+4. **Night-owl vs early-bird** score + "3 AM artists" (what plays late night).
+5. **Longest daily streak** (consecutive days with a play), current streak, active days.
+6. **Biggest day / week / month** ever, with what was played.
+7. **Listening sessions** — cluster plays by gaps; avg session length, longest binge.
+8. **Time-of-day mood shift** — mornings vs nights (pairs with audio features).
+9. **Hours-per-day trend** — listening more or less over time.
+
+### B. Behavior & engagement [H]
+
+10. **Skip rate** overall and **most-skipped tracks/artists** ("most hated").
+11. **Completion rate** — % of each track heard (`ms_played` ÷ track `duration`, needs [C]).
+12. **Skip rate by time of day / weekday / platform** — when you're restless.
+13. **Replay behavior** — back-to-back repeats (`backbtn`), most-looped in one sitting.
+14. **Deliberate vs passive** — `clickrow`/`playbtn` vs `trackdone`/shuffle.
+15. **Shuffle dependence** — shuffle vs hand-picked listening split.
+16. **How songs start and end** — Sankey of `reason_start` → `reason_end`.
+17. **Attention span** — distribution of play durations; under-30s sampling rate.
+18. **Offline listening** — what/when you play offline.
+
+### C. Top-N, discovery & loyalty [H]
+
+19. **Top artists / tracks / albums** for any window (all-time, per year, per month).
+20. **Per-year "Wrapped"** — each year its own top lists + song of the year.
+21. **Discovery rate** — new artists/tracks first heard per month.
+22. **One-hit wonders** — artists played exactly once vs ride-or-dies.
+23. **Rediscovery** — songs that vanished then came back; longest gap between plays.
+24. **Loyalty concentration** — % of listening from top 10 artists (Gini / diversity index).
+25. **Album commitment** — full albums vs cherry-picked singles.
+26. **Song of the summer** — top track per season each year.
+27. **First & last play** of every artist — who's fading, who's rising (retention).
+
+### D. Audio DNA & mood [C]
+
+28. **Mood quadrant** — valence × energy map (Happy / Angry / Sad / Chill).
+29. **Mood over time** — taste getting happier/sadder month to month.
+30. **Average audio profile** — danceability/energy/valence/acousticness radar.
+31. **Tempo (BPM) distribution** — average BPM, workout-tempo tracks, slow jams.
+32. **Danceability leaders** and most/least danceable periods.
+33. **Acoustic vs electronic** balance; **instrumental** listening share.
+34. **Key & mode** — major (happy) vs minor (sad) split; common key; Camelot wheel.
+35. **Explicit content %** over time.
+36. **Energy by time of day** — calm mornings vs hype nights (joins A + D).
+
+### E. Genre & taste [C]
+
+37. **Genre breakdown** — top genres by plays and by hours (via `artist_genres`).
+38. **Genre evolution** — stacked area of genre share over time.
+39. **Taste diversity** — distinct genres, concentration vs breadth.
+40. **Genre by mood/time** — which genres you reach for late at night.
+
+### F. Popularity & obscurity [C]
+
+41. **Mainstream vs underground score** — avg track `popularity` vs global.
+42. **Hipster gems** — most-played low-popularity tracks (you were early).
+43. **Basic-ness index** — share of listening that's chart-topping.
+44. **Artist popularity spread** — megastars vs small artists.
+
+### G. Era / release year [C]
+
+45. **Decade breakdown** — listening by release decade.
+46. **New vs catalog** — fresh releases vs older music; average "music age".
+47. **Music time machine** — oldest and newest tracks played.
+48. **Nostalgia index** — drifting toward older or newer music over time.
+
+### H. Geography & devices [H]
+
+49. **Travel map** — listening by `conn_country`; timeline of where you listened from.
+50. **Soundtrack of each place** — top track/artist per country.
+51. **Device story** — per-platform listening differences.
+52. **Platform over time** — when you switched devices.
+
+### I. Superlatives & fun (Wrapped-style) [H/C]
+
+53. **Listening personality** [D] — badges: Explorer↔Loyalist, Mainstream↔Underground,
+    Night-Owl↔Early-Bird, Focused↔Restless (skip), Shuffler↔Curator.
+54. **Longest / shortest song** played; most-repeated song in a single day.
+55. **The song you couldn't skip** (0% skip, many plays) vs the one you always skip.
+56. **Milestones** — your 1,000th / 10,000th play and what it was.
+57. **"On this day"** — what you were playing a year ago.
+
+### Cross-cutting caveats
+
+- **Home country dominates** `conn_country`; other countries are real travel/VPN but sparse —
+  good for a map, but don't over-read small counts.
+- **Popularity is a 0–1 snapshot**, not historical — "mainstream score" is approximate.
+- **Define "skip" consistently** — flag vs `< 30s` vs `fwdbtn`; pick one and note it.
+- **Audio-feature coverage ~94%** — always surface the coverage figure alongside [C] metrics.
