@@ -2,6 +2,7 @@ import os
 import shutil
 import tempfile
 
+import catalog
 from database import get_db, lifespan as database_lifespan, table_registry
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -100,6 +101,13 @@ def _process_upload(conn: Connection, upload_list: list[UploadFile]):
                     pass
 
 
+def _enrich_session(conn: Connection) -> dict:
+    """Materialize the track_features slice by joining history against the catalog."""
+    result = catalog.enrich_session(conn.connection.driver_connection)
+    conn.commit()
+    return result
+
+
 @app.post("/api/upload")
 async def upload(
     file: UploadFile = File(None),
@@ -132,6 +140,12 @@ async def upload(
         raise HTTPException(
             status_code=500, detail=f"Failed to ingest JSON into DuckDB: {str(e)}"
         )
+
+    try:
+        result["enrichment"] = await run_in_threadpool(_enrich_session, conn)
+    except Exception as e:
+        # Enrichment is best-effort; ingestion already succeeded.
+        result["enrichment"] = {"status": "error", "error": str(e)}
 
     return result
 

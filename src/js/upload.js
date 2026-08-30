@@ -175,9 +175,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       uploadAllBtn.classList.add("pointer-events-none", "opacity-75");
-      uploadAllBtn.textContent = `Ingesting ${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""}...`;
+      uploadAllBtn.textContent = `Analyzing ${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""}...`;
       showStatus(
-        `Uploading ${selectedFiles.length} file(s) to server...`,
+        "Merging your library and matching tracks against the catalog — this can take a moment...",
         "info",
       );
 

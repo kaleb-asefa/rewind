@@ -21,12 +21,13 @@ On upload (`POST /api/upload`), the backend ingests single or multiple Spotify E
 3. Fields present in the export are safely converted via `TRY_CAST({col} AS {dtype})`, while missing schema fields default to `CAST(NULL AS {dtype})`.
 4. The schema-normalized dataset is appended into the `history` table.
 5. `table_registry.reset()` is invoked so reflected tables pick up new data cleanly.
+6. **Catalog enrichment** (`catalog.py`): the upload then joins the session's distinct `track_id`s against the read-only 45M-track catalog (`data/metadata/catalog_sorted.parquet`) and materializes the matched rows into a small `track_features` table. The scan is memory-capped (`memory_limit`, `threads`) and streamed, so the multi-GB catalog is read once per upload, never in a metric request. Missing catalog = enrichment is skipped (ingestion still succeeds).
 
 ### Querying & Active Metric Endpoints
 
 Everything after ingestion — column selection, filters, dashboard queries — goes through SQLAlchemy Core against the reflected `history` table, executed asynchronously via `run_in_threadpool`:
 
-- **`POST /api/upload`**: Accepts single (`file`) or multiple (`files`) JSON exports; ingests data and returns the total row count.
+- **`POST /api/upload`**: Accepts single (`file`) or multiple (`files`) JSON exports; ingests data, builds the per-session `track_features` slice from the catalog, and returns the total row count plus an `enrichment` summary (`matched` / `total` / `coverage`).
 - **`GET /api/metrics/total-time`**: Sums `ms_played` and converts to total minutes listening time.
 - **`GET /api/metrics/top-artist`**: Aggregates streams and total listened minutes grouped by `artist_name`, returning top artist.
 - **`GET /api/metrics/top-album`**: Aggregates streams and total listened minutes grouped by `album_name` & `artist_name`, returning top album.

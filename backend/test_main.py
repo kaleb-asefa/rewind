@@ -3,6 +3,7 @@ import duckdb
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select, func
+import catalog
 import database
 import main
 from database import table_registry
@@ -13,6 +14,8 @@ from main import app
 def setup_and_teardown(tmp_path, monkeypatch):
     session_db_path = str(tmp_path / "rewind.duckdb")
     monkeypatch.setattr(database, "DB_PATH", session_db_path)
+    # Default: no catalog, so uploads skip enrichment (fast). Enrichment test overrides this.
+    monkeypatch.setattr(catalog, "CATALOG_PATH", str(tmp_path / "no_catalog.parquet"))
     table_registry.reset()
     yield
     table_registry.reset()
@@ -177,6 +180,67 @@ def test_track_rank_endpoint():
         assert "total_minutes" in first_item
         assert "monthly_ranks" in first_item
         assert len(first_item["monthly_ranks"]) == data["total_months"]
+
+
+def test_upload_skips_enrichment_when_catalog_missing():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            response = client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        assert response.status_code == 200
+        assert response.json()["enrichment"]["status"] == "skipped"
+
+
+def test_enrichment_builds_track_features_from_catalog(tmp_path, monkeypatch):
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        engine = app.state.engine
+
+        # Grab a few real track_ids from the uploaded history
+        with engine.connect() as conn:
+            raw = conn.connection.driver_connection
+            ids = [
+                r[0]
+                for r in raw.execute(
+                    """
+                    SELECT DISTINCT replace(track_uri, 'spotify:track:', '')
+                    FROM history WHERE track_uri LIKE 'spotify:track:%' LIMIT 3
+                    """
+                ).fetchall()
+            ]
+        assert len(ids) == 3
+
+        # Build a tiny fixture catalog containing exactly those ids
+        fixture = str(tmp_path / "catalog_fixture.parquet")
+        fx = duckdb.connect()
+        fx.execute("CREATE TABLE c (track_id VARCHAR, track_name VARCHAR, energy DOUBLE)")
+        fx.executemany(
+            "INSERT INTO c VALUES (?, ?, ?)", [(i, f"name_{i}", 0.5) for i in ids]
+        )
+        fx.execute(f"COPY c TO '{fixture}' (FORMAT PARQUET)")
+        fx.close()
+
+        monkeypatch.setattr(catalog, "CATALOG_PATH", fixture)
+
+        with engine.connect() as conn:
+            result = main._enrich_session(conn)
+
+        assert result["status"] == "ok"
+        assert result["matched"] == 3
+        assert result["total"] >= 3
+        assert 0 < result["coverage"] <= 1
+
+        with engine.connect() as conn:
+            raw = conn.connection.driver_connection
+            n = raw.execute("SELECT count(*) FROM track_features").fetchone()[0]
+            assert n == 3
+            cols = {r[0] for r in raw.execute("DESCRIBE track_features").fetchall()}
+            assert {"track_id", "track_name", "energy"}.issubset(cols)
+
 
 
 
