@@ -324,8 +324,11 @@ interpolated between monthly keyframes each animation frame) and the vertical re
 overtaking motion of a classic bar-chart race. This is the key contrast with Rank Velocity
 above, whose per-period value can fall and therefore needs EWMA + hysteresis.
 
-**Style:** a single monochrome **green** ramp (theme colour) — brighter at the top, deeper
-toward the bottom — rather than one colour per entity.
+**Style:** modelled on the *Data Is Beautiful* bar-chart-race look — a circular **cover image
+rides each bar's tip**, the name trails just behind it, the value counts up at the tip, and a
+large translucent **year** sits in the background. Bars use a single monochrome **green** ramp
+(theme colour), brighter at the top and deeper toward the bottom, rather than one colour per
+entity.
 
 **Shape of the data:** for each time step (monthly or weekly frame), compute the running
 `SUM(ms_played)` per entity up to that step and keep the top N for the frame. Toggle entity

@@ -12,9 +12,14 @@
         "July", "August", "September", "October", "November", "December"];
 
     const VISIBLE_N = 10;
-    const ROW_GAP = 44;          // px between row tops
+    const LANE = 44;             // px per row lane
+    const BAR_H = 26;            // bar thickness
+    const AVATAR = 34;          // cover circle riding the bar tip
+    const GAP = 8;
+    const TIP_RESERVE = 0.80;    // longest bar uses this fraction of the width (room for tip)
     const SECONDS_PER_MONTH = 0.9;
-    const EASE_TAU = 0.22;       // vertical glide time constant (s) — smaller = snappier
+    const EASE_TAU = 0.30;       // vertical glide time constant (s) — smaller = snappier
+    const PLACEHOLDER_ICON = { artist: "person", track: "music_note", album: "album" };
 
     // Monochrome green ramp (theme): brighter at the top, deeper toward the bottom.
     function greenShade(pos) {
@@ -65,31 +70,40 @@
         rowEls = [];
         curY = [];
         curOp = [];
-        container.style.height = `${VISIBLE_N * ROW_GAP}px`;
+        container.style.height = `${VISIBLE_N * LANE}px`;
+        const icon = PLACEHOLDER_ICON[entity] || "music_note";
 
         items.forEach((item) => {
             const row = document.createElement("div");
             row.className = "race-row";
             row.style.cssText =
-                "position:absolute;left:0;right:0;top:0;opacity:0;" +
+                `position:absolute;left:0;right:0;top:0;height:${LANE}px;opacity:0;` +
                 "transform:translateY(0px);will-change:transform,opacity;";
             const sub = item.artist_name
-                ? `<span class="text-on-surface-variant font-normal opacity-70"> · ${item.artist_name}</span>`
+                ? ` <span style="opacity:.7;font-weight:400;">· ${item.artist_name}</span>`
                 : "";
             row.innerHTML = `
-                <div class="flex items-center gap-2 h-10">
-                    <div class="race-rank w-6 text-right font-mono text-label-bold text-on-surface-variant"></div>
-                    <div class="race-name w-28 md:w-44 truncate text-body-sm font-bold text-on-surface" title="${item.name}">${item.name}${sub}</div>
-                    <div class="flex-1 h-6 rounded-full bg-surface-container-high/40 overflow-hidden">
-                        <div class="race-bar h-full rounded-full" style="width:0%;"></div>
-                    </div>
-                    <div class="race-value w-16 text-right font-mono text-label-bold text-on-surface"></div>
-                </div>`;
+                <div class="race-bar" style="position:absolute;left:0;top:${(LANE - BAR_H) / 2}px;height:${BAR_H}px;width:0;border-radius:9999px;"></div>
+                <div class="race-name" style="position:absolute;left:0;top:0;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-shadow:0 1px 3px rgba(0,0,0,.7);">${item.name}${sub}</div>
+                <div class="race-avatar" style="position:absolute;top:${(LANE - AVATAR) / 2}px;width:${AVATAR}px;height:${AVATAR}px;border-radius:9999px;overflow:hidden;border:2px solid rgba(255,255,255,.18);background:#201f1f;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.4);">
+                    <span class="material-symbols-outlined" style="font-size:18px;color:#53e076;">${icon}</span>
+                    <img class="race-cover hidden" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt=""/>
+                </div>
+                <div class="race-value" style="position:absolute;top:0;height:${LANE}px;display:flex;align-items:center;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#e5e2e1;white-space:nowrap;"></div>`;
             container.appendChild(row);
             rowEls.push(row);
-            curY.push(VISIBLE_N * ROW_GAP);
+            curY.push(VISIBLE_N * LANE);
             curOp.push(0);
         });
+
+        // Lazy-load cover art (best-effort, cached server-side).
+        if (window.loadCover) {
+            items.forEach((item, i) => {
+                if (!item.id) return;
+                const img = rowEls[i].querySelector(".race-cover");
+                window.loadCover(img, entity, item.id);
+            });
+        }
     }
 
     function render(dt) {
@@ -105,6 +119,7 @@
         if (empty) empty.classList.add("hidden");
         container.classList.remove("hidden");
 
+        const trackW = container.clientWidth || 600;
         const values = items.map((it) => valueAt(it.cumulative, progress));
         const order = values
             .map((v, i) => i)
@@ -116,32 +131,48 @@
 
         // Frame-rate independent easing. dt === null snaps (used for scrubbing).
         const k = dt == null ? 1 : 1 - Math.exp(-dt / EASE_TAU);
+        const maxBar = trackW * TIP_RESERVE;
 
         items.forEach((item, i) => {
             const row = rowEls[i];
             if (!row) return;
             const pos = slotOf[i];
             const onChart = pos < VISIBLE_N;
-            const targetY = (onChart ? pos : VISIBLE_N) * ROW_GAP;
+            const targetY = (onChart ? pos : VISIBLE_N) * LANE;
 
             curY[i] += (targetY - curY[i]) * k;
             curOp[i] += ((onChart ? 1 : 0) - curOp[i]) * k;
             row.style.transform = `translateY(${curY[i].toFixed(2)}px)`;
             row.style.opacity = curOp[i].toFixed(3);
+            if (curOp[i] < 0.01) return;  // invisible row — skip layout math
+
+            const barW = Math.max(2, (values[i] / maxVal) * maxBar);
+            const avatarLeft = Math.min(Math.max(barW - AVATAR / 2, 0), trackW - AVATAR);
 
             const bar = row.querySelector(".race-bar");
-            const rankEl = row.querySelector(".race-rank");
+            const nameEl = row.querySelector(".race-name");
+            const avatarEl = row.querySelector(".race-avatar");
             const valEl = row.querySelector(".race-value");
+
             if (bar) {
-                bar.style.width = `${Math.max(0, (values[i] / maxVal) * 100)}%`;
-                if (onChart) bar.style.background = greenShade(pos);
+                bar.style.width = `${barW}px`;
+                bar.style.background = greenShade(pos);
             }
-            if (rankEl) rankEl.textContent = `${pos + 1}`;
-            if (valEl) valEl.textContent = fmtValue(values[i]);
+            if (avatarEl) avatarEl.style.left = `${avatarLeft}px`;
+            if (nameEl) nameEl.style.width = `${Math.max(0, avatarLeft - GAP)}px`;
+            if (valEl) {
+                valEl.style.left = `${avatarLeft + AVATAR + GAP}px`;
+                valEl.textContent = fmtValue(values[i]);
+            }
         });
 
         const monthDisp = document.getElementById("race-month-display");
         if (monthDisp) monthDisp.textContent = monthLabel(progress);
+        const watermark = document.getElementById("race-date-watermark");
+        if (watermark && months.length) {
+            const idx = Math.min(Math.max(0, Math.floor(progress)), months.length - 1);
+            watermark.textContent = months[idx].slice(0, 4);
+        }
         const scrubber = document.getElementById("race-scrubber");
         if (scrubber && document.activeElement !== scrubber) {
             scrubber.max = Math.max(0, months.length - 1);
@@ -191,6 +222,7 @@
         items = (res.data.data || []).map((d) => ({
             name: d.name || "Unknown",
             artist_name: d.artist_name || null,
+            id: d.id || null,
             cumulative: Array.isArray(d.cumulative_minutes) ? d.cumulative_minutes : [],
         }));
 

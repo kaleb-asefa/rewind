@@ -653,11 +653,38 @@ async def get_bar_race(
             rows = []
 
         full_months, featured = _compute_bar_race(rows, key_len, limit)
+
+        # Best-effort id lookup so the frontend can lazy-load cover art.
+        id_map: dict = {}
+        try:
+            if entity == "artist":
+                for r in raw_con.execute(
+                    "SELECT artist_name, MAX(artist_id) FROM track_features "
+                    "WHERE artist_id IS NOT NULL GROUP BY artist_name"
+                ).fetchall():
+                    id_map[(r[0],)] = r[1]
+            elif entity == "album":
+                for r in raw_con.execute(
+                    "SELECT album_name, artist_name, MAX(album_id) FROM track_features "
+                    "WHERE album_id IS NOT NULL GROUP BY album_name, artist_name"
+                ).fetchall():
+                    id_map[(r[0], r[1])] = r[2]
+            else:  # track
+                for r in raw_con.execute(
+                    "SELECT track_name, artist_name, "
+                    "MAX(replace(track_uri, 'spotify:track:', '')) FROM history "
+                    "WHERE track_uri LIKE 'spotify:track:%' GROUP BY track_name, artist_name"
+                ).fetchall():
+                    id_map[(r[0], r[1])] = r[2]
+        except Exception:
+            id_map = {}
+
         data = []
         for idx, f in enumerate(featured, start=1):
             item = {
                 "rank": idx,
                 "name": f["key"][0],
+                "id": id_map.get(f["key"]),
                 "total_minutes": round(f["total_ms"] / 60000, 2),
                 "cumulative_minutes": [
                     round(v / 60000, 2) for v in f["cumulative_ms"]
