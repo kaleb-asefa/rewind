@@ -1,6 +1,7 @@
 import os
 import shutil
 import tempfile
+from datetime import date, timedelta
 
 import catalog
 import images
@@ -369,6 +370,21 @@ def _generate_month_sequence(start_str: str, end_str: str) -> list[str]:
     return months
 
 
+def _generate_week_sequence(start_str: str, end_str: str) -> list[str]:
+    """All ISO week-start dates (inclusive) between two ``date_trunc('week')`` values."""
+    try:
+        start = date.fromisoformat(start_str[:10])
+        end = date.fromisoformat(end_str[:10])
+    except Exception:
+        return []
+    weeks = []
+    cur = start
+    while cur <= end:
+        weeks.append(cur.isoformat())
+        cur += timedelta(days=7)
+    return weeks
+
+
 def _smoothed_rank_frames(
     monthly_rows: list,
     key_len: int,
@@ -393,7 +409,7 @@ def _smoothed_rank_frames(
     month_map: dict[str, dict] = {}
     lifetime: dict[tuple, list] = {}
     for row in monthly_rows:
-        m_key = str(row[0])[:7]
+        m_key = str(row[0])[:10]
         key = tuple(row[1 : 1 + key_len])
         ms = row[1 + key_len] or 0
         streams = row[2 + key_len] or 0
@@ -409,7 +425,7 @@ def _smoothed_rank_frames(
 
     sorted_months = sorted(month_map.keys())
     full_months = (
-        _generate_month_sequence(sorted_months[0], sorted_months[-1]) or sorted_months
+        _generate_week_sequence(sorted_months[0], sorted_months[-1]) or sorted_months
     )
 
     entities = list(lifetime.keys())
@@ -518,14 +534,14 @@ async def get_artist_rank(
         try:
             monthly_data = raw_con.execute("""
                 SELECT 
-                    date_trunc('month', ts) as month,
+                    date_trunc('week', ts) as period,
                     artist_name,
                     SUM(ms_played) as ms,
                     COUNT(*) as streams
                 FROM history
                 WHERE artist_name IS NOT NULL AND ts IS NOT NULL
-                GROUP BY date_trunc('month', ts), artist_name
-                ORDER BY month ASC, ms DESC, streams DESC
+                GROUP BY date_trunc('week', ts), artist_name
+                ORDER BY period ASC, ms DESC, streams DESC
             """).fetchall()
         except Exception:
             monthly_data = []
@@ -573,15 +589,15 @@ async def get_track_rank(
         try:
             monthly_data = raw_con.execute("""
                 SELECT 
-                    date_trunc('month', ts) as month,
+                    date_trunc('week', ts) as period,
                     track_name,
                     artist_name,
                     SUM(ms_played) as ms,
                     COUNT(*) as streams
                 FROM history
                 WHERE track_name IS NOT NULL AND ts IS NOT NULL
-                GROUP BY date_trunc('month', ts), track_name, artist_name
-                ORDER BY month ASC, ms DESC, streams DESC
+                GROUP BY date_trunc('week', ts), track_name, artist_name
+                ORDER BY period ASC, ms DESC, streams DESC
             """).fetchall()
         except Exception:
             monthly_data = []

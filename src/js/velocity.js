@@ -12,21 +12,48 @@
 
     let dynamicMonthsList = [];
 
+    function periodParts(monthIdx) {
+        const idx = Math.min(Math.max(0, Math.floor(monthIdx)), dynamicMonthsList.length - 1);
+        const s = dynamicMonthsList[idx] || "";
+        return {
+            y: s.slice(0, 4),
+            m: parseInt(s.slice(5, 7), 10) - 1,
+            d: s.length >= 10 ? parseInt(s.slice(8, 10), 10) : null,
+        };
+    }
+
+    function monthOf(idx) {
+        if (idx < 0 || idx >= dynamicMonthsList.length) return -1;
+        return parseInt(dynamicMonthsList[idx].slice(5, 7), 10) - 1;
+    }
+
+    function yearOf(idx) {
+        if (idx < 0 || idx >= dynamicMonthsList.length) return "";
+        return dynamicMonthsList[idx].slice(0, 4);
+    }
+
+    // A period "starts" a month/year when its month/year differs from the previous one.
+    // Monthly data: every period is a month-start (labels every period, as before).
+    // Weekly data: only the first week of a month is, so month labels don't repeat.
+    function isMonthStart(idx) {
+        if (idx <= 0) return true;
+        return monthOf(idx) !== monthOf(idx - 1);
+    }
+
+    function isYearStart(idx) {
+        if (idx <= 0) return false;
+        return yearOf(idx) !== yearOf(idx - 1);
+    }
+
     function getFullDateString(monthIdx) {
         if (!dynamicMonthsList.length) return "NO DATA";
-        const idx = Math.min(Math.max(0, Math.floor(monthIdx)), dynamicMonthsList.length - 1);
-        const yyyymm = dynamicMonthsList[idx];
-        const y = yyyymm.slice(0, 4);
-        const m = parseInt(yyyymm.slice(5, 7), 10) - 1;
-        return `${MONTH_NAMES[m]} ${y}`;
+        const { y, m, d } = periodParts(monthIdx);
+        return d ? `${SHORT_MONTHS[m]} ${d}, ${y}` : `${MONTH_NAMES[m]} ${y}`;
     }
 
     function getShortMonthYear(monthIdx) {
         if (!dynamicMonthsList.length) return "";
-        const idx = Math.min(Math.max(0, Math.floor(monthIdx)), dynamicMonthsList.length - 1);
-        const yyyymm = dynamicMonthsList[idx];
-        const y = yyyymm.slice(0, 4);
-        const m = parseInt(yyyymm.slice(5, 7), 10) - 1;
+        const { y, m } = periodParts(monthIdx);
         return `${SHORT_MONTHS[m]} '${y.slice(2)}`;
     }
 
@@ -202,27 +229,33 @@
             const x = getMonthX(m, winStart);
 
             if (x >= PADDING_LEFT - 30 && x <= SVG_W - PADDING_RIGHT + 30) {
-                const isJanNewYear = dynamicMonthsList[m] && dynamicMonthsList[m].endsWith('-01');
+                const yearStart = isYearStart(m);
+                const monthStart = isMonthStart(m);
 
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 line.setAttribute('x1', x);
                 line.setAttribute('y1', PADDING_TOP - 10);
                 line.setAttribute('x2', x);
                 line.setAttribute('y2', SVG_H - PADDING_BOTTOM + 5);
-                line.setAttribute('stroke', isJanNewYear ? 'rgba(83, 224, 118, 0.2)' : 'rgba(255, 255, 255, 0.04)');
-                line.setAttribute('stroke-width', isJanNewYear ? '1.5' : '1');
+                const stroke = yearStart
+                    ? 'rgba(83, 224, 118, 0.25)'
+                    : (monthStart ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.03)');
+                line.setAttribute('stroke', stroke);
+                line.setAttribute('stroke-width', yearStart ? '1.5' : '1');
                 xGroup.appendChild(line);
 
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text.setAttribute('x', x);
-                text.setAttribute('y', SVG_H - PADDING_BOTTOM + 20);
-                text.setAttribute('text-anchor', 'middle');
-                text.setAttribute('fill', isJanNewYear ? '#53e076' : '#bccbb9');
-                text.setAttribute('font-size', isJanNewYear ? '11' : '10');
-                text.setAttribute('font-weight', isJanNewYear ? '800' : '700');
-                text.setAttribute('font-family', 'Space Mono, monospace');
-                text.textContent = getShortMonthYear(m);
-                xGroup.appendChild(text);
+                if (monthStart) {
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', x);
+                    text.setAttribute('y', SVG_H - PADDING_BOTTOM + 20);
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('fill', yearStart ? '#53e076' : '#bccbb9');
+                    text.setAttribute('font-size', yearStart ? '11' : '10');
+                    text.setAttribute('font-weight', yearStart ? '800' : '700');
+                    text.setAttribute('font-family', 'Space Mono, monospace');
+                    text.textContent = getShortMonthYear(m);
+                    xGroup.appendChild(text);
+                }
             }
         }
 
@@ -298,7 +331,7 @@
 
             if (isPlaying && dynamicMonthsList.length > 0) {
                 const maxP = Math.max(0, dynamicMonthsList.length - 1);
-                progress += (dt / 0.8) * playSpeed;
+                progress += (dt / 0.3) * playSpeed;
                 if (progress >= maxP) {
                     progress = 0;
                 }

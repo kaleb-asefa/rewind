@@ -281,16 +281,16 @@ maths is to make those entrances and exits smooth and meaningful rather than jit
 **Chosen method:**
 
 1. **EWMA score (smooths the signal).** Score each entity by an exponentially weighted moving
-   average of monthly listening time:
+   average of weekly listening time:
 
    $$S_t = \alpha \cdot m_t + (1-\alpha)\,S_{t-1}$$
 
-   where $m_t$ is minutes listened in month $t$ and $\alpha \approx 0.35$ (lower = smoother,
-   higher = more responsive). Fading memory means a few heavy months build a peak that then
+   where $m_t$ is minutes listened in week $t$ and $\alpha \approx 0.35$ (lower = smoother,
+   higher = more responsive). Fading memory means a few heavy weeks build a peak that then
    *decays* once you stop — so an obsession rises smoothly and later **flops** off-chart
    instead of vanishing in a single frame.
 
-2. **Per-month Top-N (genuine enter/leave).** Each month keeps the top $N$ by that smoothed
+2. **Per-period Top-N (genuine enter/leave).** Each week keeps the top $N$ by that smoothed
    score; everyone else is off-chart (rank $N+1$). An entity appears only **after its first
    listen** ($S_t > 0$) and drops off when others out-score it — capturing rise and fall.
 
@@ -298,8 +298,8 @@ maths is to make those entrances and exits smooth and meaningful rather than jit
    in the last slot if it clears them by a small margin, so lines don't blink in and out for a
    single month at the edge.
 
-**Defaults:** $\alpha = 0.35$, $N = 8$, monthly frames, relegation margin $\approx 0.1$. All
-tunable. Works for artists and tracks; the frontend interpolates between monthly ranks so the
+**Defaults:** $\alpha = 0.35$, $N = 8$, weekly frames, relegation margin $\approx 0.1$. All
+tunable. Works for artists and tracks; the frontend interpolates between weekly ranks so the
 lines glide.
 
 ### All-time bar race (new)
