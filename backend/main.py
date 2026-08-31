@@ -549,10 +549,20 @@ async def get_artist_rank(
         full_months, featured = _smoothed_rank_frames(
             monthly_data, key_len=1, limit=limit
         )
+        id_map: dict = {}
+        try:
+            for r in raw_con.execute(
+                "SELECT artist_name, MAX(artist_id) FROM track_features "
+                "WHERE artist_id IS NOT NULL GROUP BY artist_name"
+            ).fetchall():
+                id_map[(r[0],)] = r[1]
+        except Exception:
+            id_map = {}
         data = [
             {
                 "rank": idx,
                 "artist_name": f["key"][0],
+                "id": id_map.get(f["key"]),
                 "total_streams": f["total_streams"],
                 "total_minutes": round(f["total_ms"] / 60000, 2),
                 "monthly_ranks": f["monthly_ranks"],
@@ -605,11 +615,22 @@ async def get_track_rank(
         full_months, featured = _smoothed_rank_frames(
             monthly_data, key_len=2, limit=limit
         )
+        id_map: dict = {}
+        try:
+            for r in raw_con.execute(
+                "SELECT track_name, artist_name, "
+                "MAX(replace(track_uri, 'spotify:track:', '')) FROM history "
+                "WHERE track_uri LIKE 'spotify:track:%' GROUP BY track_name, artist_name"
+            ).fetchall():
+                id_map[(r[0], r[1])] = r[2]
+        except Exception:
+            id_map = {}
         data = [
             {
                 "rank": idx,
                 "track_name": f["key"][0],
                 "artist_name": f["key"][1],
+                "id": id_map.get(f["key"]),
                 "total_streams": f["total_streams"],
                 "total_minutes": round(f["total_ms"] / 60000, 2),
                 "monthly_ranks": f["monthly_ranks"],

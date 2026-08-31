@@ -352,6 +352,22 @@
         '#ff4081', '#64ffda', '#ffd740', '#80d8ff'
     ];
 
+    // Lazy-load real cover art for the tip avatars (best-effort, cached server-side).
+    async function prefetchCovers(list, kind) {
+        if (!window.fetchWithTimeout) return;
+        await Promise.all(list.map(async (item) => {
+            if (!item.spotifyId) return;
+            try {
+                const res = await window.fetchWithTimeout(
+                    `/api/image?kind=${kind}&id=${encodeURIComponent(item.spotifyId)}`, {}, 8000);
+                if (res.ok && res.data && res.data.image_url) {
+                    item.image = res.data.image_url;
+                }
+            } catch (_) { /* covers are non-critical */ }
+        }));
+        renderChart();
+    }
+
     async function fetchRankData() {
         const fetcher = window.fetchWithTimeout || (async (ep) => {
             const res = await fetch(`http://127.0.0.1:8000${ep}`);
@@ -395,11 +411,13 @@
                     title: item.track_name || 'Unknown Track',
                     subtitle: item.artist_name || 'Unknown Artist',
                     image: MUSIC_NOTE_AVATAR,
+                    spotifyId: item.id || null,
                     color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
                     ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
                     plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
                 }));
                 TRACKS_DATA.splice(0, TRACKS_DATA.length, ...mappedTracks);
+                prefetchCovers(TRACKS_DATA, 'track');
             }
 
             if (artistsRes.ok && artistsRes.data && artistsRes.data.status === "ok" && Array.isArray(artistsRes.data.data) && artistsRes.data.data.length > 0) {
@@ -408,11 +426,13 @@
                     title: item.artist_name || 'Unknown Artist',
                     subtitle: `${item.total_streams || 0} streams`,
                     image: ARTIST_AVATAR,
+                    spotifyId: item.id || null,
                     color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
                     ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
                     plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
                 }));
                 ARTISTS_DATA.splice(0, ARTISTS_DATA.length, ...mappedArtists);
+                prefetchCovers(ARTISTS_DATA, 'artist');
             }
 
             currentData = currentCategory === 'tracks' ? TRACKS_DATA : ARTISTS_DATA;
