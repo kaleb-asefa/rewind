@@ -348,20 +348,36 @@
     // Single theme green for every trend line (tips are identified by their labels).
     const LINE_COLOR = '#53e076';
 
-    // Lazy-load real cover art for the tip avatars (best-effort, cached server-side).
+    // Lazy-load cover art for the tip avatars, in a small worker pool so requests
+    // don't pile into one huge queue and time out (best-effort, cached server-side).
+    let coversFetched = { tracks: false, artists: false };
+
     async function prefetchCovers(list, kind) {
         if (!window.fetchWithTimeout) return;
-        await Promise.all(list.map(async (item) => {
-            if (!item.spotifyId) return;
-            try {
-                const res = await window.fetchWithTimeout(
-                    `/api/image?kind=${kind}&id=${encodeURIComponent(item.spotifyId)}`, {}, 8000);
-                if (res.ok && res.data && res.data.image_url) {
-                    item.image = res.data.image_url;
-                }
-            } catch (_) { /* covers are non-critical */ }
-        }));
+        const targets = list.filter((it) => it.spotifyId);
+        let idx = 0;
+        async function worker() {
+            while (idx < targets.length) {
+                const item = targets[idx++];
+                try {
+                    const res = await window.fetchWithTimeout(
+                        `/api/image?kind=${kind}&id=${encodeURIComponent(item.spotifyId)}`, {}, 8000);
+                    if (res.ok && res.data && res.data.image_url) {
+                        item.image = res.data.image_url;
+                    }
+                } catch (_) { /* covers are non-critical */ }
+            }
+        }
+        await Promise.all(Array.from({ length: 8 }, worker));
         renderChart();
+    }
+
+    // Prefetch a category's covers once, only when that tab is actually shown.
+    function ensureCovers(category) {
+        if (coversFetched[category]) return;
+        coversFetched[category] = true;
+        prefetchCovers(category === 'tracks' ? TRACKS_DATA : ARTISTS_DATA,
+            category === 'tracks' ? 'track' : 'artist');
     }
 
     async function fetchRankData() {
@@ -413,7 +429,6 @@
                     plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
                 }));
                 TRACKS_DATA.splice(0, TRACKS_DATA.length, ...mappedTracks);
-                prefetchCovers(TRACKS_DATA, 'track');
             }
 
             if (artistsRes.ok && artistsRes.data && artistsRes.data.status === "ok" && Array.isArray(artistsRes.data.data) && artistsRes.data.data.length > 0) {
@@ -428,10 +443,11 @@
                     plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
                 }));
                 ARTISTS_DATA.splice(0, ARTISTS_DATA.length, ...mappedArtists);
-                prefetchCovers(ARTISTS_DATA, 'artist');
             }
 
+            coversFetched = { tracks: false, artists: false };
             currentData = currentCategory === 'tracks' ? TRACKS_DATA : ARTISTS_DATA;
+            ensureCovers(currentCategory);
             renderChart();
             updateDisplay();
         } catch (e) {
@@ -443,6 +459,7 @@
     window.switchCategory = function (category) {
         currentCategory = category;
         currentData = category === 'tracks' ? TRACKS_DATA : ARTISTS_DATA;
+        ensureCovers(category);
         progress = 0.0;
 
         const tracksBtn = document.getElementById('tab-tracks');
