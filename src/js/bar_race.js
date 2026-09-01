@@ -19,7 +19,6 @@
     const LEFT_PAD = 30;         // left gutter for the rank number
     const RIGHT_PAD = 130;       // reserved right space so bars never reach the edge
     const AXIS_TOP = 18;         // top strip for the value-axis labels
-    const AXIS_FILL = 0.82;      // leader targets this fraction of the axis (leaves headroom)
     const SECONDS_PER_MONTH = 0.9;
     const EASE_TAU = 0.30;       // vertical glide time constant (s) — smaller = snappier
     const AXIS_EASE_TAU = 0.5;   // axis-rescale glide time constant (s)
@@ -43,7 +42,7 @@
     let curOp = [];              // eased opacity per row
     let progress = 0;            // 0 .. months.length-1
     let isPlaying = true;
-    let speed = 1.0;
+    let speed = 0.5;
     let rafId = null;
     let lastTs = null;
     let curAxisMax = 1;          // eased axis maximum (minutes)
@@ -63,13 +62,13 @@
         return `${Math.round(min).toLocaleString()} min`;
     }
 
-    // Round up to a "nice" number (1, 1.5, 2, 2.5, 3, 4, 5, 7.5, 10 × 10^k).
-    function niceCeil(x) {
-        if (!(x > 0)) return 1;
-        const base = Math.pow(10, Math.floor(Math.log10(x)));
-        const f = x / base;
-        const steps = [1, 1.5, 2, 2.5, 3, 4, 5, 7.5, 10];
-        return (steps.find((s) => f <= s) || 10) * base;
+    // Smallest "nice" gridline step (1, 2, 2.5, 5, 10 × 10^k) that is at least `rough`.
+    function niceStep(rough) {
+        if (!(rough > 0)) return 1;
+        const base = Math.pow(10, Math.floor(Math.log10(rough)));
+        const f = rough / base;
+        const steps = [1, 2, 2.5, 5, 10];
+        return (steps.find((s) => s >= f) || 10) * base;
     }
 
     function ensureGrid() {
@@ -80,7 +79,7 @@
         grid.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:5;";
         vp.insertBefore(grid, vp.firstChild);
         gridEls = [];
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 10; i++) {
             const line = document.createElement("div");
             line.style.cssText = "position:absolute;width:1px;background:rgba(255,255,255,.06);";
             const label = document.createElement("div");
@@ -92,30 +91,30 @@
     }
 
     // Redraw the value-axis ticks/labels for the current (eased) axis maximum.
+    // Gridlines sit at fixed "nice" minute values and slide left / compress as the
+    // axis maximum grows, so growth reads off the moving scale (the #1 bar stays full).
     function updateGrid(usableWidth, xOffset) {
         ensureGrid();
         const rowsH = VISIBLE_N * LANE;
-        const nTicks = 4;
-        gridEls.forEach((g, i) => {
-            const tick = i + 1;
-            if (tick > nTicks) {
-                g.line.style.display = "none";
-                g.label.style.display = "none";
-                return;
-            }
-            const frac = tick / nTicks;
-            const x = xOffset + frac * usableWidth;
-            const val = Math.round(frac * curAxisMax);
+        const step = niceStep(curAxisMax / 6);
+        let gi = 0;
+        for (let v = step; v <= curAxisMax && gi < gridEls.length; v += step) {
+            const g = gridEls[gi];
+            const x = xOffset + (v / curAxisMax) * usableWidth;
             g.line.style.display = "block";
             g.line.style.left = `${x.toFixed(1)}px`;
             g.line.style.top = `${AXIS_TOP}px`;
             g.line.style.height = `${rowsH}px`;
             g.label.style.display = "block";
             g.label.style.left = `${x.toFixed(1)}px`;
-            g.label.textContent = tick === nTicks
-                ? `${val.toLocaleString()} min`
-                : val.toLocaleString();
-        });
+            g.label.textContent = v.toLocaleString();
+            gi += 1;
+        }
+        if (gi > 0) gridEls[gi - 1].label.textContent += " min";
+        for (; gi < gridEls.length; gi += 1) {
+            gridEls[gi].line.style.display = "none";
+            gridEls[gi].label.style.display = "none";
+        }
     }
 
     function valueAt(cum, p) {
@@ -197,11 +196,10 @@
         const k = dt == null ? 1 : 1 - Math.exp(-dt / EASE_TAU);
         const kAxis = dt == null ? 1 : 1 - Math.exp(-dt / AXIS_EASE_TAU);
 
-        // The axis rescales continuously to a "nice" value above the leader, so the
-        // #1 bar keeps space to grow and the scale labels visibly climb over time.
-        const targetAxis = niceCeil(leader / AXIS_FILL);
-        curAxisMax += (targetAxis - curAxisMax) * kAxis;
-        if (curAxisMax < 1) curAxisMax = 1;
+        // Axis max tracks the leader, so the #1 bar stays pinned at the far end and
+        // growth reads off the ticking number + the sliding/compressing axis ticks.
+        curAxisMax += (Math.max(leader, 1) - curAxisMax) * kAxis;
+        if (curAxisMax < leader) curAxisMax = leader;   // never let the leader overflow
         const usableWidth = Math.max(50, trackW - RIGHT_PAD - LEFT_PAD);
         updateGrid(usableWidth, LEFT_PAD);
 

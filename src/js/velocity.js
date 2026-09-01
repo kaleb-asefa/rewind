@@ -66,7 +66,7 @@
     let currentData = TRACKS_DATA;
     let progress = 0.0;
     let isPlaying = true;
-    let playSpeed = 1.0;
+    let playSpeed = 0.5;
     let animationFrameId = null;
     let lastTimestamp = null;
 
