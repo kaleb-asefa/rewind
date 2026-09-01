@@ -16,6 +16,7 @@
     const BAR_H = 26;            // bar thickness
     const AVATAR = 34;          // cover circle riding the bar tip
     const GAP = 8;
+    const LEFT_PAD = 30;         // left gutter for the rank number
     const RIGHT_PAD = 130;       // reserved right space so bars never reach the edge
     const AXIS_TOP = 18;         // top strip for the value-axis labels
     const AXIS_FILL = 0.82;      // leader targets this fraction of the axis (leaves headroom)
@@ -23,10 +24,14 @@
     const EASE_TAU = 0.30;       // vertical glide time constant (s) — smaller = snappier
     const AXIS_EASE_TAU = 0.5;   // axis-rescale glide time constant (s)
 
-    // Monochrome green ramp (theme): brighter at the top, deeper toward the bottom.
-    function greenShade(pos) {
-        const t = VISIBLE_N > 1 ? Math.min(pos, VISIBLE_N - 1) / (VISIBLE_N - 1) : 0;
-        return `hsl(145, 63%, ${58 - t * 30}%)`;
+    // Fixed green shade per category (stable for the whole race, so a bar keeps its
+    // colour as it moves — never recoloured between frames).
+    const GREENS = [
+        "#6ef58e", "#53e076", "#3fce68", "#1db954",
+        "#2bbf63", "#57cf7e", "#149c46", "#39d06e",
+    ];
+    function greenFor(index) {
+        return GREENS[index % GREENS.length];
     }
 
     // Module state
@@ -87,7 +92,7 @@
     }
 
     // Redraw the value-axis ticks/labels for the current (eased) axis maximum.
-    function updateGrid(usableWidth) {
+    function updateGrid(usableWidth, xOffset) {
         ensureGrid();
         const rowsH = VISIBLE_N * LANE;
         const nTicks = 4;
@@ -99,7 +104,7 @@
                 return;
             }
             const frac = tick / nTicks;
-            const x = frac * usableWidth;
+            const x = xOffset + frac * usableWidth;
             const val = Math.round(frac * curAxisMax);
             g.line.style.display = "block";
             g.line.style.left = `${x.toFixed(1)}px`;
@@ -130,7 +135,7 @@
         curOp = [];
         container.style.height = `${VISIBLE_N * LANE + AXIS_TOP}px`;
 
-        items.forEach((item) => {
+        items.forEach((item, idx) => {
             const row = document.createElement("div");
             row.className = "race-row";
             row.style.cssText =
@@ -141,8 +146,9 @@
                 : "";
             const initial = (item.name || "?").trim().charAt(0).toUpperCase() || "?";
             row.innerHTML = `
-                <div class="race-bar" style="position:absolute;left:0;top:${(LANE - BAR_H) / 2}px;height:${BAR_H}px;width:0;border-radius:9999px;"></div>
-                <div class="race-name" style="position:absolute;left:0;top:0;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-shadow:0 1px 3px rgba(0,0,0,.7);">${item.name}${sub}</div>
+                <div class="race-rank" style="position:absolute;left:0;top:0;width:${LEFT_PAD - 6}px;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#7f8d7f;"></div>
+                <div class="race-bar" style="position:absolute;left:${LEFT_PAD}px;top:${(LANE - BAR_H) / 2}px;height:${BAR_H}px;width:0;border-radius:9999px;background:${greenFor(idx)};box-shadow:0 2px 5px rgba(0,0,0,.35);"></div>
+                <div class="race-name" style="position:absolute;left:${LEFT_PAD}px;top:0;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-shadow:0 1px 3px rgba(0,0,0,.7);">${item.name}${sub}</div>
                 <div class="race-avatar" style="position:absolute;top:${(LANE - AVATAR) / 2}px;width:${AVATAR}px;height:${AVATAR}px;border-radius:9999px;overflow:hidden;border:2px solid rgba(255,255,255,.18);background:linear-gradient(135deg,#2f6b43,#1db954);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.4);">
                     <span style="font-size:15px;font-weight:800;color:#eafff0;">${initial}</span>
                     <img class="race-cover hidden" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt=""/>
@@ -196,8 +202,8 @@
         const targetAxis = niceCeil(leader / AXIS_FILL);
         curAxisMax += (targetAxis - curAxisMax) * kAxis;
         if (curAxisMax < 1) curAxisMax = 1;
-        const usableWidth = Math.max(50, trackW - RIGHT_PAD);
-        updateGrid(usableWidth);
+        const usableWidth = Math.max(50, trackW - RIGHT_PAD - LEFT_PAD);
+        updateGrid(usableWidth, LEFT_PAD);
 
         items.forEach((item, i) => {
             const row = rowEls[i];
@@ -213,30 +219,29 @@
             if (curOp[i] < 0.01) return;  // invisible row — skip layout math
 
             const barW = Math.max(2, (values[i] / curAxisMax) * usableWidth);
-            const avatarLeft = Math.min(Math.max(barW - AVATAR / 2, 0), trackW - AVATAR);
+            const avatarLeft = Math.min(Math.max(LEFT_PAD + barW - AVATAR / 2, LEFT_PAD), trackW - AVATAR);
 
             const bar = row.querySelector(".race-bar");
             const nameEl = row.querySelector(".race-name");
             const avatarEl = row.querySelector(".race-avatar");
             const valEl = row.querySelector(".race-value");
+            const rankEl = row.querySelector(".race-rank");
 
-            if (bar) {
-                bar.style.width = `${barW}px`;
-                bar.style.background = greenShade(pos);
-            }
+            if (bar) bar.style.width = `${barW}px`;
             if (avatarEl) avatarEl.style.left = `${avatarLeft}px`;
-            if (nameEl) nameEl.style.width = `${Math.max(0, avatarLeft - GAP)}px`;
+            if (nameEl) nameEl.style.width = `${Math.max(0, avatarLeft - GAP - LEFT_PAD)}px`;
             if (valEl) {
                 valEl.style.left = `${avatarLeft + AVATAR + GAP}px`;
                 valEl.textContent = fmtValue(values[i]);
             }
+            if (rankEl) rankEl.textContent = `${pos + 1}`;
         });
 
         const monthDisp = document.getElementById("race-month-display");
-        if (monthDisp) monthDisp.textContent = monthLabel(progress);
+        if (monthDisp) monthDisp.textContent = monthLabel(Math.round(progress));
         const watermark = document.getElementById("race-date-watermark");
         if (watermark && months.length) {
-            const idx = Math.min(Math.max(0, Math.floor(progress)), months.length - 1);
+            const idx = Math.min(Math.max(0, Math.round(progress)), months.length - 1);
             watermark.textContent = months[idx].slice(0, 4);
         }
         const scrubber = document.getElementById("race-scrubber");
