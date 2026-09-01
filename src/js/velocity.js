@@ -345,12 +345,8 @@
         animationFrameId = requestAnimationFrame(step);
     }
 
-    const DEFAULT_COLORS = [
-        '#53e076', '#00d2ff', '#b066fe', '#ff6b6b',
-        '#ffaa00', '#38f9d7', '#ff54b0', '#4d94ff',
-        '#e8d44d', '#ff8a50', '#7c4dff', '#00e5a0',
-        '#ff4081', '#64ffda', '#ffd740', '#80d8ff'
-    ];
+    // Single theme green for every trend line (tips are identified by their labels).
+    const LINE_COLOR = '#53e076';
 
     // Lazy-load real cover art for the tip avatars (best-effort, cached server-side).
     async function prefetchCovers(list, kind) {
@@ -412,7 +408,7 @@
                     subtitle: item.artist_name || 'Unknown Artist',
                     image: MUSIC_NOTE_AVATAR,
                     spotifyId: item.id || null,
-                    color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
+                    color: LINE_COLOR,
                     ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
                     plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
                 }));
@@ -427,7 +423,7 @@
                     subtitle: `${item.total_streams || 0} streams`,
                     image: ARTIST_AVATAR,
                     spotifyId: item.id || null,
-                    color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
+                    color: LINE_COLOR,
                     ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
                     plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
                 }));
