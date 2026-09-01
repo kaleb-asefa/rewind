@@ -16,9 +16,12 @@
     const BAR_H = 26;            // bar thickness
     const AVATAR = 34;          // cover circle riding the bar tip
     const GAP = 8;
-    const TIP_RESERVE = 0.80;    // longest bar uses this fraction of the width (room for tip)
+    const RIGHT_PAD = 130;       // reserved right space so bars never reach the edge
+    const AXIS_TOP = 18;         // top strip for the value-axis labels
+    const AXIS_FILL = 0.82;      // leader targets this fraction of the axis (leaves headroom)
     const SECONDS_PER_MONTH = 0.9;
     const EASE_TAU = 0.30;       // vertical glide time constant (s) — smaller = snappier
+    const AXIS_EASE_TAU = 0.5;   // axis-rescale glide time constant (s)
 
     // Monochrome green ramp (theme): brighter at the top, deeper toward the bottom.
     function greenShade(pos) {
@@ -38,6 +41,8 @@
     let speed = 1.0;
     let rafId = null;
     let lastTs = null;
+    let curAxisMax = 1;          // eased axis maximum (minutes)
+    let gridEls = [];            // pooled axis gridline elements
 
     function monthLabel(idx) {
         if (!months.length) return "----";
@@ -49,9 +54,63 @@
     }
 
     function fmtValue(min) {
-        const h = min / 60;
-        if (h >= 1) return `${h.toLocaleString(undefined, { maximumFractionDigits: 0 })}h`;
-        return `${Math.round(min)}m`;
+        // Always minutes, so the number keeps ticking as the bar grows.
+        return `${Math.round(min).toLocaleString()} min`;
+    }
+
+    // Round up to a "nice" number (1, 1.5, 2, 2.5, 3, 4, 5, 7.5, 10 × 10^k).
+    function niceCeil(x) {
+        if (!(x > 0)) return 1;
+        const base = Math.pow(10, Math.floor(Math.log10(x)));
+        const f = x / base;
+        const steps = [1, 1.5, 2, 2.5, 3, 4, 5, 7.5, 10];
+        return (steps.find((s) => f <= s) || 10) * base;
+    }
+
+    function ensureGrid() {
+        const vp = document.getElementById("race-viewport");
+        if (!vp || document.getElementById("race-grid")) return;
+        const grid = document.createElement("div");
+        grid.id = "race-grid";
+        grid.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:5;";
+        vp.insertBefore(grid, vp.firstChild);
+        gridEls = [];
+        for (let i = 0; i < 5; i++) {
+            const line = document.createElement("div");
+            line.style.cssText = "position:absolute;width:1px;background:rgba(255,255,255,.06);";
+            const label = document.createElement("div");
+            label.style.cssText = "position:absolute;top:0;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:10px;color:#7f8d7f;white-space:nowrap;";
+            grid.appendChild(line);
+            grid.appendChild(label);
+            gridEls.push({ line, label });
+        }
+    }
+
+    // Redraw the value-axis ticks/labels for the current (eased) axis maximum.
+    function updateGrid(usableWidth) {
+        ensureGrid();
+        const rowsH = VISIBLE_N * LANE;
+        const nTicks = 4;
+        gridEls.forEach((g, i) => {
+            const tick = i + 1;
+            if (tick > nTicks) {
+                g.line.style.display = "none";
+                g.label.style.display = "none";
+                return;
+            }
+            const frac = tick / nTicks;
+            const x = frac * usableWidth;
+            const val = Math.round(frac * curAxisMax);
+            g.line.style.display = "block";
+            g.line.style.left = `${x.toFixed(1)}px`;
+            g.line.style.top = `${AXIS_TOP}px`;
+            g.line.style.height = `${rowsH}px`;
+            g.label.style.display = "block";
+            g.label.style.left = `${x.toFixed(1)}px`;
+            g.label.textContent = tick === nTicks
+                ? `${val.toLocaleString()} min`
+                : val.toLocaleString();
+        });
     }
 
     function valueAt(cum, p) {
@@ -69,7 +128,7 @@
         rowEls = [];
         curY = [];
         curOp = [];
-        container.style.height = `${VISIBLE_N * LANE}px`;
+        container.style.height = `${VISIBLE_N * LANE + AXIS_TOP}px`;
 
         items.forEach((item) => {
             const row = document.createElement("div");
@@ -91,7 +150,7 @@
                 <div class="race-value" style="position:absolute;top:0;height:${LANE}px;display:flex;align-items:center;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#e5e2e1;white-space:nowrap;"></div>`;
             container.appendChild(row);
             rowEls.push(row);
-            curY.push(VISIBLE_N * LANE);
+            curY.push(VISIBLE_N * LANE + AXIS_TOP);
             curOp.push(0);
         });
 
@@ -123,21 +182,29 @@
         const order = values
             .map((v, i) => i)
             .sort((a, b) => values[b] - values[a]);
-        const maxVal = values[order[0]] || 1;
+        const leader = values[order[0]] || 1;
 
         const slotOf = new Array(items.length).fill(-1);
         order.forEach((itemIdx, pos) => { slotOf[itemIdx] = pos; });
 
         // Frame-rate independent easing. dt === null snaps (used for scrubbing).
         const k = dt == null ? 1 : 1 - Math.exp(-dt / EASE_TAU);
-        const maxBar = trackW * TIP_RESERVE;
+        const kAxis = dt == null ? 1 : 1 - Math.exp(-dt / AXIS_EASE_TAU);
+
+        // The axis rescales continuously to a "nice" value above the leader, so the
+        // #1 bar keeps space to grow and the scale labels visibly climb over time.
+        const targetAxis = niceCeil(leader / AXIS_FILL);
+        curAxisMax += (targetAxis - curAxisMax) * kAxis;
+        if (curAxisMax < 1) curAxisMax = 1;
+        const usableWidth = Math.max(50, trackW - RIGHT_PAD);
+        updateGrid(usableWidth);
 
         items.forEach((item, i) => {
             const row = rowEls[i];
             if (!row) return;
             const pos = slotOf[i];
             const onChart = pos < VISIBLE_N;
-            const targetY = (onChart ? pos : VISIBLE_N) * LANE;
+            const targetY = AXIS_TOP + (onChart ? pos : VISIBLE_N) * LANE;
 
             curY[i] += (targetY - curY[i]) * k;
             curOp[i] += ((onChart ? 1 : 0) - curOp[i]) * k;
@@ -145,7 +212,7 @@
             row.style.opacity = curOp[i].toFixed(3);
             if (curOp[i] < 0.01) return;  // invisible row — skip layout math
 
-            const barW = Math.max(2, (values[i] / maxVal) * maxBar);
+            const barW = Math.max(2, (values[i] / curAxisMax) * usableWidth);
             const avatarLeft = Math.min(Math.max(barW - AVATAR / 2, 0), trackW - AVATAR);
 
             const bar = row.querySelector(".race-bar");
