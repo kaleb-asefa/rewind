@@ -147,7 +147,7 @@ Share your Rewind
 <!-- Top Metric Cards Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
 <!-- Total Time -->
-<div class="glass-card metric-gradient p-6 rounded-lg flex flex-col gap-4 cursor-pointer select-none hover:border-primary/50 transition-all" id="total-time-card" title="Click to toggle unit (Minutes / Hours / Days)">
+<div class="glass-card metric-gradient p-5 rounded-lg flex flex-col gap-3 cursor-pointer select-none hover:border-primary/50 transition-all" id="total-time-card" title="Click to toggle unit (Minutes / Hours / Days)">
 <div class="flex justify-between items-start">
 <span class="font-label-bold text-label-bold text-primary uppercase tracking-widest">Total Time</span>
 <span class="material-symbols-outlined text-primary">schedule</span>
@@ -169,7 +169,7 @@ Share your Rewind
 </div>
 </div>
 <!-- Top Artist -->
-<div class="glass-card p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden group" id="top-artist-card">
+<div class="glass-card p-5 rounded-lg flex flex-col gap-3 relative overflow-hidden group" id="top-artist-card">
 <div class="flex justify-between items-start z-10">
 <span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Top Artist</span>
 <span class="material-symbols-outlined text-on-surface-variant">person</span>
@@ -178,10 +178,12 @@ Share your Rewind
 <div class="h-7 bg-surface-variant/50 rounded w-3/4"></div>
 <div class="h-4 bg-surface-variant/30 rounded w-1/2"></div>
 </div>
-<div id="top-artist-content" class="hidden z-10">
-<img id="top-artist-image" alt="" class="hidden w-14 h-14 rounded-full object-cover mb-3 border border-outline-variant/40"/>
-<div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors" id="top-artist-name">--</div>
-<div class="font-body-sm text-body-sm text-on-surface-variant mt-1" id="top-artist-streams">--</div>
+<div id="top-artist-content" class="hidden z-10 flex items-center gap-3">
+<img id="top-artist-image" alt="" class="hidden w-12 h-12 rounded-full object-cover border border-outline-variant/40 shrink-0"/>
+<div class="min-w-0">
+<div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors truncate" id="top-artist-name">--</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant truncate" id="top-artist-streams">--</div>
+</div>
 </div>
 <div id="top-artist-error" class="hidden z-10 text-body-sm text-tertiary-container space-y-1">
 <p id="top-artist-error-msg" class="text-[12px] opacity-90">Server not responding.</p>
@@ -192,7 +194,7 @@ Share your Rewind
 </div>
 </div>
 <!-- Top Album -->
-<div class="glass-card p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden group" id="top-album-card">
+<div class="glass-card p-5 rounded-lg flex flex-col gap-3 relative overflow-hidden group" id="top-album-card">
 <div class="flex justify-between items-start z-10">
 <span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Top Album</span>
 <span class="material-symbols-outlined text-on-surface-variant">album</span>
@@ -201,10 +203,12 @@ Share your Rewind
 <div class="h-7 bg-surface-variant/50 rounded w-3/4"></div>
 <div class="h-4 bg-surface-variant/30 rounded w-1/2"></div>
 </div>
-<div id="top-album-content" class="hidden z-10">
-<img id="top-album-image" alt="" class="hidden w-14 h-14 rounded-md object-cover mb-3 border border-outline-variant/40"/>
-<div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors" id="top-album-name">--</div>
-<div class="font-body-sm text-body-sm text-on-surface-variant mt-1" id="top-album-subtext">--</div>
+<div id="top-album-content" class="hidden z-10 flex items-center gap-3">
+<img id="top-album-image" alt="" class="hidden w-12 h-12 rounded-md object-cover border border-outline-variant/40 shrink-0"/>
+<div class="min-w-0">
+<div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors truncate" id="top-album-name">--</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant truncate" id="top-album-subtext">--</div>
+</div>
 </div>
 <div id="top-album-error" class="hidden z-10 text-body-sm text-tertiary-container space-y-1">
 <p id="top-album-error-msg" class="text-[12px] opacity-90">Server not responding.</p>
@@ -215,7 +219,7 @@ Share your Rewind
 </div>
 </div>
 <!-- Top Track -->
-<div class="glass-card p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden group" id="top-track-card">
+<div class="glass-card p-5 rounded-lg flex flex-col gap-3 relative overflow-hidden group" id="top-track-card">
 <div class="flex justify-between items-start z-10">
 <span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Top Track</span>
 <span class="material-symbols-outlined text-on-surface-variant">equalizer</span>
@@ -224,10 +228,12 @@ Share your Rewind
 <div class="h-7 bg-surface-variant/50 rounded w-3/4"></div>
 <div class="h-4 bg-surface-variant/30 rounded w-1/2"></div>
 </div>
-<div id="top-track-content" class="hidden z-10">
-<img id="top-track-image" alt="" class="hidden w-14 h-14 rounded-md object-cover mb-3 border border-outline-variant/40"/>
-<div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors" id="top-track-name">--</div>
-<div class="font-body-sm text-body-sm text-on-surface-variant mt-1" id="top-track-subtext">--</div>
+<div id="top-track-content" class="hidden z-10 flex items-center gap-3">
+<img id="top-track-image" alt="" class="hidden w-12 h-12 rounded-md object-cover border border-outline-variant/40 shrink-0"/>
+<div class="min-w-0">
+<div class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors truncate" id="top-track-name">--</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant truncate" id="top-track-subtext">--</div>
+</div>
 </div>
 <div id="top-track-error" class="hidden z-10 text-body-sm text-tertiary-container space-y-1">
 <p id="top-track-error-msg" class="text-[12px] opacity-90">Server not responding.</p>
@@ -287,6 +293,51 @@ Share your Rewind
 </div>
 </div>
 <div id="heatmap-tooltip" role="tooltip"></div>
+</section>
+<!-- Listening Behavior Cards -->
+<section>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<div class="glass-card p-5 rounded-lg flex flex-col gap-3 border-l-4 border-l-primary/30">
+<div class="flex justify-between items-start">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Total Songs</span>
+<span class="material-symbols-outlined text-primary">library_music</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-on-surface">4,320</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Unique tracks identified</div>
+</div>
+</div>
+<div class="glass-card p-5 rounded-lg flex flex-col gap-3 border-l-4 border-l-primary/30">
+<div class="flex justify-between items-start">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Most Active Day</span>
+<span class="material-symbols-outlined text-primary">calendar_today</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-on-surface">Friday</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Average 6.5h listening</div>
+</div>
+</div>
+<div class="glass-card p-5 rounded-lg flex flex-col gap-3 border-l-4 border-l-error/30">
+<div class="flex justify-between items-start">
+<span class="font-label-bold text-label-bold text-error uppercase tracking-widest">Most Hated Artist</span>
+<span class="material-symbols-outlined text-error">thumb_down</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-on-surface">Nickelback</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Skipped 98% of the time</div>
+</div>
+</div>
+<div class="glass-card p-5 rounded-lg flex flex-col gap-3 border-l-4 border-l-error/30">
+<div class="flex justify-between items-start">
+<span class="font-label-bold text-label-bold text-error uppercase tracking-widest">Most Hated Track</span>
+<span class="material-symbols-outlined text-error">do_not_disturb_on</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-on-surface truncate">Baby Shark</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Added to blocklist</div>
+</div>
+</div>
+</div>
 </section>
 </main>
 <!-- Share Modal -->
