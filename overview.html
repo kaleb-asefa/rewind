@@ -88,14 +88,14 @@
     <link href="src/styles/main.css" rel="stylesheet"/>
     <script src="src/js/theme.js"></script>
     <script src="src/js/api.js" defer></script>
-    <script src="src/js/router.js" defer></script>
     <script src="src/js/spotlight.js" defer></script>
     <script src="src/js/heatmap.js" defer></script>
     <script src="src/js/total_time.js" defer></script>
     <script src="src/js/top_artist.js" defer></script>
     <script src="src/js/top_album.js" defer></script>
     <script src="src/js/top_track.js" defer></script>
-    <script src="src/js/upload.js" defer></script>
+    <script src="https://unpkg.com/html-to-image@1.11.13/dist/html-to-image.js"></script>
+    <script src="src/js/share.js" defer></script>
 </head><body class="bg-background text-on-background antialiased">
 <!-- TopNavBar -->
 <header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-lg shadow-sm">
@@ -106,9 +106,9 @@
                 Rewind
 </a>
 <div class="hidden md:flex items-center gap-6">
-<a id="nav-link-overview" class="font-body-lg text-body-lg text-primary dark:text-primary border-b-2 border-primary pb-1 transition-colors duration-200 cursor-pointer" href="?view=overview">Overview</a>
-<a id="nav-link-velocity" class="font-body-lg text-body-lg text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors duration-200 cursor-pointer" href="time.html">Rank Velocity</a>
-<a id="nav-link-upload" class="font-body-lg text-body-lg text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors duration-200 cursor-pointer" href="?view=upload">Upload Data</a>
+<a class="font-body-lg text-body-lg text-primary dark:text-primary border-b-2 border-primary pb-1 transition-colors duration-200" href="overview.html">Your Rewind</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors duration-200" href="explore.html">Explore</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors duration-200" href="upload.html">Upload</a>
 </div>
 </div>
 <div class="flex items-center gap-4">
@@ -134,9 +134,15 @@
 <main id="view-overview" class="pt-24 pb-section-gap px-container-padding-desktop max-w-[1440px] mx-auto space-y-section-gap">
 <!-- Hero Section -->
 <section>
-<div class="mb-gutter">
-<h1 class="font-display-lg text-display-lg text-on-surface tracking-tight">Analytics Overview</h1>
-<p class="font-body-lg text-body-lg text-on-surface-variant opacity-70">Deep diving into your sonic identity and listening behavior.</p>
+<div class="mb-gutter flex flex-wrap items-start justify-between gap-4">
+<div>
+<h1 class="font-display-lg text-display-lg text-on-surface tracking-tight">Your Rewind</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant opacity-70">A shareable snapshot of your all-time listening.</p>
+</div>
+<button type="button" id="share-open-btn" class="flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all shadow-[0_8px_24px_rgba(30,215,96,0.25)]">
+<span class="material-symbols-outlined text-xl">ios_share</span>
+Share your Rewind
+</button>
 </div>
 <!-- Top Metric Cards Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
@@ -282,205 +288,64 @@
 </div>
 <div id="heatmap-tooltip" role="tooltip"></div>
 </section>
-<!-- Bottom Metric Section -->
-<section>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
-<!-- Total Songs -->
-<div class="glass-card p-6 rounded-lg flex flex-col gap-4 border-l-4 border-l-primary/30">
-<div class="flex justify-between items-start">
-<span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Total Songs</span>
-<span class="material-symbols-outlined text-primary">library_music</span>
-</div>
-<div>
-<div class="font-headline-md text-headline-md text-on-surface">4,320</div>
-<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Unique tracks identified</div>
-</div>
-</div>
-<!-- Most Active Day -->
-<div class="glass-card p-6 rounded-lg flex flex-col gap-4 border-l-4 border-l-primary/30">
-<div class="flex justify-between items-start">
-<span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Most Active Day</span>
-<span class="material-symbols-outlined text-primary">calendar_today</span>
-</div>
-<div>
-<div class="font-headline-md text-headline-md text-on-surface">Friday</div>
-<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Average 6.5h listening</div>
-</div>
-</div>
-<!-- Most Hated Artist -->
-<div class="glass-card p-6 rounded-lg flex flex-col gap-4 border-l-4 border-l-error/30">
-<div class="flex justify-between items-start">
-<span class="font-label-bold text-label-bold text-error uppercase tracking-widest">Most Hated Artist</span>
-<span class="material-symbols-outlined text-error">thumb_down</span>
-</div>
-<div>
-<div class="font-headline-md text-headline-md text-on-surface">Nickelback</div>
-<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Skipped 98% of the time</div>
-</div>
-</div>
-<!-- Most Hated Track -->
-<div class="glass-card p-6 rounded-lg flex flex-col gap-4 border-l-4 border-l-error/30">
-<div class="flex justify-between items-start">
-<span class="font-label-bold text-label-bold text-error uppercase tracking-widest">Most Hated Track</span>
-<span class="material-symbols-outlined text-error">do_not_disturb_on</span>
-</div>
-<div>
-<div class="font-headline-md text-headline-md text-on-surface truncate">Baby Shark</div>
-<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Added to blocklist</div>
-</div>
-</div>
-</div>
-</section>
-<!-- Fun Data Visual Section (Extra) -->
-<section class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-<div class="lg:col-span-2 glass-card rounded-lg p-gutter overflow-hidden relative min-h-[400px]">
-<div class="relative z-10">
-<h3 class="font-headline-md text-headline-md text-on-surface mb-base">Sonic Spectrum</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant mb-gutter">Visualizing the frequency ranges you favor most across your top genres.</p>
-<div class="flex items-end gap-2 h-48 mb-8">
-<div class="flex-1 bg-primary/20 hover:bg-primary transition-colors rounded-t-sm" style="height: 40%"></div>
-<div class="flex-1 bg-primary/30 hover:bg-primary transition-colors rounded-t-sm" style="height: 60%"></div>
-<div class="flex-1 bg-primary/50 hover:bg-primary transition-colors rounded-t-sm" style="height: 85%"></div>
-<div class="flex-1 bg-primary hover:bg-primary transition-colors rounded-t-sm" style="height: 100%"></div>
-<div class="flex-1 bg-primary/70 hover:bg-primary transition-colors rounded-t-sm" style="height: 75%"></div>
-<div class="flex-1 bg-primary/40 hover:bg-primary transition-colors rounded-t-sm" style="height: 55%"></div>
-<div class="flex-1 bg-primary/20 hover:bg-primary transition-colors rounded-t-sm" style="height: 30%"></div>
-<div class="flex-1 bg-primary/10 hover:bg-primary transition-colors rounded-t-sm" style="height: 20%"></div>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div class="bg-surface-container p-4 rounded-lg">
-<div class="text-on-surface-variant font-label-bold uppercase text-[10px] mb-1">Dominant Frequency</div>
-<div class="text-on-surface font-body-lg">Low-End / Sub Bass</div>
-</div>
-<div class="bg-surface-container p-4 rounded-lg">
-<div class="text-on-surface-variant font-label-bold uppercase text-[10px] mb-1">Energy Rating</div>
-<div class="text-on-surface font-body-lg">Highly Dynamic</div>
-</div>
-</div>
-</div>
-<!-- Artistic background decoration -->
-<div class="absolute -bottom-20 -right-20 w-80 h-80 bg-primary/5 rounded-full blur-[100px]"></div>
-</div>
-<div class="glass-card rounded-lg p-gutter flex flex-col">
-<h3 class="font-headline-md text-headline-md text-on-surface mb-gutter">Personality Profile</h3>
-<div class="flex-1 flex flex-col justify-center gap-6">
-<div class="space-y-2">
-<div class="flex justify-between font-label-bold text-label-bold uppercase text-on-surface-variant">
-<span class="">Eclecticism</span>
-<span class="text-primary">88%</span>
-</div>
-<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-<div class="h-full bg-primary" style="width: 88%"></div>
-</div>
-</div>
-<div class="space-y-2">
-<div class="flex justify-between font-label-bold text-label-bold uppercase text-on-surface-variant">
-<span class="">Mainstream Factor</span>
-<span class="text-primary">32%</span>
-</div>
-<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-<div class="h-full bg-primary" style="width: 32%"></div>
-</div>
-</div>
-<div class="space-y-2">
-<div class="flex justify-between font-label-bold text-label-bold uppercase text-on-surface-variant">
-<span class="">Lyrical Depth</span>
-<span class="text-primary">94%</span>
-</div>
-<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-<div class="h-full bg-primary" style="width: 94%"></div>
-</div>
-</div>
-<div class="space-y-2">
-<div class="flex justify-between font-label-bold text-label-bold uppercase text-on-surface-variant">
-<span class="">Atmospheric Preference</span>
-<span class="text-primary">76%</span>
-</div>
-<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-<div class="h-full bg-primary" style="width: 76%"></div>
-</div>
-</div>
-</div>
-<button class="mt-8 bg-primary text-on-primary font-label-bold py-3 rounded-full hover:scale-[1.02] active:scale-95 transition-all">
-                Share Insight Card
-            </button>
-</div>
-</section>
 </main>
-<!-- Upload View Container (Hidden by default for 0-reload View Swap) -->
-<main id="view-upload" class="hidden flex-grow pt-32 pb-section-gap px-container-padding-mobile md:px-container-padding-desktop max-w-7xl mx-auto w-full">
-<div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-<!-- Left Column: Instructions -->
-<div class="space-y-8 animate-in fade-in slide-in-from-left-4 duration-700">
-<div class="space-y-2">
-<span class="text-primary font-label-bold text-label-bold tracking-widest uppercase">Getting Started</span>
-<h1 class="font-display-lg text-display-lg text-on-surface leading-tight">Import Your History</h1>
+<!-- Share Modal -->
+<div id="share-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+<div class="flex flex-col items-center gap-5 max-h-full">
+<!-- Shareable Card (rendered to image) -->
+<div id="share-card" class="relative overflow-hidden rounded-2xl bg-[#0e0e0e] text-white" style="width:360px;height:640px;">
+<div class="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-primary/20 blur-[80px]"></div>
+<div class="absolute -bottom-32 -left-20 w-72 h-72 rounded-full bg-primary/10 blur-[90px]"></div>
+<div class="relative z-10 flex flex-col h-full p-7">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">fast_rewind</span>
+<span class="font-display-lg text-title-md font-extrabold tracking-tight">Rewind</span>
 </div>
-<div class="space-y-6">
-<div class="relative pl-6 instruction-step">
-<p class="font-body-lg text-body-lg text-on-surface">1. Locate your Spotify data export folder.</p>
-<p class="text-secondary-fixed-dim text-body-sm font-body-sm mt-1">This is usually a .zip file received via email from Spotify's privacy dashboard.</p>
+<div class="mt-1 text-[11px] uppercase tracking-[0.25em] text-white/40 font-label-bold">My all-time listening</div>
+<div class="mt-8">
+<div class="text-[11px] uppercase tracking-[0.2em] text-primary font-label-bold">Total time</div>
+<div id="share-total-time" class="font-display-lg text-[44px] leading-none font-extrabold mt-1">--</div>
 </div>
-<div class="relative pl-6 instruction-step">
-<p class="font-body-lg text-body-lg text-on-surface">2. Select only JSON files containing audio history.</p>
-<p class="text-secondary-fixed-dim text-body-sm font-body-sm mt-1">We parse your listening patterns directly from these files.</p>
+<div class="mt-8 space-y-5">
+<div>
+<div class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-label-bold">Top Artist</div>
+<div id="share-top-artist" class="font-display-lg text-2xl font-bold mt-0.5 truncate">--</div>
 </div>
-<div class="relative pl-6 instruction-step">
-<p class="font-body-lg text-body-lg text-on-surface">3. Look for files named like <code class="bg-surface-variant text-primary px-1.5 py-0.5 rounded text-sm font-mono">'Streaming_History_Audio_YYYY_N.json'</code>.</p>
-<p class="text-secondary-fixed-dim text-body-sm font-body-sm mt-1">Example: Streaming_History_Audio_2025_1.json</p>
+<div>
+<div class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-label-bold">Top Track</div>
+<div id="share-top-track" class="font-display-lg text-2xl font-bold mt-0.5 truncate">--</div>
 </div>
-<div class="p-4 bg-tertiary-container/10 border border-tertiary-container/20 rounded-lg flex gap-3">
-<span class="material-symbols-outlined text-tertiary-container">warning</span>
-<p class="text-on-surface text-body-sm font-body-sm"><span class="font-bold text-tertiary-container">Important:</span> Do not upload video history files (e.g., <code class="bg-surface-variant text-primary px-1.5 py-0.5 rounded text-sm font-mono">'Streaming_History_Video_YYYY_N.json'</code>). These are currently not supported for analysis.</p>
-</div>
-</div>
-<div class="pt-4">
-<a class="flex items-center gap-2 text-secondary-fixed-dim hover:text-primary transition-colors text-body-sm font-body-sm group" href="index.html#how-it-works">
-<span class="material-symbols-outlined text-[18px]">help</span>
-                        Need help getting your data? View the guide
-                        <span class="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
-</a>
+<div>
+<div class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-label-bold">Top Album</div>
+<div id="share-top-album" class="font-display-lg text-2xl font-bold mt-0.5 truncate">--</div>
 </div>
 </div>
-<!-- Right Column: Upload Zone -->
-<div class="animate-in fade-in slide-in-from-right-4 duration-700 delay-150">
-<div class="glass-card rounded-xl p-8 min-h-[480px] flex flex-col relative">
-<div class="upload-zone flex-grow border-2 border-dashed border-outline-variant rounded-lg flex flex-col items-center justify-center text-center p-8 transition-all cursor-pointer group" id="drop-zone">
-<input accept=".json" class="hidden" id="file-input" multiple="" type="file">
-<div class="w-20 h-20 bg-surface-variant/50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-primary-container/20 transition-all">
-<span class="material-symbols-outlined text-4xl text-secondary group-hover:text-primary">upload_file</span>
+<div class="mt-auto flex items-end justify-between">
+<div>
+<div id="share-days" class="font-display-lg text-3xl font-extrabold text-primary">--</div>
+<div class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-label-bold">active days</div>
 </div>
-<h3 class="font-headline-md text-headline-md text-on-surface mb-2">Ready to Rewind?</h3>
-<p class="font-body-lg text-body-lg text-secondary-fixed-dim max-w-xs mx-auto mb-8">
-                            Drop your JSON files here or click to browse your computer
-                        </p>
-<button type="button" id="browse-btn" class="bg-primary-container text-on-primary-container px-10 py-4 rounded-full font-bold text-body-lg hover:shadow-[0_0_20px_rgba(29,185,84,0.3)] transition-all active:scale-95">
-                            Browse Files
-                        </button>
-<p class="mt-6 text-body-sm font-body-sm text-secondary-fixed-dim opacity-50">
-                            Max file size: 50MB per file
-                        </p>
-</div>
-<!-- File List (Hidden by default) -->
-<div class="hidden mt-6 space-y-3" id="file-list-container">
-<div class="flex justify-between items-center px-1">
-<span class="text-label-bold font-label-bold text-secondary uppercase tracking-wider">Queue</span>
-<span class="text-label-bold font-label-bold text-primary" id="file-count">0 files</span>
-</div>
-<div class="max-h-48 overflow-y-auto pr-2 space-y-2 custom-scrollbar" id="file-list">
-<!-- Items dynamically added here -->
-</div>
-<div id="upload-status" class="hidden p-3 rounded-lg text-body-sm font-medium transition-all"></div>
-<a href="#" class="w-full mt-4 block text-center bg-on-surface text-surface py-3 rounded-full font-bold hover:bg-white transition-colors" id="upload-all">
-                            Analyze All Files
-                        </a>
+<div class="text-right">
+<div id="share-streams" class="font-display-lg text-3xl font-extrabold">--</div>
+<div class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-label-bold">streams</div>
 </div>
 </div>
-<!-- Background Decorative Element -->
-<div class="absolute -z-10 blur-[120px] top-1/2 right-0 w-64 h-64 bg-primary/10 rounded-full"></div>
 </div>
 </div>
-</main>
+<!-- Actions (excluded from the exported image) -->
+<div id="share-actions" class="flex items-center gap-3">
+<button type="button" id="share-download-btn" class="flex items-center gap-2 bg-primary text-on-primary px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-lg">download</span> Download
+</button>
+<button type="button" id="share-native-btn" class="hidden items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-lg">ios_share</span> Share
+</button>
+<button type="button" id="share-close-btn" class="flex items-center gap-2 bg-surface-container text-on-surface-variant px-5 py-3 rounded-full font-bold hover:text-on-surface transition-all">
+Close
+</button>
+</div>
+</div>
+</div>
 <!-- Footer -->
 <footer class="w-full py-section-gap bg-surface-container-lowest dark:bg-surface-container-lowest border-t border-white/5">
 <div class="flex flex-col md:flex-row justify-between items-center px-container-padding-desktop gap-8 md:gap-0">

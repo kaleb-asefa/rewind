@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Rewind - Rank Velocity Over Time</title>
+    <title>Explore | Rewind</title>
     
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
@@ -119,29 +119,16 @@
                     Rewind
                 </a>
                 <div class="hidden md:flex items-center gap-6">
-                    <a id="nav-link-overview" class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" href="overview.html">Overview</a>
-                    <a id="nav-link-velocity" class="font-body-lg text-body-lg text-primary border-b-2 border-primary pb-1 transition-colors duration-200 cursor-pointer" href="time.html">Rank Velocity</a>
-                    <a id="nav-link-upload" class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer" href="overview.html#upload">Upload Data</a>
+                    <a class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary transition-colors duration-200" href="overview.html">Your Rewind</a>
+                    <a class="font-body-lg text-body-lg text-primary border-b-2 border-primary pb-1 transition-colors duration-200" href="explore.html">Explore</a>
+                    <a class="font-body-lg text-body-lg text-on-surface-variant hover:text-primary transition-colors duration-200" href="upload.html">Upload</a>
                 </div>
             </div>
-            
+
             <div class="flex items-center gap-4">
-                <div class="relative hidden lg:block">
-                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-                    <input class="bg-surface-container rounded-full pl-10 pr-4 py-2 text-body-sm font-body-sm focus:outline-none focus:ring-1 focus:ring-primary w-64 transition-all" placeholder="Search insights..." type="text">
-                </div>
                 <button id="theme-toggle" type="button" aria-label="Switch to dark mode" class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" title="Toggle theme">
                     <span id="theme-icon" class="theme-icon material-symbols-outlined text-lg">dark_mode</span>
                 </button>
-                <button class="active:scale-95 transition-transform">
-                    <span class="material-symbols-outlined text-on-surface-variant hover:text-primary">notifications</span>
-                </button>
-                <button class="active:scale-95 transition-transform">
-                    <span class="material-symbols-outlined text-on-surface-variant hover:text-primary">settings</span>
-                </button>
-                <div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
-                    <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdc-VwAPlptMYg1R-WMAI8hFkkxEEZoTC4nwZaYz81F2NFITmm0DjPGIso0GsK5xqjHy0UlgXcJ1D2gWb6x4QQ0Zu5Jn1Aaw368QyBCDgMfBIcDmnalxAx4zwK6SGJG0LRVcwVMFJlUd8XV3NFRJLAn7Tw_-vf63-PDYLs_84ArnjCgK-EK9HdWoPs4MZ6cDEzNVB03kqxWq4HVesK4syA8q5Rt-nnZxulcepAonRSOAmKBvoXuOVCubWs5az9WaaHAqlHoP1IXc4" alt="User Profile">
-                </div>
             </div>
         </nav>
     </header>
@@ -152,12 +139,29 @@
         <!-- Ambient Decorative Background Glow -->
         <div class="absolute -z-10 blur-[120px] top-1/4 left-10 w-72 h-72 bg-primary/10 rounded-full pointer-events-none"></div>
 
+        <!-- Page Hero -->
+        <div>
+            <span class="text-primary font-label-bold text-label-bold tracking-widest uppercase">Deep Dive</span>
+            <h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface tracking-tight">Explore</h1>
+            <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70">Extensive analytics on how your listening evolved over time.</p>
+        </div>
+
+        <!-- Sticky Section Sub-Nav -->
+        <nav class="sticky top-16 md:top-20 z-40 -mx-2 px-2 py-2 bg-background/85 backdrop-blur-md rounded-b-lg">
+            <div class="flex items-center gap-1 overflow-x-auto text-label-bold font-label-bold">
+                <a href="#velocity" class="whitespace-nowrap px-3 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">Rank Velocity</a>
+                <a href="#bar-race" class="whitespace-nowrap px-3 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">Bar Race</a>
+                <a href="#listening-dna" class="whitespace-nowrap px-3 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">Listening DNA</a>
+                <a href="#behavior" class="whitespace-nowrap px-3 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">Behavior</a>
+            </div>
+        </nav>
+
         <!-- Header Row -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div id="velocity" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 scroll-mt-40">
             <div>
-                <h1 class="text-headline-md font-headline-md font-bold tracking-tight text-on-surface">
+                <h2 class="text-headline-md font-headline-md font-bold tracking-tight text-on-surface">
                     Rank Velocity Over Time
-                </h1>
+                </h2>
             </div>
 
             <!-- Category Switcher Pills -->
@@ -247,7 +251,7 @@
         </div>
 
         <!-- All-Time Bar Race Header Row -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4">
+        <div id="bar-race" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 scroll-mt-40">
             <div>
                 <h2 class="text-headline-md font-headline-md font-bold tracking-tight text-on-surface">
                     All-Time Bar Race
@@ -318,6 +322,135 @@
             </div>
 
         </div>
+
+        <!-- Listening DNA (deep-dive section) -->
+        <section id="listening-dna" class="scroll-mt-40 pt-6 space-y-3">
+            <div>
+                <h2 class="text-headline-md font-headline-md font-bold tracking-tight text-on-surface">Listening DNA</h2>
+                <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">The sonic fingerprint behind your most-played music.</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+                <div class="lg:col-span-2 glass-card rounded-lg p-gutter overflow-hidden relative min-h-[400px]">
+                    <div class="relative z-10">
+                        <h3 class="font-headline-md text-headline-md text-on-surface mb-base">Sonic Spectrum</h3>
+                        <p class="font-body-sm text-body-sm text-on-surface-variant mb-gutter">Visualizing the frequency ranges you favor most across your top genres.</p>
+                        <div class="flex items-end gap-2 h-48 mb-8">
+                            <div class="flex-1 bg-primary/20 hover:bg-primary transition-colors rounded-t-sm" style="height: 40%"></div>
+                            <div class="flex-1 bg-primary/30 hover:bg-primary transition-colors rounded-t-sm" style="height: 60%"></div>
+                            <div class="flex-1 bg-primary/50 hover:bg-primary transition-colors rounded-t-sm" style="height: 85%"></div>
+                            <div class="flex-1 bg-primary hover:bg-primary transition-colors rounded-t-sm" style="height: 100%"></div>
+                            <div class="flex-1 bg-primary/70 hover:bg-primary transition-colors rounded-t-sm" style="height: 75%"></div>
+                            <div class="flex-1 bg-primary/40 hover:bg-primary transition-colors rounded-t-sm" style="height: 55%"></div>
+                            <div class="flex-1 bg-primary/20 hover:bg-primary transition-colors rounded-t-sm" style="height: 30%"></div>
+                            <div class="flex-1 bg-primary/10 hover:bg-primary transition-colors rounded-t-sm" style="height: 20%"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-surface-container p-4 rounded-lg">
+                                <div class="text-on-surface-variant font-label-bold uppercase text-[10px] mb-1">Dominant Frequency</div>
+                                <div class="text-on-surface font-body-lg">Low-End / Sub Bass</div>
+                            </div>
+                            <div class="bg-surface-container p-4 rounded-lg">
+                                <div class="text-on-surface-variant font-label-bold uppercase text-[10px] mb-1">Energy Rating</div>
+                                <div class="text-on-surface font-body-lg">Highly Dynamic</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute -bottom-20 -right-20 w-80 h-80 bg-primary/5 rounded-full blur-[100px]"></div>
+                </div>
+                <div class="glass-card rounded-lg p-gutter flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface mb-gutter">Personality Profile</h3>
+                    <div class="flex-1 flex flex-col justify-center gap-6">
+                        <div class="space-y-2">
+                            <div class="flex justify-between font-label-bold text-label-bold uppercase text-on-surface-variant">
+                                <span class="">Eclecticism</span>
+                                <span class="text-primary">88%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                                <div class="h-full bg-primary" style="width: 88%"></div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between font-label-bold text-label-bold uppercase text-on-surface-variant">
+                                <span class="">Mainstream Factor</span>
+                                <span class="text-primary">32%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                                <div class="h-full bg-primary" style="width: 32%"></div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between font-label-bold text-label-bold uppercase text-on-surface-variant">
+                                <span class="">Lyrical Depth</span>
+                                <span class="text-primary">94%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                                <div class="h-full bg-primary" style="width: 94%"></div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between font-label-bold text-label-bold uppercase text-on-surface-variant">
+                                <span class="">Atmospheric Preference</span>
+                                <span class="text-primary">76%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                                <div class="h-full bg-primary" style="width: 76%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="overview.html" class="mt-8 text-center bg-primary text-on-primary font-label-bold py-3 rounded-full hover:scale-[1.02] active:scale-95 transition-all">Share your Rewind</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Listening Behavior (deep-dive section) -->
+        <section id="behavior" class="scroll-mt-40 pt-6 space-y-3">
+            <div>
+                <h2 class="text-headline-md font-headline-md font-bold tracking-tight text-on-surface">Listening Behavior</h2>
+                <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">Highlights and outliers across your library.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+                <div class="glass-card p-6 rounded-lg flex flex-col gap-4 border-l-4 border-l-primary/30">
+                    <div class="flex justify-between items-start">
+                        <span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Total Songs</span>
+                        <span class="material-symbols-outlined text-primary">library_music</span>
+                    </div>
+                    <div>
+                        <div class="font-headline-md text-headline-md text-on-surface">4,320</div>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Unique tracks identified</div>
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-lg flex flex-col gap-4 border-l-4 border-l-primary/30">
+                    <div class="flex justify-between items-start">
+                        <span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Most Active Day</span>
+                        <span class="material-symbols-outlined text-primary">calendar_today</span>
+                    </div>
+                    <div>
+                        <div class="font-headline-md text-headline-md text-on-surface">Friday</div>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Average 6.5h listening</div>
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-lg flex flex-col gap-4 border-l-4 border-l-error/30">
+                    <div class="flex justify-between items-start">
+                        <span class="font-label-bold text-label-bold text-error uppercase tracking-widest">Most Hated Artist</span>
+                        <span class="material-symbols-outlined text-error">thumb_down</span>
+                    </div>
+                    <div>
+                        <div class="font-headline-md text-headline-md text-on-surface">Nickelback</div>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Skipped 98% of the time</div>
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-lg flex flex-col gap-4 border-l-4 border-l-error/30">
+                    <div class="flex justify-between items-start">
+                        <span class="font-label-bold text-label-bold text-error uppercase tracking-widest">Most Hated Track</span>
+                        <span class="material-symbols-outlined text-error">do_not_disturb_on</span>
+                    </div>
+                    <div>
+                        <div class="font-headline-md text-headline-md text-on-surface truncate">Baby Shark</div>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Added to blocklist</div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
     </main>
 

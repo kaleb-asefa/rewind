@@ -74,7 +74,7 @@ These are common suggestions that are deliberately not being built yet. Do not i
   - `AGENTS.md` — this file
 - `src/` — Tailwind entry CSS and modular JavaScript source code
   - `js/api.js` — centralized API client with timeout support and error handling
-  - `js/router.js` — single-page client-side router and view manager (`#view-overview`, `#view-upload`)
+  - `js/share.js` — builds the shareable "Your Rewind" snapshot card and exports it as a PNG
   - `js/total_time.js` — total listening time metric component & skeleton state handler
   - `js/top_artist.js` — top artist metric card renderer
   - `js/top_album.js` — top album metric card renderer

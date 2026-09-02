@@ -166,11 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
 
       if (selectedFiles.length === 0) {
-        if (window.switchView) {
-          window.switchView("overview");
-        } else {
-          window.location.href = "overview.html?view=overview";
-        }
+        window.location.href = "overview.html";
         return;
       }
 
@@ -201,15 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (response.ok) {
-          const overviewView = document.getElementById("view-overview");
-          if (overviewView && window.switchView) {
-            // On overview.html: switch to the overview instantly and refresh cards.
-            window.switchView("overview");
-            window.dispatchEvent(new Event("rewind:data-updated"));
-          } else {
-            // Standalone upload page: navigate to the overview page.
-            window.location.href = "overview.html?view=overview";
-          }
+          window.location.href = "overview.html";
         } else {
           const errData = await response.json().catch(() => ({}));
           showStatus(

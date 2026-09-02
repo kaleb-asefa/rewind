@@ -308,7 +308,7 @@
         render(null);
     }
 
-    // ---- Exposed controls (wired from time.html) ----
+    // ---- Exposed controls (wired from explore.html) ----
     window.switchRaceEntity = function (next) {
         if (next === entity) return;
         entity = next;
