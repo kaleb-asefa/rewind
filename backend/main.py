@@ -859,3 +859,76 @@ async def get_heatmap(
 
     res = await run_in_threadpool(query)
     return {"status": "ok", **res}
+
+
+@app.get("/api/metrics/total-songs")
+async def get_total_songs(
+    request: Request,
+    conn: Connection = Depends(get_db),
+):
+    """Number of distinct Spotify tracks in the listening history."""
+
+    def query():
+        raw_con = conn.connection.driver_connection
+        try:
+            row = raw_con.execute(
+                "SELECT COUNT(DISTINCT track_uri) FROM history "
+                "WHERE track_uri LIKE 'spotify:track:%'"
+            ).fetchone()
+        except Exception:
+            row = None
+        return int(row[0]) if row and row[0] else 0
+
+    total_songs = await run_in_threadpool(query)
+    return {"status": "ok", "total_songs": total_songs}
+
+
+_WEEKDAY_NAMES = {
+    1: "Monday",
+    2: "Tuesday",
+    3: "Wednesday",
+    4: "Thursday",
+    5: "Friday",
+    6: "Saturday",
+    7: "Sunday",
+}
+
+
+@app.get("/api/metrics/active-day")
+async def get_active_day(
+    request: Request,
+    conn: Connection = Depends(get_db),
+):
+    """Weekday with the most listening, plus average listening per that weekday."""
+
+    def query():
+        raw_con = conn.connection.driver_connection
+        try:
+            return raw_con.execute(
+                "SELECT EXTRACT(isodow FROM ts) AS dow, "
+                "       COALESCE(SUM(ms_played), 0) AS ms, "
+                "       COUNT(DISTINCT CAST(ts AS DATE)) AS days "
+                "FROM history WHERE ts IS NOT NULL "
+                "GROUP BY EXTRACT(isodow FROM ts) "
+                "ORDER BY ms DESC"
+            ).fetchall()
+        except Exception:
+            return []
+
+    rows = await run_in_threadpool(query)
+    if not rows:
+        return {
+            "status": "ok",
+            "weekday": None,
+            "average_minutes": 0,
+            "total_minutes": 0,
+        }
+
+    dow, ms, days = rows[0]
+    avg_ms = (ms / days) if days else 0
+    return {
+        "status": "ok",
+        "weekday": _WEEKDAY_NAMES.get(int(dow)),
+        "average_minutes": round(avg_ms / 60000, 2),
+        "total_minutes": round(ms / 60000, 2),
+    }

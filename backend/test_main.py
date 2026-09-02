@@ -430,6 +430,45 @@ def test_heatmap_specific_year_selectable():
         assert fallback["year"] == years[-1]
 
 
+def test_total_songs_endpoint():
+    with TestClient(app) as client:
+        res = client.get("/api/metrics/total-songs")
+        assert res.status_code == 200
+        assert res.json() == {"status": "ok", "total_songs": 0}
+
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")})
+
+        res = client.get("/api/metrics/total-songs")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+        assert data["total_songs"] > 0
+
+
+def test_active_day_endpoint():
+    with TestClient(app) as client:
+        empty = client.get("/api/metrics/active-day").json()
+        assert empty["status"] == "ok"
+        assert empty["weekday"] is None
+
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")})
+
+        res = client.get("/api/metrics/active-day")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+        assert data["weekday"] in {
+            "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+        }
+        assert data["average_minutes"] > 0
+        assert data["total_minutes"] >= data["average_minutes"]
+
+
+
 
 
 

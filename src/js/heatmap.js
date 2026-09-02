@@ -14,6 +14,11 @@
 
     if (!grid || !monthsEl) return;
 
+    // Move the tooltip to <body> so no card/stacking context can clip or cover it.
+    if (tooltip && tooltip.parentElement !== document.body) {
+        document.body.appendChild(tooltip);
+    }
+
     const cache = new Map(); // year -> payload
     let years = [];
     let activeYear = null;
@@ -158,7 +163,8 @@
 
     function showTooltip(e, day) {
         if (!tooltip) return;
-        const rect = e.target.getBoundingClientRect();
+        const target = e.currentTarget || e.target;
+        const rect = target.getBoundingClientRect();
 
         if (day.streams === 0) {
             tooltip.innerHTML = `<strong>${formatDate(day.date)}</strong><br>No listening`;
@@ -173,8 +179,29 @@
         }
 
         tooltip.classList.add('visible');
-        tooltip.style.left = `${rect.left + rect.width / 2}px`;
-        tooltip.style.top = `${rect.top}px`;
+        positionTooltip(rect);
+    }
+
+    function positionTooltip(rect) {
+        const margin = 8;   // viewport edge padding
+        const gap = 6;      // distance between the cell and the tooltip
+        const tw = tooltip.offsetWidth;
+        const th = tooltip.offsetHeight;
+        const vw = document.documentElement.clientWidth;
+        const vh = window.innerHeight;
+
+        // Horizontally centered on the cell, clamped inside the viewport.
+        let left = rect.left + rect.width / 2 - tw / 2;
+        left = Math.max(margin, Math.min(left, vw - tw - margin));
+
+        // Prefer just above the cell; flip below when there is no room above.
+        let top = rect.top - th - gap;
+        if (top < margin) top = rect.bottom + gap;
+        top = Math.min(top, vh - th - margin);
+        top = Math.max(margin, top);
+
+        tooltip.style.left = `${Math.round(left)}px`;
+        tooltip.style.top = `${Math.round(top)}px`;
     }
 
     function hideTooltip() {

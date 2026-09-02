@@ -94,6 +94,7 @@
     <script src="src/js/top_artist.js" defer></script>
     <script src="src/js/top_album.js" defer></script>
     <script src="src/js/top_track.js" defer></script>
+    <script src="src/js/behavior.js" defer></script>
     <script src="https://unpkg.com/html-to-image@1.11.13/dist/html-to-image.js"></script>
     <script src="src/js/share.js" defer></script>
 </head><body class="bg-background text-on-background antialiased">
@@ -285,7 +286,7 @@
 <span class="material-symbols-outlined text-primary">library_music</span>
 </div>
 <div>
-<div class="font-headline-md text-headline-md text-on-surface">4,320</div>
+<div class="font-headline-md text-headline-md text-on-surface" id="total-songs-value">--</div>
 <div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Unique tracks identified</div>
 </div>
 </div>
@@ -295,8 +296,8 @@
 <span class="material-symbols-outlined text-primary">calendar_today</span>
 </div>
 <div>
-<div class="font-headline-md text-headline-md text-on-surface">Friday</div>
-<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Average 6.5h listening</div>
+<div class="font-headline-md text-headline-md text-on-surface" id="active-day-value">--</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1" id="active-day-subtext">Average listening</div>
 </div>
 </div>
 <div class="glass-card p-5 rounded-lg flex flex-col gap-3 border-l-4 border-l-error/30">
