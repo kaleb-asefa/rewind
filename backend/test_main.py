@@ -368,6 +368,68 @@ def test_bar_race_track_and_album_and_invalid():
         assert bad.status_code == 400
 
 
+def test_heatmap_empty_when_no_history():
+    with TestClient(app) as client:
+        res = client.get("/api/metrics/heatmap")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+        assert data["years"] == []
+        assert data["year"] is None
+        assert data["days"] == []
+
+
+def test_heatmap_returns_daily_activity():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")})
+
+        res = client.get("/api/metrics/heatmap")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "ok"
+
+        years = data["years"]
+        assert len(years) >= 1
+        assert years == sorted(years)
+        # Default (no query param) returns the most recent year.
+        assert data["year"] == years[-1]
+
+        days = data["days"]
+        assert len(days) == data["active_days"]
+        assert data["total_streams"] == sum(d["streams"] for d in days)
+
+        for d in days:
+            assert len(d["date"]) == 10  # YYYY-MM-DD
+            assert d["date"].startswith(str(data["year"]))
+            assert d["streams"] >= 1
+            assert 1 <= d["level"] <= 4
+            assert d["minutes"] >= 0
+
+        # Active days are strictly within the requested year and sorted ascending.
+        iso_dates = [d["date"] for d in days]
+        assert iso_dates == sorted(iso_dates)
+        assert data["max_streams"] == max(d["streams"] for d in days)
+
+
+def test_heatmap_specific_year_selectable():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")})
+
+        years = client.get("/api/metrics/heatmap").json()["years"]
+        earliest = years[0]
+        res = client.get(f"/api/metrics/heatmap?year={earliest}").json()
+        assert res["year"] == earliest
+        assert all(d["date"].startswith(str(earliest)) for d in res["days"])
+
+        # An out-of-range year falls back to the most recent year present.
+        fallback = client.get("/api/metrics/heatmap?year=1999").json()
+        assert fallback["year"] == years[-1]
+
+
 
 
 

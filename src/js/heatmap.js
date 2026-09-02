@@ -1,6 +1,7 @@
 /**
  * Rewind Listening Activity Heatmap Module
- * Renders GitHub-style activity heatmaps with yearly breakdown & hover tooltips.
+ * Renders a GitHub-style activity calendar from real backend data, with a
+ * dynamic year switcher and hover tooltips showing that day's top track.
  */
 (function initHeatmap() {
     const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -9,23 +10,32 @@
     const tooltip = document.getElementById('heatmap-tooltip');
     const summaryEl = document.getElementById('heatmap-summary');
     const totalEl = document.getElementById('heatmap-total');
-    const yearBtns = document.querySelectorAll('.heatmap-year-btn');
-    let activeYear = 2024;
+    const yearsContainer = document.getElementById('heatmap-years');
 
     if (!grid || !monthsEl) return;
 
-    function seededRandom(seed) {
-        let s = seed % 2147483647;
-        if (s <= 0) s += 2147483646;
-        return () => (s = (s * 16807) % 2147483647) / 2147483647;
+    const cache = new Map(); // year -> payload
+    let years = [];
+    let activeYear = null;
+    let isFetching = false;
+
+    const fetcher = window.fetchWithTimeout || (async (ep) => {
+        const res = await fetch(`http://127.0.0.1:8000${ep}`);
+        const data = await res.json();
+        return { ok: res.ok, data };
+    });
+
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, (c) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
     }
 
-    function countToLevel(count) {
-        if (count === 0) return 0;
-        if (count <= 8) return 1;
-        if (count <= 20) return 2;
-        if (count <= 40) return 3;
-        return 4;
+    function isoLocal(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
     }
 
     function formatDate(date) {
@@ -37,38 +47,39 @@
         });
     }
 
-    function generateYearData(year) {
-        const rand = seededRandom(year * 9973);
-        const start = new Date(year, 0, 1);
-        const end = year === new Date().getFullYear()
-            ? new Date()
-            : new Date(year, 11, 31);
+    function formatMinutes(mins) {
+        if (mins >= 60) {
+            const h = Math.floor(mins / 60);
+            const m = Math.round(mins % 60);
+            return m ? `${h}h ${m}m` : `${h}h`;
+        }
+        return `${Math.round(mins)} min`;
+    }
 
+    function buildCalendar(year, dayMap) {
+        const today = new Date();
+        const isCurrentYear = year === today.getFullYear();
+        const yearStart = new Date(year, 0, 1);
+        const end = isCurrentYear ? today : new Date(year, 11, 31);
+
+        const start = new Date(yearStart);
         start.setDate(start.getDate() - start.getDay());
 
         const days = [];
         const cursor = new Date(start);
 
         while (cursor <= end || days.length % 7 !== 0) {
-            const inRange = cursor >= new Date(year, 0, 1) && cursor <= end;
-            let count = 0;
-
-            if (inRange) {
-                const dow = cursor.getDay();
-                const month = cursor.getMonth();
-                const isWeekend = dow === 0 || dow === 6;
-                const base = isWeekend ? 0.35 : 0.72;
-                const seasonal = 0.85 + Math.sin((month / 11) * Math.PI) * 0.25;
-
-                if (rand() < base * seasonal) {
-                    count = Math.floor(rand() * rand() * 55) + 1;
-                    if (rand() > 0.92) count += Math.floor(rand() * 30);
-                }
-            }
+            const inRange = cursor >= yearStart && cursor <= end;
+            const iso = isoLocal(cursor);
+            const info = inRange ? dayMap.get(iso) : null;
 
             days.push({
                 date: new Date(cursor),
-                count,
+                streams: info ? info.streams : 0,
+                minutes: info ? info.minutes : 0,
+                level: info ? info.level : 0,
+                topTrack: info ? info.top_track : null,
+                topArtist: info ? info.top_artist : null,
                 inRange,
                 padding: !inRange || cursor > end
             });
@@ -76,6 +87,23 @@
         }
 
         return days;
+    }
+
+    function renderYears() {
+        if (!yearsContainer || !years.length) return;
+        yearsContainer.innerHTML = '';
+        years.slice().reverse().forEach((y) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.dataset.year = String(y);
+            const selected = y === activeYear;
+            btn.className =
+                'heatmap-year-btn px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ' +
+                (selected ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:text-on-surface');
+            btn.textContent = String(y);
+            btn.addEventListener('click', () => loadYear(y));
+            yearsContainer.appendChild(btn);
+        });
     }
 
     function renderMonths(days) {
@@ -106,25 +134,18 @@
         grid.style.setProperty('--weeks-count', weeks);
         grid.style.gridTemplateColumns = `repeat(${weeks}, minmax(0, 1fr))`;
 
-        let activeDays = 0;
-        let totalStreams = 0;
-
         days.forEach((day) => {
             const cell = document.createElement('button');
             cell.type = 'button';
             cell.className = 'heatmap-cell';
-            cell.dataset.level = String(countToLevel(day.count));
+            cell.dataset.level = String(day.level);
 
             if (day.padding) {
                 cell.dataset.future = 'true';
                 cell.tabIndex = -1;
                 cell.setAttribute('aria-hidden', 'true');
             } else {
-                if (day.count > 0) {
-                    activeDays += 1;
-                    totalStreams += day.count;
-                }
-                cell.setAttribute('aria-label', `${formatDate(day.date)}: ${day.count} streams`);
+                cell.setAttribute('aria-label', `${formatDate(day.date)}: ${day.streams} streams`);
                 cell.addEventListener('mouseenter', (e) => showTooltip(e, day));
                 cell.addEventListener('focus', (e) => showTooltip(e, day));
                 cell.addEventListener('mouseleave', hideTooltip);
@@ -133,18 +154,24 @@
 
             grid.appendChild(cell);
         });
-
-        if (summaryEl) summaryEl.textContent = activeDays.toLocaleString();
-        if (totalEl) totalEl.textContent = totalStreams.toLocaleString();
     }
 
     function showTooltip(e, day) {
         if (!tooltip) return;
         const rect = e.target.getBoundingClientRect();
-        const mins = Math.round(day.count * 3.2);
-        tooltip.innerHTML = day.count === 0
-            ? `<strong>${formatDate(day.date)}</strong><br>No streams`
-            : `<strong>${formatDate(day.date)}</strong><br><span class="count">${day.count}</span> streams · ~${mins} min`;
+
+        if (day.streams === 0) {
+            tooltip.innerHTML = `<strong>${formatDate(day.date)}</strong><br>No listening`;
+        } else {
+            let html = `<strong>${formatDate(day.date)}</strong><br>` +
+                `<span class="count">${day.streams.toLocaleString()}</span> streams · ${formatMinutes(day.minutes)}`;
+            if (day.topTrack) {
+                const artist = day.topArtist ? ` — ${escapeHtml(day.topArtist)}` : '';
+                html += `<br><span class="top">♪ ${escapeHtml(day.topTrack)}${artist}</span>`;
+            }
+            tooltip.innerHTML = html;
+        }
+
         tooltip.classList.add('visible');
         tooltip.style.left = `${rect.left + rect.width / 2}px`;
         tooltip.style.top = `${rect.top}px`;
@@ -154,25 +181,65 @@
         if (tooltip) tooltip.classList.remove('visible');
     }
 
-    function render(year) {
-        activeYear = year;
-        const days = generateYearData(year);
+    function applyPayload(payload) {
+        activeYear = payload.year;
+        const dayMap = new Map();
+        (payload.days || []).forEach((d) => dayMap.set(d.date, d));
+
+        const days = buildCalendar(payload.year, dayMap);
+        renderYears();
         renderMonths(days);
         renderGrid(days);
 
-        yearBtns.forEach((btn) => {
-            const selected = Number(btn.dataset.year) === year;
-            btn.classList.toggle('bg-primary', selected);
-            btn.classList.toggle('text-on-primary', selected);
-            btn.classList.toggle('text-on-surface-variant', !selected);
-        });
-
-        grid.setAttribute('aria-label', `Listening activity heatmap for ${year}`);
+        if (summaryEl) summaryEl.textContent = (payload.active_days || 0).toLocaleString();
+        if (totalEl) totalEl.textContent = (payload.total_streams || 0).toLocaleString();
+        grid.setAttribute('aria-label', `Listening activity heatmap for ${payload.year}`);
     }
 
-    yearBtns.forEach((btn) => {
-        btn.addEventListener('click', () => render(Number(btn.dataset.year)));
-    });
+    function renderEmpty() {
+        const year = activeYear || new Date().getFullYear();
+        const days = buildCalendar(year, new Map());
+        renderMonths(days);
+        renderGrid(days);
+        if (summaryEl) summaryEl.textContent = '0';
+        if (totalEl) totalEl.textContent = '0';
+    }
 
-    render(activeYear);
+    async function loadYear(year, force) {
+        if (isFetching) return;
+        if (year && cache.has(year) && !force) {
+            applyPayload(cache.get(year));
+            return;
+        }
+
+        isFetching = true;
+        grid.style.opacity = '0.5';
+        try {
+            const qs = year ? `?year=${encodeURIComponent(year)}` : '';
+            const res = await fetcher(`/api/metrics/heatmap${qs}`, {}, 6000);
+
+            if (res.ok && res.data && res.data.status === 'ok' && res.data.year != null) {
+                years = res.data.years || years;
+                cache.set(res.data.year, res.data);
+                applyPayload(res.data);
+            } else {
+                renderEmpty();
+            }
+        } finally {
+            grid.style.opacity = '1';
+            isFetching = false;
+        }
+    }
+
+    function reload() {
+        cache.clear();
+        loadYear(activeYear, true);
+    }
+
+    const overviewView = document.getElementById('view-overview');
+    if (!overviewView || !overviewView.classList.contains('hidden')) {
+        loadYear();
+    }
+
+    window.addEventListener('rewind:data-updated', reload);
 })();

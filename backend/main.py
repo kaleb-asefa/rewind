@@ -741,3 +741,121 @@ async def get_bar_race(
 
     res = await run_in_threadpool(query)
     return {"status": "ok", "entity": entity, "unit": "minutes", **res}
+
+
+def _heatmap_thresholds(counts: list[int]) -> list[int]:
+    """Ascending level boundaries mapping a day's stream count to a 1-4 intensity.
+
+    Uses quartiles of the active-day distribution so the colour ramp adapts to
+    each listener instead of assuming fixed stream volumes.
+    """
+    ordered = sorted(c for c in counts if c > 0)
+    if not ordered:
+        return []
+    n = len(ordered)
+    return [ordered[min(n - 1, int(p * n))] for p in (0.25, 0.5, 0.75)]
+
+
+def _heatmap_level(count: int, thresholds: list[int]) -> int:
+    if count <= 0:
+        return 0
+    if not thresholds:
+        return 1
+    for level, bound in enumerate(thresholds, start=1):
+        if count <= bound:
+            return level
+    return 4
+
+
+@app.get("/api/metrics/heatmap")
+async def get_heatmap(
+    request: Request,
+    year: int | None = None,
+    conn: Connection = Depends(get_db),
+):
+    """Daily listening activity for a GitHub-style calendar heatmap.
+
+    Returns every year present in the history plus, for the requested year
+    (default: most recent), one entry per active day with its stream count,
+    minutes listened, an adaptive intensity level, and that day's top track.
+    """
+
+    def query():
+        raw_con = conn.connection.driver_connection
+        try:
+            year_rows = raw_con.execute(
+                "SELECT DISTINCT EXTRACT(year FROM ts)::INTEGER AS y "
+                "FROM history WHERE ts IS NOT NULL ORDER BY y"
+            ).fetchall()
+        except Exception:
+            year_rows = []
+        years = [r[0] for r in year_rows]
+
+        if not years:
+            return {"years": [], "year": None, "days": []}
+
+        target = year if year in years else years[-1]
+
+        daily = raw_con.execute(
+            "SELECT CAST(ts AS DATE) AS day, COUNT(*) AS streams, "
+            "COALESCE(SUM(ms_played), 0) AS ms "
+            "FROM history "
+            "WHERE ts IS NOT NULL AND EXTRACT(year FROM ts) = ? "
+            "GROUP BY CAST(ts AS DATE) ORDER BY day",
+            [target],
+        ).fetchall()
+
+        top_map: dict[str, tuple] = {}
+        try:
+            for r in raw_con.execute(
+                "SELECT day, track_name, artist_name FROM ("
+                "  SELECT CAST(ts AS DATE) AS day, track_name, artist_name, "
+                "         ROW_NUMBER() OVER ("
+                "           PARTITION BY CAST(ts AS DATE) "
+                "           ORDER BY COUNT(*) DESC, SUM(ms_played) DESC"
+                "         ) AS rn "
+                "  FROM history "
+                "  WHERE ts IS NOT NULL AND track_name IS NOT NULL "
+                "        AND EXTRACT(year FROM ts) = ? "
+                "  GROUP BY CAST(ts AS DATE), track_name, artist_name"
+                ") t WHERE rn = 1",
+                [target],
+            ).fetchall():
+                top_map[str(r[0])] = (r[1], r[2])
+        except Exception:
+            top_map = {}
+
+        counts = [row[1] for row in daily]
+        thresholds = _heatmap_thresholds(counts)
+
+        days = []
+        total_streams = 0
+        total_ms = 0
+        for day, streams, ms in daily:
+            iso = str(day)
+            total_streams += streams
+            total_ms += ms
+            top = top_map.get(iso)
+            days.append(
+                {
+                    "date": iso,
+                    "streams": streams,
+                    "minutes": round(ms / 60000, 2),
+                    "level": _heatmap_level(streams, thresholds),
+                    "top_track": top[0] if top else None,
+                    "top_artist": top[1] if top else None,
+                }
+            )
+
+        return {
+            "years": years,
+            "year": target,
+            "active_days": len(days),
+            "total_streams": total_streams,
+            "total_minutes": round(total_ms / 60000, 2),
+            "max_streams": max(counts) if counts else 0,
+            "days": days,
+        }
+
+    res = await run_in_threadpool(query)
+    return {"status": "ok", **res}

@@ -293,6 +293,10 @@ body, header, section, footer, .glass-player, .spotify-card {
     color: #1ed760;
     font-weight: 700;
 }
+#heatmap-tooltip .top {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 10px;
+}
 
 /* Rank Velocity Trajectory Component Styles */
 .rank-path {
