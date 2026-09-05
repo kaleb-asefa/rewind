@@ -549,7 +549,7 @@ def test_audio_returns_profile_from_track_features(tmp_path, monkeypatch):
             "energy DOUBLE, valence DOUBLE, danceability DOUBLE, acousticness DOUBLE, "
             "instrumentalness DOUBLE, tempo DOUBLE, mode INTEGER)"
         )
-        # Primary genre r&b → energy is de-inflated by 0.15 (0.6 → 0.45).
+        # Primary genre r&b → energy is de-inflated by 0.12 (0.6 → 0.48).
         fx.executemany(
             "INSERT INTO c VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [(i, f"name_{i}", "r&b, pop", 0.6, 0.4, 0.7, 0.2, 0.05, 120.0, 1) for i in ids],
@@ -564,8 +564,8 @@ def test_audio_returns_profile_from_track_features(tmp_path, monkeypatch):
         data = client.get("/api/metrics/audio").json()
         assert data["status"] == "ok"
         assert data["avg"] is not None
-        # r&b-primary energy 0.6 de-inflated to 0.45.
-        assert data["avg"]["energy"] == 0.45
+        # r&b-primary energy 0.6 de-inflated to 0.48.
+        assert data["avg"]["energy"] == 0.48
         assert data["avg"]["vocal"] == round(1 - 0.05, 3)
         assert data["tempo_avg"] == 120
         assert data["mode"]["major"] == 1.0

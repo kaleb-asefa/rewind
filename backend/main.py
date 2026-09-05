@@ -1097,9 +1097,15 @@ async def get_rhythm(
     }
 
 
-# Genre energy de-inflation penalties (see get_audio); env-tunable.
-_RNB_ENERGY_ADJ = float(os.getenv("REWIND_RNB_ENERGY_ADJ", "0.15"))
-_HIPHOP_ENERGY_ADJ = float(os.getenv("REWIND_HIPHOP_ENERGY_ADJ", "0.10"))
+# Spotify's "energy" is largely a loudness/production proxy — its own docs list
+# "perceived loudness" and "dynamic range" as inputs, and public audio-feature
+# analyses put the energy<->loudness correlation around 0.7-0.8. Hip-hop, rap, trap,
+# R&B and soul are the most brick-walled / compressed genres (the "loudness war"),
+# so their energy reads systematically high even for mellow songs. On real data that
+# inflation is ~0.10-0.15 on the 0-1 scale; 0.12 is the single value that pulls chill
+# tracks back to the calm half without flipping genuinely energetic tracks out of it.
+# Applied only to these genres (a global shift would wrongly drag pop/latin/EDM down).
+_ENERGY_LOUDNESS_ADJ = 0.12
 
 
 @app.get("/api/metrics/audio")
@@ -1118,19 +1124,16 @@ async def get_audio(
         "ON split_part(h.track_uri, ':', 3) = f.track_id "
         "WHERE h.track_uri LIKE 'spotify:track:%'"
     )
-    # Spotify over-rates 'energy' for produced urban music (dense production reads
-    # as energy even for mellow songs). De-inflate by primary genre — R&B/soul most,
-    # hip-hop/rap a bit — so genuinely energetic pop/latin/EDM keep their real energy.
-    # Penalties are env-tunable (REWIND_RNB_ENERGY_ADJ / REWIND_HIPHOP_ENERGY_ADJ).
+    # De-inflate that loudness bias for the affected genres only, keyed on the
+    # PRIMARY artist genre (a global shift would wrongly flatten real pop/latin/EDM).
     _ADJ_E = (
-        "CASE "
-        "WHEN lower(split_part(f.artist_genres, ',', 1)) LIKE '%r&b%' "
-        "  OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%soul%' "
-        f"  THEN greatest(0, f.energy - {_RNB_ENERGY_ADJ}) "
-        "WHEN lower(split_part(f.artist_genres, ',', 1)) LIKE '%hip hop%' "
-        "  OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%rap%' "
-        "  OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%trap%' "
-        f"  THEN greatest(0, f.energy - {_HIPHOP_ENERGY_ADJ}) "
+        "CASE WHEN "
+        "lower(split_part(f.artist_genres, ',', 1)) LIKE '%r&b%' "
+        "OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%soul%' "
+        "OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%hip hop%' "
+        "OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%rap%' "
+        "OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%trap%' "
+        f"THEN greatest(0, f.energy - {_ENERGY_LOUDNESS_ADJ}) "
         "ELSE f.energy END"
     )
 
