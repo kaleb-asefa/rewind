@@ -345,15 +345,10 @@
 
         <!-- Chapter 02 — When You Listen -->
         <section id="rhythm" class="scroll-mt-32 pt-10 space-y-6">
-            <div class="reveal flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-                <div>
-                    <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 02</span>
-                    <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">When You Listen</h2>
-                    <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The rhythm of your days — the hours, weekdays and seasons your music lives in.</p>
-                </div>
-                <span class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-label-bold font-label-bold border border-primary/20">
-                    <span class="material-symbols-outlined text-sm">science</span> Sample data
-                </span>
+            <div class="reveal">
+                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 02</span>
+                <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">When You Listen</h2>
+                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The rhythm of your days — the hours, weekdays and seasons your music lives in.</p>
             </div>
 
             <!-- Hero: listening clock + side stats -->
@@ -380,17 +375,17 @@
                 <div class="flex flex-col gap-gutter">
                     <div class="reveal glass-card rounded-2xl p-5 flex items-center gap-4">
                         <div class="w-12 h-12 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
-                            <span class="material-symbols-outlined">bedtime</span>
+                            <span id="chrono-icon" class="material-symbols-outlined">schedule</span>
                         </div>
                         <div class="min-w-0">
                             <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Chronotype</div>
-                            <div class="font-headline-md text-headline-md text-on-surface truncate">Night owl</div>
+                            <div id="chrono-label" class="font-headline-md text-headline-md text-on-surface truncate">—</div>
                         </div>
                     </div>
                     <div class="reveal glass-card rounded-2xl p-5">
                         <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70 mb-3">Early bird ↔ Night owl</div>
                         <div class="relative h-2 rounded-full bg-gradient-to-r from-amber-400/60 via-surface-container-high to-primary">
-                            <div class="absolute -top-1.5 w-5 h-5 rounded-full bg-white border-[3px] border-primary shadow -translate-x-1/2" style="left: 78%"></div>
+                            <div id="chrono-marker" class="absolute -top-1.5 w-5 h-5 rounded-full bg-white border-[3px] border-primary shadow -translate-x-1/2 transition-all duration-500" style="left: 50%"></div>
                         </div>
                         <div class="flex justify-between mt-3 font-mono text-[10px] text-on-surface-variant opacity-60">
                             <span>5 AM</span><span>Noon</span><span>11 PM</span>
@@ -402,7 +397,7 @@
                         </div>
                         <div class="min-w-0">
                             <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Busiest weekday</div>
-                            <div class="font-headline-md text-headline-md text-on-surface truncate">Sunday</div>
+                            <div id="busiest-weekday" class="font-headline-md text-headline-md text-on-surface truncate">—</div>
                         </div>
                     </div>
                 </div>
@@ -414,36 +409,7 @@
                 <div class="reveal glass-card rounded-2xl p-gutter">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Weekday rhythm</h3>
                     <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">Plays by day of the week.</p>
-                    <div class="flex items-end gap-2 h-40">
-                        <div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                            <div class="w-full rounded-t-md bg-primary/30 hover:bg-primary transition-colors" style="height:55%"></div>
-                            <span class="font-mono text-[10px] text-on-surface-variant">Mon</span>
-                        </div>
-                        <div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                            <div class="w-full rounded-t-md bg-primary/30 hover:bg-primary transition-colors" style="height:48%"></div>
-                            <span class="font-mono text-[10px] text-on-surface-variant">Tue</span>
-                        </div>
-                        <div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                            <div class="w-full rounded-t-md bg-primary/30 hover:bg-primary transition-colors" style="height:52%"></div>
-                            <span class="font-mono text-[10px] text-on-surface-variant">Wed</span>
-                        </div>
-                        <div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                            <div class="w-full rounded-t-md bg-primary/30 hover:bg-primary transition-colors" style="height:60%"></div>
-                            <span class="font-mono text-[10px] text-on-surface-variant">Thu</span>
-                        </div>
-                        <div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                            <div class="w-full rounded-t-md bg-primary/50 hover:bg-primary transition-colors" style="height:72%"></div>
-                            <span class="font-mono text-[10px] text-on-surface-variant">Fri</span>
-                        </div>
-                        <div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                            <div class="w-full rounded-t-md bg-primary/70 hover:bg-primary transition-colors" style="height:84%"></div>
-                            <span class="font-mono text-[10px] text-on-surface-variant">Sat</span>
-                        </div>
-                        <div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                            <div class="w-full rounded-t-md bg-primary hover:bg-primary transition-colors" style="height:100%"></div>
-                            <span class="font-mono text-[10px] text-primary font-bold">Sun</span>
-                        </div>
-                    </div>
+                    <div id="weekday-bars" class="flex items-end gap-2 h-40"></div>
                 </div>
 
                 <!-- Seasons -->
@@ -463,17 +429,17 @@
                         <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">Consecutive days with a play.</p>
                     </div>
                     <div class="my-4 flex items-end gap-2">
-                        <span class="font-display-lg text-display-lg text-primary leading-none">34</span>
+                        <span id="streak-longest" class="font-display-lg text-display-lg text-primary leading-none">—</span>
                         <span class="font-body-lg text-body-lg text-on-surface-variant mb-1">days</span>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-surface-container rounded-lg p-3">
-                            <div class="font-label-bold text-[10px] uppercase tracking-wider text-on-surface-variant opacity-70">Current</div>
-                            <div class="font-body-lg text-on-surface">6 days</div>
+                            <div class="font-label-bold text-[10px] uppercase tracking-wider text-on-surface-variant opacity-70">Latest</div>
+                            <div id="streak-current" class="font-body-lg text-on-surface">—</div>
                         </div>
                         <div class="bg-surface-container rounded-lg p-3">
                             <div class="font-label-bold text-[10px] uppercase tracking-wider text-on-surface-variant opacity-70">Active days</div>
-                            <div class="font-body-lg text-on-surface">612</div>
+                            <div id="streak-active" class="font-body-lg text-on-surface">—</div>
                         </div>
                     </div>
                 </div>

@@ -468,6 +468,54 @@ def test_active_day_endpoint():
         assert data["total_minutes"] >= data["average_minutes"]
 
 
+def test_rhythm_empty_when_no_history():
+    with TestClient(app) as client:
+        data = client.get("/api/metrics/rhythm").json()
+        assert data["status"] == "ok"
+        assert data["hourly"] == [0] * 24
+        assert data["weekday"] == [0] * 7
+        assert data["monthly"] == [0] * 12
+        assert data["peak_hour"] is None
+        assert data["busiest_weekday"] is None
+        assert data["total_streams"] == 0
+        assert data["chronotype"] == {"label": None, "position": 0.0}
+        assert data["streak"] == {"longest": 0, "current": 0, "active_days": 0}
+
+
+def test_rhythm_returns_patterns():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")})
+
+        data = client.get("/api/metrics/rhythm").json()
+        assert data["status"] == "ok"
+        assert len(data["hourly"]) == 24
+        assert len(data["weekday"]) == 7
+        assert len(data["monthly"]) == 12
+
+        total = data["total_streams"]
+        assert total > 0
+        # hourly is the play count split, so it must sum to the total streams.
+        assert sum(data["hourly"]) == total
+        assert sum(data["weekday"]) == total
+        assert sum(data["monthly"]) == total
+
+        assert 0 <= data["peak_hour"] <= 23
+        assert data["hourly"][data["peak_hour"]] == max(data["hourly"])
+        assert data["busiest_weekday"] in set(main._WEEKDAY_NAMES.values())
+
+        chrono = data["chronotype"]
+        assert chrono["label"] in {"Early bird", "Balanced", "Night owl"}
+        assert 0.0 <= chrono["position"] <= 1.0
+
+        streak = data["streak"]
+        assert streak["active_days"] >= 1
+        assert streak["longest"] >= 1
+        assert streak["longest"] >= streak["current"]
+
+
+
 
 
 

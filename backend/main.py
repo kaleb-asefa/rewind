@@ -932,3 +932,113 @@ async def get_active_day(
         "average_minutes": round(avg_ms / 60000, 2),
         "total_minutes": round(ms / 60000, 2),
     }
+
+
+def _listening_streaks(days: list) -> dict:
+    """Longest and latest consecutive-day streaks from sorted distinct dates."""
+    if not days:
+        return {"longest": 0, "current": 0, "active_days": 0}
+    longest = run = 1
+    for i in range(1, len(days)):
+        run = run + 1 if (days[i] - days[i - 1]).days == 1 else 1
+        longest = max(longest, run)
+    latest = 1
+    for i in range(len(days) - 1, 0, -1):
+        if (days[i] - days[i - 1]).days == 1:
+            latest += 1
+        else:
+            break
+    return {"longest": longest, "current": latest, "active_days": len(days)}
+
+
+def _chronotype(hourly: list[int]) -> dict:
+    """Early-bird ↔ night-owl position (0..1) from the hourly play distribution.
+
+    Hours are shifted so the listening day starts at 5AM, then a play-weighted
+    average is mapped onto 0 (early riser) .. 1 (deep night owl).
+    """
+    total = sum(hourly)
+    if total == 0:
+        return {"label": None, "position": 0.0}
+    weighted = sum(((h - 5) % 24) * c for h, c in enumerate(hourly))
+    position = max(0.0, min(1.0, (weighted / total) / 23))
+    if position < 0.34:
+        label = "Early bird"
+    elif position < 0.6:
+        label = "Balanced"
+    else:
+        label = "Night owl"
+    return {"label": label, "position": round(position, 3)}
+
+
+@app.get("/api/metrics/rhythm")
+async def get_rhythm(
+    request: Request,
+    conn: Connection = Depends(get_db),
+):
+    """Temporal listening patterns for the "When You Listen" chapter: plays by
+    hour of day, weekday and month of year, plus daily streaks and a chronotype
+    score. Times use the stored (UTC) timestamp, consistent with the heatmap.
+    """
+
+    def query():
+        raw_con = conn.connection.driver_connection
+
+        def fetch(sql):
+            try:
+                return raw_con.execute(sql).fetchall()
+            except Exception:
+                return []
+
+        hourly = [0] * 24
+        for h, c in fetch(
+            "SELECT EXTRACT(hour FROM ts)::INTEGER AS h, COUNT(*) "
+            "FROM history WHERE ts IS NOT NULL GROUP BY h"
+        ):
+            if h is not None and 0 <= int(h) <= 23:
+                hourly[int(h)] = int(c)
+
+        weekday = [0] * 7  # Mon..Sun
+        for d, c in fetch(
+            "SELECT EXTRACT(isodow FROM ts)::INTEGER AS d, COUNT(*) "
+            "FROM history WHERE ts IS NOT NULL GROUP BY d"
+        ):
+            if d is not None and 1 <= int(d) <= 7:
+                weekday[int(d) - 1] = int(c)
+
+        monthly = [0] * 12  # Jan..Dec
+        for m, c in fetch(
+            "SELECT EXTRACT(month FROM ts)::INTEGER AS m, COUNT(*) "
+            "FROM history WHERE ts IS NOT NULL GROUP BY m"
+        ):
+            if m is not None and 1 <= int(m) <= 12:
+                monthly[int(m) - 1] = int(c)
+
+        day_rows = fetch(
+            "SELECT DISTINCT CAST(ts AS DATE) AS day FROM history "
+            "WHERE ts IS NOT NULL ORDER BY day"
+        )
+        days = [r[0] for r in day_rows]
+
+        return hourly, weekday, monthly, days
+
+    hourly, weekday, monthly, days = await run_in_threadpool(query)
+
+    total_streams = sum(hourly)
+    peak_hour = max(range(24), key=lambda i: hourly[i]) if total_streams else None
+    busiest_idx = max(range(7), key=lambda i: weekday[i]) if sum(weekday) else None
+    busiest_weekday = (
+        _WEEKDAY_NAMES.get(busiest_idx + 1) if busiest_idx is not None else None
+    )
+
+    return {
+        "status": "ok",
+        "hourly": hourly,
+        "peak_hour": peak_hour,
+        "weekday": weekday,
+        "busiest_weekday": busiest_weekday,
+        "monthly": monthly,
+        "chronotype": _chronotype(hourly),
+        "streak": _listening_streaks(days),
+        "total_streams": total_streams,
+    }
