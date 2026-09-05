@@ -1205,3 +1205,138 @@ async def get_audio(
     total = res["total"]
     res["coverage"] = round(res["matched"] / total, 4) if total else 0.0
     return {"status": "ok", **res}
+
+
+# Spotify's raw genre tags are hyper-granular ("north carolina hip hop"); fold the
+# primary tag into a handful of everyday buckets for a readable breakdown. First
+# match wins, so order matters (specific before generic; "pop" before "dance").
+_GENRE_RULES = [
+    ("K-Pop", ("k-pop", "korean")),
+    ("Afrobeats", ("amapiano", "afrobeat", "afropop", "afro house", "afro-fusion", "alte")),
+    ("Latin", ("reggaeton", "urbano", "latin", "bachata", "salsa", "cumbia", "corrido", "banda", "regional mexican", "mariachi")),
+    ("Reggae", ("reggae", "dancehall")),
+    ("Hip-Hop", ("hip hop", "hip-hop", "rap", "trap", "drill", "grime")),
+    ("R&B", ("r&b", "rnb", "r & b", "soul", "funk", "motown", "urban contemporary")),
+    ("Country", ("country", "americana", "bluegrass")),
+    ("Jazz", ("jazz", "blues", "bossa nova")),
+    ("Classical", ("classical", "orchestra", "composer", "baroque", "opera", "soundtrack", "score")),
+    ("Rock", ("rock", "metal", "punk", "grunge", "emo", "hardcore")),
+    ("Pop", ("pop", "alt z")),
+    ("Electronic", ("edm", "house", "techno", "trance", "dubstep", "electro", "drum and bass", "dnb", "garage", "future bass", "electronic", "dance")),
+    ("Indie", ("indie", "alternative")),
+    ("Singer-Songwriter", ("singer-songwriter", "singer songwriter")),
+    ("Gospel", ("gospel", "worship", "christian")),
+]
+
+
+def _umbrella_genre(raw: str) -> str:
+    """Fold a granular Spotify genre tag into a broad, readable bucket; keep the
+    raw tag (title-cased) when nothing matches rather than lumping to 'Other'."""
+    g = (raw or "").strip().lower()
+    if not g:
+        return ""
+    for label, keys in _GENRE_RULES:
+        if any(k in g for k in keys):
+            return label
+    return g.title()
+
+
+@app.get("/api/metrics/taste")
+async def get_taste(conn: Connection = Depends(get_db)):
+    """Genre / era / popularity profile for the "Your Taste" chapter, from the
+    enriched track_features slice. Empty genres when unenriched → the frontend
+    keeps its sample fallback.
+    """
+
+    _JOIN = (
+        "FROM history h JOIN track_features f "
+        "ON split_part(h.track_uri, ':', 3) = f.track_id "
+        "WHERE h.track_uri LIKE 'spotify:track:%'"
+    )
+
+    def query():
+        raw_con = conn.connection.driver_connection
+
+        # Primary genre → plays, then fold into umbrella buckets in Python.
+        try:
+            grows = raw_con.execute(
+                "SELECT lower(split_part(f.artist_genres, ',', 1)) AS g, COUNT(*) AS plays "
+                + _JOIN + " AND f.artist_genres IS NOT NULL AND f.artist_genres <> '' "
+                "GROUP BY g"
+            ).fetchall()
+        except Exception:
+            return None
+
+        buckets: dict[str, int] = {}
+        for raw, plays in grows:
+            label = _umbrella_genre(raw)
+            if label:
+                buckets[label] = buckets.get(label, 0) + int(plays)
+        if not buckets:
+            return None
+        ranked = sorted(buckets.items(), key=lambda kv: kv[1], reverse=True)
+        total_genre_plays = sum(buckets.values()) or 1
+        genres = [{"name": name, "plays": plays} for name, plays in ranked[:6]]
+        # Count only genres with a real presence (>=1% of plays) so the diversity
+        # word doesn't inflate on a long tail of one-off tags.
+        distinct_genres = sum(1 for _, p in buckets.items() if p / total_genre_plays >= 0.01)
+
+        try:
+            mainstream = raw_con.execute(
+                "SELECT AVG(f.popularity) " + _JOIN + " AND f.popularity IS NOT NULL"
+            ).fetchone()[0]
+        except Exception:
+            mainstream = None
+
+        eras = []
+        avg_year = None
+        try:
+            erows = raw_con.execute(
+                "SELECT CAST(floor(CAST(f.release_year AS INTEGER) / 10) * 10 AS INTEGER) AS decade, "
+                "COUNT(*) AS plays " + _JOIN
+                + " AND f.release_year IS NOT NULL AND CAST(f.release_year AS INTEGER) > 1900 "
+                "GROUP BY decade ORDER BY decade"
+            ).fetchall()
+            eras = [{"decade": int(d), "plays": int(p)} for d, p in erows]
+            ay = raw_con.execute(
+                "SELECT AVG(CAST(f.release_year AS DOUBLE)) " + _JOIN
+                + " AND f.release_year IS NOT NULL AND CAST(f.release_year AS INTEGER) > 1900"
+            ).fetchone()[0]
+            avg_year = int(round(ay)) if ay else None
+        except Exception:
+            eras = []
+
+        # Hidden gems = low global popularity but high personal plays.
+        gems = []
+        try:
+            gemrows = raw_con.execute(
+                "SELECT any_value(h.track_name), any_value(h.artist_name), COUNT(*) AS plays "
+                + _JOIN + " AND f.popularity IS NOT NULL AND f.popularity < 0.4 "
+                "AND h.track_name IS NOT NULL "
+                "GROUP BY f.track_id HAVING COUNT(*) >= 5 ORDER BY plays DESC LIMIT 4"
+            ).fetchall()
+            gems = [{"name": r[0], "artist": r[1] or "", "plays": int(r[2])} for r in gemrows]
+        except Exception:
+            gems = []
+
+        return {
+            "genres": genres,
+            "mainstream": round(mainstream, 3) if mainstream is not None else None,
+            "distinct_genres": distinct_genres,
+            "eras": eras,
+            "avg_year": avg_year,
+            "gems": gems,
+        }
+
+    res = await run_in_threadpool(query)
+    if not res:
+        return {
+            "status": "ok",
+            "genres": [],
+            "mainstream": None,
+            "distinct_genres": 0,
+            "eras": [],
+            "avg_year": None,
+            "gems": [],
+        }
+    return {"status": "ok", **res}

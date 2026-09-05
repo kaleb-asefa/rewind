@@ -578,6 +578,71 @@ def test_audio_returns_profile_from_track_features(tmp_path, monkeypatch):
             assert t["plays"] >= 1
 
 
+def test_taste_empty_when_unenriched():
+    with TestClient(app) as client:
+        data = client.get("/api/metrics/taste").json()
+        assert data["status"] == "ok"
+        assert data["genres"] == []
+        assert data["mainstream"] is None
+        assert data["distinct_genres"] == 0
+        assert data["eras"] == []
+        assert data["gems"] == []
+
+
+def test_taste_returns_profile_from_track_features(tmp_path, monkeypatch):
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        engine = app.state.engine
+        with engine.connect() as conn:
+            raw = conn.connection.driver_connection
+            ids = [
+                r[0]
+                for r in raw.execute(
+                    "SELECT DISTINCT replace(track_uri, 'spotify:track:', '') FROM history "
+                    "WHERE track_uri LIKE 'spotify:track:%' LIMIT 6"
+                ).fetchall()
+            ]
+        assert len(ids) >= 4
+
+        fixture = str(tmp_path / "taste_fixture.parquet")
+        fx = duckdb.connect()
+        fx.execute(
+            "CREATE TABLE c (track_id VARCHAR, track_name VARCHAR, artist_name VARCHAR, "
+            "artist_genres VARCHAR, popularity DOUBLE, release_year INTEGER)"
+        )
+        # Two clear umbrella genres + a low-popularity gem candidate.
+        rows = []
+        for idx, tid in enumerate(ids):
+            genre = "conscious hip hop, rap" if idx % 2 == 0 else "r&b, pop"
+            pop = 0.2 if idx == 0 else 0.8  # first track is an obscure gem
+            year = 2012 if idx % 2 == 0 else 2021
+            rows.append((tid, f"name_{idx}", f"artist_{idx}", genre, pop, year))
+        fx.executemany("INSERT INTO c VALUES (?, ?, ?, ?, ?, ?)", rows)
+        fx.execute(f"COPY c TO '{fixture}' (FORMAT PARQUET)")
+        fx.close()
+        monkeypatch.setattr(catalog, "CATALOG_PATH", fixture)
+
+        with engine.connect() as conn:
+            main._enrich_session(conn)
+
+        data = client.get("/api/metrics/taste").json()
+        assert data["status"] == "ok"
+        names = [g["name"] for g in data["genres"]]
+        assert "Hip-Hop" in names and "R&B" in names
+        for g in data["genres"]:
+            assert g["plays"] >= 1
+        assert 0 <= data["mainstream"] <= 1
+        assert data["distinct_genres"] >= 2
+        assert all(e["decade"] % 10 == 0 for e in data["eras"])
+        assert data["avg_year"] and 1900 < data["avg_year"] < 2100
+        for gem in data["gems"]:
+            assert gem["plays"] >= 5
+
+
+
 
 
 

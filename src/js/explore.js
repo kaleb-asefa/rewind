@@ -496,7 +496,7 @@
             { name: 'Amapiano', plays: 700 },
         ],
         mainstream: 0.62,
-        distinct_genres: 38,
+        distinct_genres: 8,
         eras: [
             { decade: 1990, plays: 900 },
             { decade: 2000, plays: 1800 },
@@ -543,7 +543,7 @@
     }
 
     function rangeWord(n) {
-        return n >= 25 ? 'Explorer' : n >= 10 ? 'Adventurous' : 'Loyalist';
+        return n >= 7 ? 'Explorer' : n >= 4 ? 'Adventurous' : 'Loyalist';
     }
     function renderTasteRange(n) {
         setText('taste-range-word', rangeWord(n));
