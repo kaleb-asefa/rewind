@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Explore · Bento Sample | Rewind</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        try {
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            "primary": "#53e076",
+                            "on-primary": "#003914",
+                            "primary-container": "#1db954",
+                            "on-surface": "#e5e2e1",
+                            "on-surface-variant": "#bccbb9",
+                            "surface": "#131313",
+                            "surface-container": "#201f1f",
+                            "surface-container-high": "#2a2a2a",
+                            "surface-container-highest": "#353534",
+                            "background": "#121212",
+                            "outline-variant": "#3d4a3d"
+                        },
+                        borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" },
+                        spacing: {
+                            "container-padding-desktop": "32px",
+                            "section-gap": "48px",
+                            "gutter": "24px",
+                            "container-padding-mobile": "16px",
+                            "base": "8px"
+                        },
+                        fontFamily: {
+                            "sans": ["Plus Jakarta Sans", "sans-serif"],
+                            "body-lg": ["Plus Jakarta Sans", "sans-serif"],
+                            "label-bold": ["Plus Jakarta Sans", "sans-serif"],
+                            "body-sm": ["Plus Jakarta Sans", "sans-serif"],
+                            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+                            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+                            "display-lg-mobile": ["Plus Jakarta Sans", "sans-serif"],
+                            "mono": ["Space Mono", "monospace"]
+                        },
+                        fontSize: {
+                            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                            "label-bold": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                            "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                            "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                            "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+                        }
+                    }
+                }
+            };
+        } catch (_e) {}
+    </script>
+
+    <link href="src/styles/main.css" rel="stylesheet"/>
+    <script src="src/js/theme.js"></script>
+    <script src="src/js/explore.js" defer></script>
+</head>
+<body class="bg-background text-on-background antialiased min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-lg shadow-sm">
+        <nav class="flex justify-between items-center px-container-padding-desktop py-4 w-full max-w-[1440px] mx-auto">
+            <a href="index.html" class="text-headline-md font-headline-md text-primary tracking-tighter flex items-center gap-2 font-bold">
+                <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">fast_rewind</span>
+                Rewind
+            </a>
+            <div class="flex items-center gap-3">
+                <a href="explore.html" class="text-body-sm font-body-sm text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base">arrow_back</span> Back to Explore
+                </a>
+                <button id="theme-toggle" type="button" aria-label="Toggle theme" class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all" title="Toggle theme">
+                    <span id="theme-icon" class="theme-icon material-symbols-outlined text-lg">dark_mode</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="flex-grow pt-24 pb-16 px-container-padding-desktop max-w-[1440px] mx-auto w-full">
+
+        <!-- Sample banner -->
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <span class="text-primary font-label-bold text-label-bold tracking-widest uppercase">Layout preview · Pattern C</span>
+                <h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface tracking-tight">Bento Mosaic</h1>
+                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">A single scannable wall of varied-size cards — captivating and dense, but a weaker guided story than the scrollytelling chapters. All content below is placeholder.</p>
+            </div>
+            <span class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-label-bold font-label-bold border border-primary/20">
+                <span class="material-symbols-outlined text-sm">science</span> Sample only
+            </span>
+        </div>
+
+        <!-- Bento grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[150px]">
+
+            <!-- Top artist (big) -->
+            <div class="glass-card rounded-2xl p-5 col-span-2 row-span-2 relative overflow-hidden flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Top artist</span>
+                    <span class="material-symbols-outlined text-primary">artist</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary/40 to-primary/10 flex items-center justify-center text-primary text-3xl font-bold shrink-0">S</div>
+                    <div class="min-w-0">
+                        <div class="font-display-lg text-display-lg-mobile text-on-surface truncate">SZA</div>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant">1,668 plays · 70 h</div>
+                    </div>
+                </div>
+                <div class="absolute -bottom-16 -right-16 w-56 h-56 bg-primary/5 rounded-full blur-[80px] pointer-events-none"></div>
+            </div>
+
+            <!-- Listening clock (big, live sample svg) -->
+            <div class="glass-card rounded-2xl p-5 col-span-2 row-span-2 relative overflow-hidden">
+                <div class="flex items-center justify-between">
+                    <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Listening clock</span>
+                    <span class="material-symbols-outlined text-primary">schedule</span>
+                </div>
+                <div class="relative flex items-center justify-center">
+                    <svg id="clock-svg" viewBox="0 0 300 300" class="w-[230px] max-w-full h-auto"></svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span class="font-label-bold text-[10px] uppercase tracking-widest text-on-surface-variant opacity-70">Peak</span>
+                        <span id="clock-peak" class="font-display-lg text-display-lg-mobile text-primary leading-none">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total time -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+                <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Total time</span>
+                <div><span class="font-display-lg text-display-lg-mobile text-primary leading-none">687</span> <span class="text-on-surface-variant">h</span></div>
+            </div>
+
+            <!-- Skip rate -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+                <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Skip rate</span>
+                <div><span class="font-display-lg text-display-lg-mobile text-on-surface leading-none">44</span><span class="text-on-surface-variant">%</span></div>
+            </div>
+
+            <!-- Longest streak -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+                <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Longest streak</span>
+                <div><span class="font-display-lg text-display-lg-mobile text-primary leading-none">34</span> <span class="text-on-surface-variant">days</span></div>
+            </div>
+
+            <!-- Top decade -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+                <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Top decade</span>
+                <div class="font-headline-md text-headline-md text-on-surface">2020s</div>
+            </div>
+
+            <!-- Mood quadrant (big) -->
+            <div class="glass-card rounded-2xl p-5 col-span-2 row-span-2">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Mood quadrant</span>
+                    <span class="material-symbols-outlined text-primary">mood</span>
+                </div>
+                <div class="relative aspect-square max-h-[220px] mx-auto border border-white/10 rounded-lg">
+                    <div class="absolute left-1/2 top-0 bottom-0 w-px bg-white/10"></div>
+                    <div class="absolute top-1/2 left-0 right-0 h-px bg-white/10"></div>
+                    <span class="absolute top-1 left-2 text-[10px] text-on-surface-variant opacity-60">Angry</span>
+                    <span class="absolute top-1 right-2 text-[10px] text-on-surface-variant opacity-60">Happy</span>
+                    <span class="absolute bottom-1 left-2 text-[10px] text-on-surface-variant opacity-60">Sad</span>
+                    <span class="absolute bottom-1 right-2 text-[10px] text-on-surface-variant opacity-60">Chill</span>
+                    <div class="absolute w-16 h-16 rounded-full bg-primary/30 blur-md" style="left:52%;top:58%"></div>
+                    <div class="absolute w-3 h-3 rounded-full bg-primary shadow" style="left:60%;top:62%"></div>
+                </div>
+            </div>
+
+            <!-- Top genres (big) -->
+            <div class="glass-card rounded-2xl p-5 col-span-2 row-span-2 flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Top genres</span>
+                    <span class="material-symbols-outlined text-primary">graphic_eq</span>
+                </div>
+                <div class="flex-1 flex flex-col justify-center gap-3">
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-body-sm"><span class="text-on-surface">R&amp;B</span><span class="text-primary font-bold">38%</span></div>
+                        <div class="h-2 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-primary" style="width:38%"></div></div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-body-sm"><span class="text-on-surface">Hip-hop</span><span class="text-primary font-bold">27%</span></div>
+                        <div class="h-2 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-primary/80" style="width:27%"></div></div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-body-sm"><span class="text-on-surface">Pop</span><span class="text-primary font-bold">18%</span></div>
+                        <div class="h-2 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-primary/60" style="width:18%"></div></div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-body-sm"><span class="text-on-surface">Afrobeats</span><span class="text-primary font-bold">10%</span></div>
+                        <div class="h-2 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-primary/40" style="width:10%"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Night owl -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+                <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Chronotype</span>
+                <div class="flex items-center gap-2 text-on-surface"><span class="material-symbols-outlined text-primary">bedtime</span><span class="font-headline-md text-headline-md">Night owl</span></div>
+            </div>
+
+            <!-- Mainstream -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+                <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Mainstream</span>
+                <div><span class="font-display-lg text-display-lg-mobile text-on-surface leading-none">61</span><span class="text-on-surface-variant">%</span></div>
+            </div>
+
+            <!-- Seasons (live sample svg) -->
+            <div class="glass-card rounded-2xl p-5 col-span-2">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Across the year</span>
+                    <span class="material-symbols-outlined text-primary">calendar_month</span>
+                </div>
+                <svg id="season-svg" viewBox="0 0 320 110" class="w-full h-[90px]"></svg>
+            </div>
+
+            <!-- Countries -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+                <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Countries</span>
+                <div class="flex items-center gap-2 text-on-surface"><span class="material-symbols-outlined text-primary">public</span><span class="font-headline-md text-headline-md">7</span></div>
+            </div>
+
+            <!-- Discovery -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+                <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">New artists / mo</span>
+                <div><span class="font-display-lg text-display-lg-mobile text-primary leading-none">12</span></div>
+            </div>
+
+            <!-- Personality badges (wide) -->
+            <div class="glass-card rounded-2xl p-5 col-span-2 md:col-span-4 flex flex-wrap items-center gap-3">
+                <span class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70 mr-2">Personality</span>
+                <span class="px-3 py-1.5 rounded-full bg-primary/15 text-primary text-body-sm font-bold">Explorer</span>
+                <span class="px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface text-body-sm">Night Owl</span>
+                <span class="px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface text-body-sm">Restless Skipper</span>
+                <span class="px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface text-body-sm">Shuffler</span>
+                <span class="px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface text-body-sm">Deep Listener</span>
+            </div>
+
+        </div>
+    </main>
+</body>
+</html>
