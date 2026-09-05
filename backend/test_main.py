@@ -545,13 +545,14 @@ def test_audio_returns_profile_from_track_features(tmp_path, monkeypatch):
         fixture = str(tmp_path / "audio_fixture.parquet")
         fx = duckdb.connect()
         fx.execute(
-            "CREATE TABLE c (track_id VARCHAR, track_name VARCHAR, energy DOUBLE, "
-            "valence DOUBLE, danceability DOUBLE, acousticness DOUBLE, "
+            "CREATE TABLE c (track_id VARCHAR, track_name VARCHAR, artist_genres VARCHAR, "
+            "energy DOUBLE, valence DOUBLE, danceability DOUBLE, acousticness DOUBLE, "
             "instrumentalness DOUBLE, tempo DOUBLE, mode INTEGER)"
         )
+        # Primary genre r&b → energy is de-inflated by 0.15 (0.6 → 0.45).
         fx.executemany(
-            "INSERT INTO c VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [(i, f"name_{i}", 0.6, 0.4, 0.7, 0.2, 0.05, 120.0, 1) for i in ids],
+            "INSERT INTO c VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [(i, f"name_{i}", "r&b, pop", 0.6, 0.4, 0.7, 0.2, 0.05, 120.0, 1) for i in ids],
         )
         fx.execute(f"COPY c TO '{fixture}' (FORMAT PARQUET)")
         fx.close()
@@ -563,7 +564,8 @@ def test_audio_returns_profile_from_track_features(tmp_path, monkeypatch):
         data = client.get("/api/metrics/audio").json()
         assert data["status"] == "ok"
         assert data["avg"] is not None
-        assert 0 <= data["avg"]["energy"] <= 1
+        # r&b-primary energy 0.6 de-inflated to 0.45.
+        assert data["avg"]["energy"] == 0.45
         assert data["avg"]["vocal"] == round(1 - 0.05, 3)
         assert data["tempo_avg"] == 120
         assert data["mode"]["major"] == 1.0
@@ -574,6 +576,7 @@ def test_audio_returns_profile_from_track_features(tmp_path, monkeypatch):
             assert 0 <= t["valence"] <= 1
             assert 0 <= t["energy"] <= 1
             assert t["plays"] >= 1
+
 
 
 

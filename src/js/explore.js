@@ -287,10 +287,10 @@
         if (e) e.textContent = v;
     }
 
-    // Spotify 'energy' skews high (produced R&B/pop sit ~0.5-0.7) and 'valence' low,
-    // so the mood split isn't at 0.5. These centers define the four zones + map lines.
-    const EN_MID = 0.6;
-    const VAL_MID = 0.45;
+    // Neutral split at 0.5 — the backend already de-inflates R&B/soul 'energy'
+    // (genre-specific), so raising the threshold here isn't needed.
+    const EN_MID = 0.5;
+    const VAL_MID = 0.5;
     // Friendly one-word mood for a (positivity, energy) pair.
     function moodZone(v, e) {
         if (e >= EN_MID) return v >= VAL_MID ? 'Pumped' : 'Intense';

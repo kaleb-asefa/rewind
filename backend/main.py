@@ -1071,12 +1071,26 @@ async def get_audio(
         "ON split_part(h.track_uri, ':', 3) = f.track_id "
         "WHERE h.track_uri LIKE 'spotify:track:%'"
     )
+    # Spotify over-rates 'energy' for produced urban music (dense production reads
+    # as energy even for mellow songs). De-inflate by primary genre — R&B/soul most,
+    # hip-hop/rap a bit — so genuinely energetic pop/latin/EDM keep their real energy.
+    _ADJ_E = (
+        "CASE "
+        "WHEN lower(split_part(f.artist_genres, ',', 1)) LIKE '%r&b%' "
+        "  OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%soul%' "
+        "  THEN greatest(0, f.energy - 0.15) "
+        "WHEN lower(split_part(f.artist_genres, ',', 1)) LIKE '%hip hop%' "
+        "  OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%rap%' "
+        "  OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%trap%' "
+        "  THEN greatest(0, f.energy - 0.10) "
+        "ELSE f.energy END"
+    )
 
     def query():
         raw_con = conn.connection.driver_connection
         try:
             agg = raw_con.execute(
-                "SELECT AVG(f.energy), AVG(f.valence), AVG(f.danceability), "
+                "SELECT AVG(" + _ADJ_E + "), AVG(f.valence), AVG(f.danceability), "
                 "AVG(f.acousticness), AVG(f.instrumentalness), AVG(f.tempo), "
                 "AVG(CASE WHEN f.mode = 1 THEN 1.0 ELSE 0.0 END), COUNT(*) " + _JOIN
             ).fetchone()
@@ -1088,10 +1102,11 @@ async def get_audio(
 
         try:
             trows = raw_con.execute(
-                "SELECT any_value(h.track_name), f.valence, f.energy, COUNT(*) AS plays "
+                "SELECT any_value(h.track_name), any_value(f.valence), any_value("
+                + _ADJ_E + "), COUNT(*) AS plays "
                 + _JOIN + " AND h.track_name IS NOT NULL "
                 "AND f.valence IS NOT NULL AND f.energy IS NOT NULL "
-                "GROUP BY f.track_id, f.valence, f.energy ORDER BY plays DESC LIMIT 24"
+                "GROUP BY f.track_id ORDER BY plays DESC LIMIT 24"
             ).fetchall()
         except Exception:
             trows = []
