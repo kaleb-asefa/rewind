@@ -41,7 +41,7 @@
     let curY = [];               // eased vertical position per row
     let curOp = [];              // eased opacity per row
     let progress = 0;            // 0 .. months.length-1
-    let isPlaying = true;
+    let isPlaying = false;        // start paused; user presses play to run
     let speed = 0.5;
     let rafId = null;
     let lastTs = null;
@@ -296,7 +296,7 @@
         }));
 
         progress = 0;
-        isPlaying = months.length > 1;
+        isPlaying = false;        // stay paused after data loads
         setPlayIcon();
 
         const startEl = document.getElementById("race-start-year");
@@ -331,7 +331,7 @@
 
     window.resetRace = function () {
         progress = 0;
-        isPlaying = true;
+        isPlaying = false;
         setPlayIcon();
         render(null);
     };

@@ -65,7 +65,7 @@
     let currentCategory = 'tracks';
     let currentData = TRACKS_DATA;
     let progress = 0.0;
-    let isPlaying = true;
+    let isPlaying = false;        // start paused; user presses play to run
     let playSpeed = 0.5;
     let animationFrameId = null;
     let lastTimestamp = null;
