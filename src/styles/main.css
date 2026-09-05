@@ -421,3 +421,33 @@ html { scroll-behavior: smooth; }
 
 /* radial listening clock */
 .clock-bar { stroke-linecap: round; }
+
+/* rhythm chart hover interactivity */
+.clock-bar { transition: stroke 0.15s ease, stroke-opacity 0.15s ease, stroke-width 0.15s ease; }
+.clock-bar.is-hover { stroke: #ffffff; stroke-opacity: 1; stroke-width: 9; }
+.clock-hit, .season-hit { cursor: pointer; }
+#season-dot, #season-vline { transition: opacity 0.15s ease; pointer-events: none; }
+.weekday-col:hover .weekday-bar { background: rgb(30, 215, 96); }
+
+.rhythm-tooltip {
+    position: fixed;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    background: #252525;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+    border-radius: 8px;
+    padding: 7px 11px;
+    font-size: 12px;
+    white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    line-height: 1.25;
+}
+.rhythm-tooltip.visible { opacity: 1; }
+.rhythm-tooltip .rt-title { font-weight: 700; }
+.rhythm-tooltip .rt-val { color: #1ed760; font-size: 11px; font-weight: 600; }

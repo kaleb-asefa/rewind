@@ -971,6 +971,11 @@ def _chronotype(hourly: list[int]) -> dict:
     return {"label": label, "position": round(position, 3)}
 
 
+# Spotify stores `ts` in UTC; shift by the local offset so the rhythm chapter
+# reads in the listener's wall-clock time. Default = EAT (Ethiopia, UTC+3).
+LOCAL_TZ_OFFSET_HOURS = int(os.getenv("REWIND_TZ_OFFSET_HOURS", "3"))
+
+
 @app.get("/api/metrics/rhythm")
 async def get_rhythm(
     request: Request,
@@ -978,45 +983,51 @@ async def get_rhythm(
 ):
     """Temporal listening patterns for the "When You Listen" chapter: plays by
     hour of day, weekday and month of year, plus daily streaks and a chronotype
-    score. Times use the stored (UTC) timestamp, consistent with the heatmap.
+    score. Times are shifted from the stored UTC timestamp into local time
+    (LOCAL_TZ_OFFSET_HOURS, default EAT / UTC+3) so hours read as wall-clock.
     """
 
     def query():
         raw_con = conn.connection.driver_connection
+        off = LOCAL_TZ_OFFSET_HOURS
 
-        def fetch(sql):
+        def fetch(sql, params=None):
             try:
-                return raw_con.execute(sql).fetchall()
+                return raw_con.execute(sql, params).fetchall() if params else raw_con.execute(sql).fetchall()
             except Exception:
                 return []
 
         hourly = [0] * 24
         for h, c in fetch(
-            "SELECT EXTRACT(hour FROM ts)::INTEGER AS h, COUNT(*) "
-            "FROM history WHERE ts IS NOT NULL GROUP BY h"
+            "SELECT EXTRACT(hour FROM ts + to_hours(?))::INTEGER AS h, COUNT(*) "
+            "FROM history WHERE ts IS NOT NULL GROUP BY h",
+            [off],
         ):
             if h is not None and 0 <= int(h) <= 23:
                 hourly[int(h)] = int(c)
 
         weekday = [0] * 7  # Mon..Sun
         for d, c in fetch(
-            "SELECT EXTRACT(isodow FROM ts)::INTEGER AS d, COUNT(*) "
-            "FROM history WHERE ts IS NOT NULL GROUP BY d"
+            "SELECT EXTRACT(isodow FROM ts + to_hours(?))::INTEGER AS d, COUNT(*) "
+            "FROM history WHERE ts IS NOT NULL GROUP BY d",
+            [off],
         ):
             if d is not None and 1 <= int(d) <= 7:
                 weekday[int(d) - 1] = int(c)
 
         monthly = [0] * 12  # Jan..Dec
         for m, c in fetch(
-            "SELECT EXTRACT(month FROM ts)::INTEGER AS m, COUNT(*) "
-            "FROM history WHERE ts IS NOT NULL GROUP BY m"
+            "SELECT EXTRACT(month FROM ts + to_hours(?))::INTEGER AS m, COUNT(*) "
+            "FROM history WHERE ts IS NOT NULL GROUP BY m",
+            [off],
         ):
             if m is not None and 1 <= int(m) <= 12:
                 monthly[int(m) - 1] = int(c)
 
         day_rows = fetch(
-            "SELECT DISTINCT CAST(ts AS DATE) AS day FROM history "
-            "WHERE ts IS NOT NULL ORDER BY day"
+            "SELECT DISTINCT CAST(ts + to_hours(?) AS DATE) AS day FROM history "
+            "WHERE ts IS NOT NULL ORDER BY day",
+            [off],
         )
         days = [r[0] for r in day_rows]
 
