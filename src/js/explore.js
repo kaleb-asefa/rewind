@@ -287,10 +287,14 @@
         if (e) e.textContent = v;
     }
 
+    // Spotify 'energy' skews high (produced R&B/pop sit ~0.5-0.7) and 'valence' low,
+    // so the mood split isn't at 0.5. These centers define the four zones + map lines.
+    const EN_MID = 0.6;
+    const VAL_MID = 0.45;
     // Friendly one-word mood for a (positivity, energy) pair.
     function moodZone(v, e) {
-        if (e >= 0.5) return v >= 0.5 ? 'Pumped' : 'Intense';
-        return v >= 0.5 ? 'Chill' : 'Moody';
+        if (e >= EN_MID) return v >= VAL_MID ? 'Pumped' : 'Intense';
+        return v >= VAL_MID ? 'Chill' : 'Moody';
     }
     function computeVibe(tracks) {
         let sv = 0, se = 0, sp = 0;
@@ -321,8 +325,8 @@
         const maxPlays = Math.max.apply(null, tracks.map((t) => t.plays).concat(1));
         let g = '';
         g += '<rect x="' + pad + '" y="' + pad + '" width="' + plot + '" height="' + plot + '" rx="14" fill="none" stroke="rgba(255,255,255,0.08)"/>';
-        g += '<line x1="' + pad + '" y1="' + mid + '" x2="' + (S - pad) + '" y2="' + mid + '" stroke="rgba(255,255,255,0.1)"/>';
-        g += '<line x1="' + mid + '" y1="' + pad + '" x2="' + mid + '" y2="' + (S - pad) + '" stroke="rgba(255,255,255,0.1)"/>';
+        g += '<line x1="' + pad + '" y1="' + py(EN_MID).toFixed(1) + '" x2="' + (S - pad) + '" y2="' + py(EN_MID).toFixed(1) + '" stroke="rgba(255,255,255,0.1)"/>';
+        g += '<line x1="' + px(VAL_MID).toFixed(1) + '" y1="' + pad + '" x2="' + px(VAL_MID).toFixed(1) + '" y2="' + (S - pad) + '" stroke="rgba(255,255,255,0.1)"/>';
         const zl = (x, y, anchor, txt) => '<text x="' + x + '" y="' + y + '" fill="rgba(255,255,255,0.4)" font-size="10" font-weight="700" text-anchor="' + anchor + '" letter-spacing="0.05em">' + txt + '</text>';
         g += zl(pad + 8, pad + 16, 'start', 'INTENSE');
         g += zl(S - pad - 8, pad + 16, 'end', 'PUMPED');
