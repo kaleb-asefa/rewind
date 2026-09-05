@@ -159,10 +159,9 @@
                 <a data-chapter href="#sound" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">03</span> Your Sound
                 </a>
-                <span class="chapter-pill chapter-pill--soon flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap cursor-default select-none">
+                <a data-chapter href="#taste" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">04</span> Your Taste
-                    <span class="text-[9px] uppercase tracking-wider">soon</span>
-                </span>
+                </a>
             </div>
         </nav>
 
@@ -486,6 +485,57 @@
                 <div class="reveal glass-card rounded-2xl p-gutter">
                     <h3 class="font-headline-md text-headline-md text-on-surface mb-4">Your vibe</h3>
                     <div id="vibe-sliders" class="space-y-5"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 04 — Your Taste -->
+        <section id="taste" class="scroll-mt-32 pt-10 space-y-6">
+            <div class="reveal">
+                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 04</span>
+                <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Taste</h2>
+                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The genres and eras you lean into.</p>
+            </div>
+
+            <!-- Hero: top genres + summary -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+                <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter relative overflow-hidden min-h-[380px]">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Your top genres</h3>
+                    <div id="genre-bars" class="mt-5 space-y-3.5"></div>
+                    <div class="absolute -bottom-16 -right-16 w-72 h-72 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+                </div>
+
+                <div class="flex flex-col gap-gutter">
+                    <div class="reveal glass-card rounded-2xl p-5">
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">How mainstream</div>
+                        <div id="taste-mainstream-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
+                        <div class="relative h-1.5 rounded-full bg-surface-container-high mt-3">
+                            <div id="taste-mainstream-bar" class="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-500" style="width:0%"></div>
+                        </div>
+                        <div class="flex justify-between mt-2 text-[11px] text-on-surface-variant">
+                            <span>Underground</span><span>Mainstream</span>
+                        </div>
+                    </div>
+                    <div class="reveal glass-card rounded-2xl p-5">
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Taste range</div>
+                        <div id="taste-range-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
+                        <div id="taste-range-sub" class="font-body-sm text-body-sm text-on-surface-variant opacity-80">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bento: eras + hidden gems -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+                <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">When your music was made</h3>
+                    <div id="era-word" class="font-headline-md text-headline-md text-primary font-bold mt-1">—</div>
+                    <div id="era-bars" class="flex items-end gap-3 h-40 mt-4"></div>
+                </div>
+
+                <div class="reveal glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Hidden gems</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-3">Low-key tracks you play a lot.</p>
+                    <div id="gem-list" class="space-y-1.5"></div>
                 </div>
             </div>
         </section>

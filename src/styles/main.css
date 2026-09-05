@@ -435,6 +435,14 @@ html { scroll-behavior: smooth; }
 .mood-seg { cursor: pointer; transition: filter 0.12s ease; }
 .mood-seg:hover { filter: brightness(1.15); }
 
+/* chapter 04 taste */
+.genre-row .genre-bar-fill { transition: width 0.5s ease, filter 0.12s ease; }
+.genre-row:hover .genre-bar-fill { filter: brightness(1.15); }
+.genre-row:hover .genre-name { color: #ffffff; }
+.era-col:hover .era-bar { background: rgb(30, 215, 96); }
+.gem-row { transition: background 0.12s ease; }
+.gem-row:hover { background: rgba(255, 255, 255, 0.05); }
+
 .rhythm-tooltip {
     position: fixed;
     z-index: 100;
