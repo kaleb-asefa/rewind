@@ -367,8 +367,6 @@
         const el = document.getElementById('vibe-sliders');
         if (!el) return;
         const rows = [
-            { l: 'Chilled', r: 'Energetic', v: avg.energy },
-            { l: 'Moody', r: 'Happy', v: avg.valence },
             { l: 'Acoustic', r: 'Produced', v: 1 - avg.acousticness },
             { l: 'Easy listening', r: 'Dancefloor', v: avg.danceability },
             { l: 'Instrumental', r: 'Vocal', v: avg.vocal },

@@ -144,7 +144,7 @@
         <div class="max-w-3xl">
             <span class="text-primary font-label-bold text-label-bold tracking-widest uppercase">Deep Dive</span>
             <h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface tracking-tight">Explore</h1>
-            <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70">Your listening, told as a story — press play on the climb, then scroll through the rhythm, sound and shape of your taste.</p>
+            <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70">A closer look at your listening.</p>
         </div>
 
         <!-- Sticky Chapter Rail (scroll-spy) -->
@@ -171,7 +171,7 @@
             <div class="reveal">
                 <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 01</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">The Climb</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">Watch your favourites rise, peak and fall. Rank Velocity tracks momentum week by week; the Bar Race stacks up all-time listening time.</p>
+                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">How your top artists and tracks moved over time.</p>
             </div>
 
         <!-- Header Row -->
@@ -347,7 +347,7 @@
             <div class="reveal">
                 <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 02</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">When You Listen</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The rhythm of your days — the hours, weekdays and seasons your music lives in.</p>
+                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The hours, days and seasons you listen.</p>
             </div>
 
             <!-- Hero: listening clock + side stats -->
@@ -355,8 +355,7 @@
                 <!-- Radial clock -->
                 <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter relative overflow-hidden min-h-[420px]">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Your listening clock</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-2">When, across the 24-hour day, you press play.</p>
-                    <div class="relative flex items-center justify-center mt-2">
+                    <div class="relative flex items-center justify-center mt-4">
                         <svg id="clock-svg" viewBox="0 0 300 300" class="w-[300px] max-w-full h-auto"></svg>
                         <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                             <span id="clock-caption" class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface-variant opacity-70">Peak hour</span>
@@ -372,22 +371,14 @@
 
                 <!-- Side quick-stats -->
                 <div class="flex flex-col gap-gutter">
-                    <div class="reveal glass-card rounded-2xl p-5 flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
-                            <span id="chrono-icon" class="material-symbols-outlined">schedule</span>
-                        </div>
-                        <div class="min-w-0">
-                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Chronotype</div>
-                            <div id="chrono-label" class="font-headline-md text-headline-md text-on-surface truncate">—</div>
-                        </div>
-                    </div>
                     <div class="reveal glass-card rounded-2xl p-5">
-                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70 mb-3">Early bird ↔ Night owl</div>
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Chronotype</div>
+                        <div id="chrono-label" class="font-headline-md text-headline-md text-on-surface mb-3">—</div>
                         <div class="relative h-2 rounded-full bg-gradient-to-r from-amber-400/60 via-surface-container-high to-primary">
                             <div id="chrono-marker" class="absolute -top-1.5 w-5 h-5 rounded-full bg-white border-[3px] border-primary shadow -translate-x-1/2 transition-all duration-500" style="left: 50%"></div>
                         </div>
                         <div class="flex justify-between mt-3 font-mono text-[10px] text-on-surface-variant opacity-60">
-                            <span>5 AM</span><span>Noon</span><span>11 PM</span>
+                            <span>Early bird</span><span>Night owl</span>
                         </div>
                     </div>
                     <div class="reveal glass-card rounded-2xl p-5 flex items-center gap-4">
@@ -407,15 +398,13 @@
                 <!-- Weekday rhythm -->
                 <div class="reveal glass-card rounded-2xl p-gutter">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Weekday rhythm</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">Plays by day of the week.</p>
-                    <div id="weekday-bars" class="flex items-end gap-2 h-40"></div>
+                    <div id="weekday-bars" class="flex items-end gap-2 h-40 mt-4"></div>
                 </div>
 
                 <!-- Seasons -->
                 <div class="reveal glass-card rounded-2xl p-gutter">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Across the year</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">Listening by month of the year.</p>
-                    <svg id="season-svg" viewBox="0 0 320 110" class="w-full h-auto"></svg>
+                    <svg id="season-svg" viewBox="0 0 320 110" class="w-full h-auto mt-4"></svg>
                     <div class="flex justify-between mt-2 font-mono text-[10px] text-on-surface-variant opacity-60">
                         <span>Jan</span><span>Apr</span><span>Jul</span><span>Oct</span><span>Dec</span>
                     </div>
@@ -451,40 +440,28 @@
                 <div>
                     <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 03</span>
                     <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Sound</h2>
-                    <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The feel of your music, in plain language — the moods, the mellow-or-hyped, the happy-or-sad of what you play.</p>
+                    <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The feel of your music.</p>
                 </div>
                 <span class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-label-bold font-label-bold border border-primary/20">
                     <span class="material-symbols-outlined text-sm">science</span> Sample data
                 </span>
             </div>
 
-            <!-- Hero: mood map + plain-language summary -->
+            <!-- Hero: mood map + summary -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-                <!-- Mood map -->
                 <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter relative overflow-hidden min-h-[440px]">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Your music moods</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-1">Every song placed by how happy and how energetic it feels. The white ring is where your taste sits.</p>
-                    <div class="relative mt-2 flex justify-center">
+                    <div class="relative mt-3 flex justify-center">
                         <svg id="mood-svg" viewBox="0 0 320 320" class="w-full max-w-[440px] h-auto"></svg>
-                    </div>
-                    <div class="mt-2 text-center font-body-sm text-body-sm">
-                        <span class="text-on-surface-variant opacity-70">Your happy place:</span>
-                        <span id="mood-sweetspot" class="text-primary font-bold">—</span>
                     </div>
                     <div class="absolute -bottom-16 -right-16 w-72 h-72 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
                 </div>
 
-                <!-- Side summary -->
                 <div class="flex flex-col gap-gutter">
                     <div class="reveal glass-card rounded-2xl p-5">
                         <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Your music in a word</div>
                         <div id="vibe-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
                         <div id="vibe-phrase" class="font-body-sm text-body-sm text-on-surface-variant opacity-80">—</div>
-                    </div>
-                    <div class="reveal glass-card rounded-2xl p-5">
-                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70 mb-3">Your mood mix</div>
-                        <div id="mood-mix" class="flex h-3 rounded-full overflow-hidden bg-surface-container-high"></div>
-                        <div id="mood-mix-legend" class="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[11px] text-on-surface-variant"></div>
                     </div>
                     <div class="reveal glass-card rounded-2xl p-5">
                         <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70 mb-3">Bright or moody?</div>
@@ -493,38 +470,26 @@
                             <div id="mode-minor-bar" class="bg-primary/25 transition-all duration-500" style="width:0%"></div>
                         </div>
                         <div class="flex justify-between mt-2 text-[11px]">
-                            <span class="text-primary font-bold"><span id="mode-major">—</span>% bright &amp; uplifting</span>
+                            <span class="text-primary font-bold"><span id="mode-major">—</span>% bright</span>
                             <span class="text-on-surface-variant"><span id="mode-minor">—</span>% moody</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Bento: pace / vibe / plain words -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
-                <!-- Pace gauge -->
+            <!-- Bento: pace + vibe -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
                 <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Your pace</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-2">How fast-moving your music tends to feel.</p>
-                    <div class="flex-1 flex flex-col items-center justify-center">
+                    <div class="flex-1 flex flex-col items-center justify-center mt-2">
                         <svg id="pace-svg" viewBox="0 0 240 150" class="w-full max-w-[280px] h-auto"></svg>
                         <div id="pace-word" class="font-headline-md text-headline-md text-primary -mt-3">—</div>
-                        <div class="font-body-sm text-body-sm text-on-surface-variant opacity-70">how your music moves</div>
                     </div>
                 </div>
 
-                <!-- Your vibe sliders -->
                 <div class="reveal glass-card rounded-2xl p-gutter">
-                    <h3 class="font-headline-md text-headline-md text-on-surface">Your vibe</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">Where your taste lands between the extremes.</p>
+                    <h3 class="font-headline-md text-headline-md text-on-surface mb-4">Your vibe</h3>
                     <div id="vibe-sliders" class="space-y-5"></div>
-                </div>
-
-                <!-- In plain words -->
-                <div class="reveal glass-card rounded-2xl p-gutter">
-                    <h3 class="font-headline-md text-headline-md text-on-surface">In plain words</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">The short version of your sound.</p>
-                    <ul id="plain-words" class="space-y-3"></ul>
                 </div>
             </div>
         </section>
@@ -540,23 +505,6 @@
                     Rewind Analytics
                 </div>
                 <p class="font-body-sm text-body-sm text-on-surface-variant opacity-60">© 2024 Rewind Analytics. All rights reserved.</p>
-            </div>
-            <div class="flex items-center gap-8">
-                <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all duration-300" href="#">Privacy Policy</a>
-                <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all duration-300" href="#">Terms of Service</a>
-                <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all duration-300" href="#">Support</a>
-                <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-all duration-300" href="#">API Documentation</a>
-            </div>
-            <div class="flex items-center gap-4">
-                <a class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all" href="#">
-                    <span class="material-symbols-outlined text-[18px]">public</span>
-                </a>
-                <a class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all" href="#">
-                    <span class="material-symbols-outlined text-[18px]">hub</span>
-                </a>
-                <a class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all" href="#">
-                    <span class="material-symbols-outlined text-[18px]">terminal</span>
-                </a>
             </div>
         </div>
     </footer>
