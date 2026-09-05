@@ -69,7 +69,7 @@
     const FULL_WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const FULL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const state = { hourly: [], weekday: [], monthly: [], seasonPts: null, clockPeak: null };
-    const soundState = { tracks: [], radar: [], tempoBins: [] };
+    const soundState = { tracks: [], mix: [] };
 
     function plays(n) {
         return n.toLocaleString() + (n === 1 ? ' play' : ' plays');
@@ -258,13 +258,8 @@
 
     /* ---- Chapter 03 — Your Sound (sample data placeholder) ---- */
     const SAMPLE_SOUND = {
-        avg: { danceability: 0.68, energy: 0.55, valence: 0.5, acousticness: 0.3, speechiness: 0.17, liveness: 0.19 },
-        tempo_avg: 124,
-        tempo_bins: [
-            { lo: 60, hi: 80, c: 180 }, { lo: 80, hi: 100, c: 520 }, { lo: 100, hi: 120, c: 1240 },
-            { lo: 120, hi: 140, c: 1580 }, { lo: 140, hi: 160, c: 900 }, { lo: 160, hi: 180, c: 420 },
-            { lo: 180, hi: 200, c: 160 },
-        ],
+        avg: { energy: 0.5, valence: 0.55, danceability: 0.68, acousticness: 0.3, vocal: 0.9 },
+        tempo_avg: 118,
         mode: { major: 0.57 },
         tracks: [
             { name: 'Snooze', valence: 0.42, energy: 0.45, plays: 120 },
@@ -287,27 +282,54 @@
     function pct(v) {
         return Math.round(v * 100);
     }
+    function setText(id, v) {
+        const e = document.getElementById(id);
+        if (e) e.textContent = v;
+    }
 
-    /* Mood quadrant: valence (x) × energy (y), dot size by plays, ring = weighted mean. */
-    function renderMood(tracks) {
+    // Friendly one-word mood for a (positivity, energy) pair.
+    function moodZone(v, e) {
+        if (e >= 0.5) return v >= 0.5 ? 'Pumped' : 'Intense';
+        return v >= 0.5 ? 'Chill' : 'Moody';
+    }
+    function computeVibe(tracks) {
+        let sv = 0, se = 0, sp = 0;
+        const counts = { Pumped: 0, Intense: 0, Chill: 0, Moody: 0 };
+        tracks.forEach((t) => {
+            sv += t.valence * t.plays; se += t.energy * t.plays; sp += t.plays;
+            counts[moodZone(t.valence, t.energy)] += t.plays;
+        });
+        sp = sp || 1;
+        const zone = moodZone(sv / sp, se / sp);
+        const mix = [
+            { key: 'Chill', label: 'Feel-good', pct: Math.round((counts.Chill / sp) * 100) },
+            { key: 'Pumped', label: 'Upbeat', pct: Math.round((counts.Pumped / sp) * 100) },
+            { key: 'Moody', label: 'Moody', pct: Math.round((counts.Moody / sp) * 100) },
+            { key: 'Intense', label: 'Intense', pct: Math.round((counts.Intense / sp) * 100) },
+        ];
+        return { zone, mix };
+    }
+
+    /* Mood map: positivity (x) × energy (y), dot size by plays, ring = your average. */
+    function renderMood(tracks, sweet) {
         soundState.tracks = tracks;
         const svg = document.getElementById('mood-svg');
         if (!svg) return;
-        const S = 320, pad = 34, plot = S - pad * 2, mid = S / 2;
+        const S = 320, pad = 40, plot = S - pad * 2, mid = S / 2;
         const px = (v) => pad + v * plot;
         const py = (e) => pad + (1 - e) * plot;
         const maxPlays = Math.max.apply(null, tracks.map((t) => t.plays).concat(1));
         let g = '';
-        g += '<rect x="' + pad + '" y="' + pad + '" width="' + plot + '" height="' + plot + '" rx="12" fill="none" stroke="rgba(255,255,255,0.08)"/>';
+        g += '<rect x="' + pad + '" y="' + pad + '" width="' + plot + '" height="' + plot + '" rx="14" fill="none" stroke="rgba(255,255,255,0.08)"/>';
         g += '<line x1="' + pad + '" y1="' + mid + '" x2="' + (S - pad) + '" y2="' + mid + '" stroke="rgba(255,255,255,0.1)"/>';
         g += '<line x1="' + mid + '" y1="' + pad + '" x2="' + mid + '" y2="' + (S - pad) + '" stroke="rgba(255,255,255,0.1)"/>';
-        const lbl = (x, y, anchor, txt) => '<text x="' + x + '" y="' + y + '" fill="rgba(255,255,255,0.32)" font-size="9" font-weight="700" text-anchor="' + anchor + '" letter-spacing="0.08em">' + txt + '</text>';
-        g += lbl(pad + 8, pad + 15, 'start', 'TURBULENT');
-        g += lbl(S - pad - 8, pad + 15, 'end', 'HYPE');
-        g += lbl(pad + 8, S - pad - 9, 'start', 'SAD');
-        g += lbl(S - pad - 8, S - pad - 9, 'end', 'CHILL');
-        g += '<text x="' + mid + '" y="' + (S - 8) + '" fill="rgba(255,255,255,0.4)" font-size="9" font-weight="600" text-anchor="middle">POSITIVITY →</text>';
-        g += '<text x="12" y="' + mid + '" fill="rgba(255,255,255,0.4)" font-size="9" font-weight="600" text-anchor="middle" transform="rotate(-90 12 ' + mid + ')">ENERGY →</text>';
+        const zl = (x, y, anchor, txt) => '<text x="' + x + '" y="' + y + '" fill="rgba(255,255,255,0.4)" font-size="10" font-weight="700" text-anchor="' + anchor + '" letter-spacing="0.05em">' + txt + '</text>';
+        g += zl(pad + 8, pad + 16, 'start', 'INTENSE');
+        g += zl(S - pad - 8, pad + 16, 'end', 'PUMPED');
+        g += zl(pad + 8, S - pad - 9, 'start', 'IN MY FEELS');
+        g += zl(S - pad - 8, S - pad - 9, 'end', 'CHILL');
+        g += '<text x="' + mid + '" y="' + (S - 12) + '" fill="rgba(255,255,255,0.45)" font-size="9" font-weight="600" text-anchor="middle">SAD  →  HAPPY</text>';
+        g += '<text x="14" y="' + mid + '" fill="rgba(255,255,255,0.45)" font-size="9" font-weight="600" text-anchor="middle" transform="rotate(-90 14 ' + mid + ')">CALM  →  ENERGETIC</text>';
         let dots = '';
         tracks.forEach((t, i) => {
             const r = 4 + (t.plays / maxPlays) * 7;
@@ -320,85 +342,112 @@
         const you = '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="10" fill="none" stroke="#fff" stroke-width="2.5"/>' +
             '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="3.5" fill="#fff"/>';
         svg.innerHTML = g + dots + you;
+        setText('mood-sweetspot', sweet);
     }
 
-    const RADAR_AXES = [
-        { key: 'danceability', label: 'Dance' },
-        { key: 'energy', label: 'Energy' },
-        { key: 'valence', label: 'Positivity' },
-        { key: 'acousticness', label: 'Acoustic' },
-        { key: 'speechiness', label: 'Speech' },
-        { key: 'liveness', label: 'Live' },
-    ];
-    function renderRadar(avg) {
-        const svg = document.getElementById('radar-svg');
-        if (!svg) return;
-        const cx = 150, cy = 150, R = 96, n = RADAR_AXES.length;
-        const ang = (i) => -Math.PI / 2 + i * ((2 * Math.PI) / n);
-        const pt = (i, r) => [cx + Math.cos(ang(i)) * R * r, cy + Math.sin(ang(i)) * R * r];
-        soundState.radar = RADAR_AXES.map((a) => ({ label: a.label, val: avg[a.key] || 0 }));
-        let g = '';
-        [0.25, 0.5, 0.75, 1].forEach((rr) => {
-            let d = '';
-            for (let i = 0; i < n; i++) { const p = pt(i, rr); d += (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }
-            g += '<path d="' + d + 'Z" fill="none" stroke="rgba(255,255,255,0.08)"/>';
-        });
-        for (let i = 0; i < n; i++) {
-            const p = pt(i, 1);
-            g += '<line x1="' + cx + '" y1="' + cy + '" x2="' + p[0].toFixed(1) + '" y2="' + p[1].toFixed(1) + '" stroke="rgba(255,255,255,0.08)"/>';
-            const lp = pt(i, 1.18);
-            const anchor = Math.abs(lp[0] - cx) < 10 ? 'middle' : lp[0] > cx ? 'start' : 'end';
-            g += '<text x="' + lp[0].toFixed(1) + '" y="' + (lp[1] + 3).toFixed(1) + '" fill="rgba(255,255,255,0.55)" font-size="9" font-weight="600" text-anchor="' + anchor + '">' + RADAR_AXES[i].label + '</text>';
+    const MIX_SHADES = ['rgb(30,215,96)', 'rgba(30,215,96,0.72)', 'rgba(30,215,96,0.48)', 'rgba(30,215,96,0.3)'];
+    function renderMoodMix(mix) {
+        const bar = document.getElementById('mood-mix');
+        if (!bar) return;
+        const sorted = mix.slice().sort((a, b) => b.pct - a.pct).filter((m) => m.pct > 0);
+        soundState.mix = sorted;
+        bar.innerHTML = sorted
+            .map((m, i) => '<div class="mood-seg" data-mix="' + i + '" style="width:' + m.pct + '%;background:' + MIX_SHADES[i] + '"></div>')
+            .join('');
+        const legend = document.getElementById('mood-mix-legend');
+        if (legend) {
+            legend.innerHTML = sorted
+                .map((m, i) => '<span class="inline-flex items-center gap-1.5"><span style="width:8px;height:8px;border-radius:9999px;background:' + MIX_SHADES[i] + '"></span>' + m.label + ' ' + m.pct + '%</span>')
+                .join('');
         }
-        let d = '';
-        const verts = [];
-        for (let i = 0; i < n; i++) {
-            const v = Math.max(0, Math.min(1, avg[RADAR_AXES[i].key] || 0));
-            const p = pt(i, v); verts.push(p);
-            d += (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1);
-        }
-        g += '<path d="' + d + 'Z" fill="rgba(30,215,96,0.25)" stroke="rgb(30,215,96)" stroke-width="2"/>';
-        verts.forEach((p, i) => {
-            g += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2.6" fill="rgb(30,215,96)"/>';
-            g += '<circle class="radar-dot" data-r="' + i + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="9" fill="transparent"/>';
-        });
-        svg.innerHTML = g;
     }
 
-    function renderTempo(bins, avg) {
-        soundState.tempoBins = bins;
-        const svg = document.getElementById('tempo-svg');
+    // Human spectrum sliders — where taste lands between two everyday words.
+    function renderVibe(avg) {
+        const el = document.getElementById('vibe-sliders');
+        if (!el) return;
+        const rows = [
+            { l: 'Chilled', r: 'Energetic', v: avg.energy },
+            { l: 'Moody', r: 'Happy', v: avg.valence },
+            { l: 'Acoustic', r: 'Produced', v: 1 - avg.acousticness },
+            { l: 'Easy listening', r: 'Dancefloor', v: avg.danceability },
+            { l: 'Instrumental', r: 'Vocal', v: avg.vocal },
+        ];
+        el.innerHTML = rows
+            .map((row) => {
+                const p = Math.round(Math.max(0, Math.min(1, row.v)) * 100);
+                return '<div>' +
+                    '<div class="flex justify-between text-[11px] text-on-surface-variant mb-1.5"><span>' + row.l + '</span><span>' + row.r + '</span></div>' +
+                    '<div class="relative h-1.5 rounded-full bg-surface-container-high">' +
+                    '<div class="absolute inset-y-0 left-0 rounded-full bg-primary/30" style="width:' + p + '%"></div>' +
+                    '<div class="absolute top-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-primary shadow" style="left:' + p + '%;transform:translate(-50%,-50%)"></div>' +
+                    '</div></div>';
+            })
+            .join('');
+    }
+
+    function paceWord(b) {
+        return b < 85 ? 'Laid-back' : b < 105 ? 'Easy-going' : b < 125 ? 'Upbeat' : b < 145 ? 'Lively' : 'High-energy';
+    }
+    function renderPace(bpm) {
+        const svg = document.getElementById('pace-svg');
         if (!svg) return;
-        const W = 320, H = 150, padB = 16, padT = 14, padX = 6;
-        const max = Math.max.apply(null, bins.map((b) => b.c).concat(1));
-        const n = bins.length, bw = (W - padX * 2) / n;
-        let g = '';
-        bins.forEach((b, i) => {
-            const h = (b.c / max) * (H - padT - padB);
-            const x = padX + i * bw, y = H - padB - h;
-            const op = (0.35 + 0.55 * (b.c / max)).toFixed(2);
-            g += '<rect class="tempo-bar" data-b="' + i + '" x="' + (x + 2).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + (bw - 4).toFixed(1) + '" height="' + h.toFixed(1) + '" rx="3" fill="rgb(30,215,96)" fill-opacity="' + op + '"/>';
-        });
-        const lo = bins[0].lo, hi = bins[bins.length - 1].hi;
-        const ax = padX + ((avg - lo) / (hi - lo)) * (W - padX * 2);
-        g += '<line x1="' + ax.toFixed(1) + '" y1="' + (padT - 6) + '" x2="' + ax.toFixed(1) + '" y2="' + (H - padB) + '" stroke="#fff" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.85"/>';
-        g += '<text x="' + ax.toFixed(1) + '" y="' + (padT - 8) + '" fill="#fff" font-size="9" font-weight="700" text-anchor="middle">' + avg + ' avg</text>';
-        svg.innerHTML = g;
+        const cx = 120, cy = 125, R = 92, lo = 60, hi = 190;
+        const p = Math.max(0, Math.min(1, (bpm - lo) / (hi - lo)));
+        const at = (pp, rad) => { const th = Math.PI * (1 - pp); return [cx + rad * Math.cos(th), cy - rad * Math.sin(th)]; };
+        const bg = 'M ' + (cx - R) + ' ' + cy + ' A ' + R + ' ' + R + ' 0 0 1 ' + (cx + R) + ' ' + cy;
+        const end = at(p, R);
+        const val = 'M ' + (cx - R) + ' ' + cy + ' A ' + R + ' ' + R + ' 0 0 1 ' + end[0].toFixed(1) + ' ' + end[1].toFixed(1);
+        const np = at(p, R - 16);
+        svg.innerHTML =
+            '<path d="' + bg + '" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="12" stroke-linecap="round"/>' +
+            '<path d="' + val + '" fill="none" stroke="rgb(30,215,96)" stroke-width="12" stroke-linecap="round"/>' +
+            '<line x1="' + cx + '" y1="' + cy + '" x2="' + np[0].toFixed(1) + '" y2="' + np[1].toFixed(1) + '" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
+            '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="#fff"/>' +
+            '<text x="' + (cx - R) + '" y="' + (cy + 18) + '" fill="rgba(255,255,255,0.5)" font-size="9" text-anchor="middle">Slow</text>' +
+            '<text x="' + (cx + R) + '" y="' + (cy + 18) + '" fill="rgba(255,255,255,0.5)" font-size="9" text-anchor="middle">Fast</text>';
     }
 
+    function renderPlainWords(avg, mode) {
+        const el = document.getElementById('plain-words');
+        if (!el) return;
+        const hi = (t) => '<b class="text-primary">' + t + '</b>';
+        const items = [
+            { icon: 'bolt', text: avg.energy < 0.5 ? 'You keep it more ' + hi('chilled-out') + ' than hyped.' : 'You lean more ' + hi('energetic') + ' than laid-back.' },
+            { icon: mode.major >= 0.5 ? 'wb_sunny' : 'cloud', text: mode.major >= 0.5 ? 'Your music leans ' + hi('bright and uplifting') + '.' : 'Your music leans ' + hi('moody and emotional') + '.' },
+            { icon: 'mic', text: avg.vocal >= 0.6 ? "It's " + hi('lyrics-first') + ' — vocals over instrumentals.' : 'You lean ' + hi('instrumental') + ' over vocals.' },
+            { icon: 'graphic_eq', text: 'About ' + hi(pct(avg.acousticness) + '% acoustic') + ', the rest produced.' },
+        ];
+        el.innerHTML = items
+            .map((it) => '<li class="flex items-start gap-2.5">' +
+                '<span class="material-symbols-outlined text-primary text-lg shrink-0">' + it.icon + '</span>' +
+                '<span class="font-body-sm text-body-sm text-on-surface">' + it.text + '</span></li>')
+            .join('');
+    }
+
+    const VIBE_SWEET = { Chill: 'Chill & feel-good', Pumped: 'Upbeat & energetic', Moody: 'Mellow & moody', Intense: 'Dark & intense' };
+    const VIBE_WORD = { Chill: 'Feel-good', Pumped: 'Upbeat', Moody: 'Moody', Intense: 'Intense' };
+    const VIBE_PHRASE = {
+        Chill: 'easy, positive songs you sink into',
+        Pumped: 'bright, high-energy anthems',
+        Moody: 'slow, emotional songs',
+        Intense: 'dark, high-energy tracks',
+    };
     function renderSound() {
         if (!document.getElementById('mood-svg')) return;
         const s = SAMPLE_SOUND;
-        renderMood(s.tracks);
-        renderRadar(s.avg);
-        renderTempo(s.tempo_bins, s.tempo_avg);
-        const bpm = document.getElementById('sound-bpm');
-        if (bpm) bpm.textContent = s.tempo_avg;
-        const dance = document.getElementById('sound-dance');
-        if (dance) dance.textContent = pct(s.avg.danceability) + ' / 100';
+        const vibe = computeVibe(s.tracks);
+        renderMood(s.tracks, VIBE_SWEET[vibe.zone]);
+        renderMoodMix(vibe.mix);
+        renderVibe(s.avg);
+        renderPace(s.tempo_avg);
+        renderPlainWords(s.avg, s.mode);
+        setText('vibe-word', VIBE_WORD[vibe.zone]);
+        setText('vibe-phrase', 'Most of your music is ' + VIBE_PHRASE[vibe.zone] + '.');
+        setText('pace-word', paceWord(s.tempo_avg));
         const maj = pct(s.mode.major), min = 100 - maj;
-        const mEl = document.getElementById('mode-major'); if (mEl) mEl.textContent = maj;
-        const nEl = document.getElementById('mode-minor'); if (nEl) nEl.textContent = min;
+        setText('mode-major', maj);
+        setText('mode-minor', min);
         const mb = document.getElementById('mode-major-bar'); if (mb) mb.style.width = maj + '%';
         const nb = document.getElementById('mode-minor-bar'); if (nb) nb.style.width = min + '%';
     }
@@ -479,7 +528,7 @@
                 if (a == null) return;
                 const t = soundState.tracks[+a];
                 e.target.classList.add('is-hover');
-                showTip(t.name, 'Energy ' + pct(t.energy) + ' · Positivity ' + pct(t.valence), e.clientX, e.clientY);
+                showTip(t.name, moodZone(t.valence, t.energy), e.clientX, e.clientY);
             });
             mood.addEventListener('mousemove', (e) => {
                 if (attr(e.target, 'data-t') != null) moveTip(e.clientX, e.clientY);
@@ -492,35 +541,19 @@
             });
         }
 
-        const radar = document.getElementById('radar-svg');
-        if (radar) {
-            radar.addEventListener('mouseover', (e) => {
-                const a = attr(e.target, 'data-r');
+        const mix = document.getElementById('mood-mix');
+        if (mix) {
+            mix.addEventListener('mouseover', (e) => {
+                const a = attr(e.target, 'data-mix');
                 if (a == null) return;
-                const ax = soundState.radar[+a];
-                showTip(ax.label, pct(ax.val) + '%', e.clientX, e.clientY);
+                const m = soundState.mix[+a];
+                showTip(m.label, m.pct + '% of your plays', e.clientX, e.clientY);
             });
-            radar.addEventListener('mousemove', (e) => {
-                if (attr(e.target, 'data-r') != null) moveTip(e.clientX, e.clientY);
+            mix.addEventListener('mousemove', (e) => {
+                if (attr(e.target, 'data-mix') != null) moveTip(e.clientX, e.clientY);
             });
-            radar.addEventListener('mouseout', (e) => {
-                if (attr(e.target, 'data-r') != null && attr(e.relatedTarget, 'data-r') == null) hideTip();
-            });
-        }
-
-        const tempo = document.getElementById('tempo-svg');
-        if (tempo) {
-            tempo.addEventListener('mouseover', (e) => {
-                const a = attr(e.target, 'data-b');
-                if (a == null) return;
-                const b = soundState.tempoBins[+a];
-                showTip(b.lo + '–' + b.hi + ' BPM', plays(b.c), e.clientX, e.clientY);
-            });
-            tempo.addEventListener('mousemove', (e) => {
-                if (attr(e.target, 'data-b') != null) moveTip(e.clientX, e.clientY);
-            });
-            tempo.addEventListener('mouseout', (e) => {
-                if (attr(e.target, 'data-b') != null && attr(e.relatedTarget, 'data-b') == null) hideTip();
+            mix.addEventListener('mouseout', (e) => {
+                if (attr(e.target, 'data-mix') != null && attr(e.relatedTarget, 'data-mix') == null) hideTip();
             });
         }
     }

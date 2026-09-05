@@ -430,11 +430,10 @@ html { scroll-behavior: smooth; }
 .weekday-col:hover .weekday-bar { background: rgb(30, 215, 96); }
 
 /* chapter 03 charts */
-.mood-dot, .radar-dot, .tempo-bar { cursor: pointer; }
-.mood-dot { transition: fill 0.12s ease; }
+.mood-dot { cursor: pointer; transition: fill 0.12s ease; }
 .mood-dot.is-hover { fill: #ffffff; }
-.tempo-bar { transition: fill-opacity 0.12s ease; }
-.tempo-bar:hover { fill-opacity: 1; }
+.mood-seg { cursor: pointer; transition: filter 0.12s ease; }
+.mood-seg:hover { filter: brightness(1.15); }
 
 .rhythm-tooltip {
     position: fixed;
