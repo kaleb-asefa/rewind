@@ -162,6 +162,9 @@
                 <a data-chapter href="#taste" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">04</span> Your Taste
                 </a>
+                <a data-chapter href="#habits" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                    <span class="num font-mono">05</span> How You Listen
+                </a>
             </div>
         </nav>
 
@@ -536,6 +539,58 @@
                     <h3 class="font-headline-md text-headline-md text-on-surface">Hidden gems</h3>
                     <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-3">Low-key tracks you play a lot.</p>
                     <div id="gem-list" class="space-y-1.5"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 05 — How You Listen -->
+        <section id="habits" class="scroll-mt-32 pt-10 space-y-6">
+            <div class="reveal">
+                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 05</span>
+                <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">How You Listen</h2>
+                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">Your habits behind the play button.</p>
+            </div>
+
+            <!-- Hero: shuffle vs hand-picked -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+                <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter relative overflow-hidden min-h-[280px] flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">How you press play</h3>
+                    <div class="flex-1 flex flex-col justify-center">
+                        <div id="shuffle-word" class="font-display-lg text-display-lg-mobile text-primary leading-none">—</div>
+                        <div id="shuffle-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-5"></div>
+                        <div class="flex justify-between mt-2 text-[11px] text-on-surface-variant">
+                            <span><span id="shuffle-pct">—</span>% shuffle</span>
+                            <span><span id="picked-pct">—</span>% hand-picked</span>
+                        </div>
+                    </div>
+                    <div class="absolute -bottom-16 -right-16 w-72 h-72 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+                </div>
+
+                <div class="flex flex-col gap-gutter">
+                    <div class="reveal glass-card rounded-2xl p-5">
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Restless or locked in?</div>
+                        <div id="skip-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
+                        <div id="skip-sub" class="font-body-sm text-body-sm text-on-surface-variant opacity-80">—</div>
+                    </div>
+                    <div class="reveal glass-card rounded-2xl p-5">
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Longest binge</div>
+                        <div id="binge-value" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant opacity-80">in one sitting</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bento: attention span + loops -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+                <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">How long you stick around</h3>
+                    <div id="attention-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-6"></div>
+                    <div id="attention-legend" class="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[11px] text-on-surface-variant"></div>
+                </div>
+                <div class="reveal glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">On repeat</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-3">Songs you looped back-to-back.</p>
+                    <div id="loop-list" class="space-y-1.5"></div>
                 </div>
             </div>
         </section>
