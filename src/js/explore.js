@@ -440,17 +440,31 @@
     async function fetchSound() {
         if (!document.getElementById('mood-svg')) return;
         let s = SAMPLE_SOUND;
+        let coverage = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout('/api/metrics/audio');
                 if (res && res.ok && res.data && res.data.avg && res.data.tracks && res.data.tracks.length) {
                     s = res.data;
+                    coverage = typeof res.data.coverage === 'number' ? res.data.coverage : null;
                 }
             } catch (_e) {
                 /* keep sample fallback */
             }
         }
         renderSound(s);
+        setCoverageNote(coverage);
+    }
+    // Only surface a caveat when coverage is low; high-coverage users see nothing.
+    function setCoverageNote(cov) {
+        const el = document.getElementById('sound-coverage');
+        if (!el) return;
+        if (cov != null && cov < 0.75) {
+            el.textContent = 'Based on the ' + Math.round(cov * 100) + '% of your songs we could match to audio data.';
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
     }
     function renderSound(s) {
         // Vibe word/zone come from the average so they agree with the sliders.

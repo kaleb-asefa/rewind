@@ -782,9 +782,10 @@ async def get_heatmap(
 
     def query():
         raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con)  # int minutes; safe to inline
         try:
             year_rows = raw_con.execute(
-                "SELECT DISTINCT EXTRACT(year FROM ts)::INTEGER AS y "
+                f"SELECT DISTINCT EXTRACT(year FROM ts + to_minutes({off}))::INTEGER AS y "
                 "FROM history WHERE ts IS NOT NULL ORDER BY y"
             ).fetchall()
         except Exception:
@@ -797,11 +798,11 @@ async def get_heatmap(
         target = year if year in years else years[-1]
 
         daily = raw_con.execute(
-            "SELECT CAST(ts AS DATE) AS day, COUNT(*) AS streams, "
+            f"SELECT CAST(ts + to_minutes({off}) AS DATE) AS day, COUNT(*) AS streams, "
             "COALESCE(SUM(ms_played), 0) AS ms "
             "FROM history "
-            "WHERE ts IS NOT NULL AND EXTRACT(year FROM ts) = ? "
-            "GROUP BY CAST(ts AS DATE) ORDER BY day",
+            f"WHERE ts IS NOT NULL AND EXTRACT(year FROM ts + to_minutes({off})) = ? "
+            f"GROUP BY CAST(ts + to_minutes({off}) AS DATE) ORDER BY day",
             [target],
         ).fetchall()
 
@@ -809,15 +810,15 @@ async def get_heatmap(
         try:
             for r in raw_con.execute(
                 "SELECT day, track_name, artist_name FROM ("
-                "  SELECT CAST(ts AS DATE) AS day, track_name, artist_name, "
+                f"  SELECT CAST(ts + to_minutes({off}) AS DATE) AS day, track_name, artist_name, "
                 "         ROW_NUMBER() OVER ("
-                "           PARTITION BY CAST(ts AS DATE) "
+                f"           PARTITION BY CAST(ts + to_minutes({off}) AS DATE) "
                 "           ORDER BY COUNT(*) DESC, SUM(ms_played) DESC"
                 "         ) AS rn "
                 "  FROM history "
                 "  WHERE ts IS NOT NULL AND track_name IS NOT NULL "
-                "        AND EXTRACT(year FROM ts) = ? "
-                "  GROUP BY CAST(ts AS DATE), track_name, artist_name"
+                f"        AND EXTRACT(year FROM ts + to_minutes({off})) = ? "
+                f"  GROUP BY CAST(ts + to_minutes({off}) AS DATE), track_name, artist_name"
                 ") t WHERE rn = 1",
                 [target],
             ).fetchall():
@@ -903,13 +904,14 @@ async def get_active_day(
 
     def query():
         raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con)  # int minutes; safe to inline
         try:
             return raw_con.execute(
-                "SELECT EXTRACT(isodow FROM ts) AS dow, "
+                f"SELECT EXTRACT(isodow FROM ts + to_minutes({off})) AS dow, "
                 "       COALESCE(SUM(ms_played), 0) AS ms, "
-                "       COUNT(DISTINCT CAST(ts AS DATE)) AS days "
+                f"       COUNT(DISTINCT CAST(ts + to_minutes({off}) AS DATE)) AS days "
                 "FROM history WHERE ts IS NOT NULL "
-                "GROUP BY EXTRACT(isodow FROM ts) "
+                f"GROUP BY EXTRACT(isodow FROM ts + to_minutes({off})) "
                 "ORDER BY ms DESC"
             ).fetchall()
         except Exception:
@@ -971,9 +973,49 @@ def _chronotype(hourly: list[int]) -> dict:
     return {"label": label, "position": round(position, 3)}
 
 
-# Spotify stores `ts` in UTC; shift by the local offset so the rhythm chapter
-# reads in the listener's wall-clock time. Default = EAT (Ethiopia, UTC+3).
-LOCAL_TZ_OFFSET_HOURS = int(os.getenv("REWIND_TZ_OFFSET_HOURS", "3"))
+# Spotify stores `ts` in UTC. Localize per user by their dominant conn_country so
+# the clock/weekday/heatmap read as wall-clock. Env REWIND_TZ_OFFSET_HOURS forces a
+# fixed offset; otherwise fall back to UTC. Offsets in MINUTES (half-hour zones exist).
+_ENV_TZ_HOURS = os.getenv("REWIND_TZ_OFFSET_HOURS")
+_COUNTRY_TZ_MIN = {
+    "GB": 0, "IE": 0, "PT": 0, "IS": 0, "GH": 0, "SN": 0, "CI": 0,
+    "NG": 60, "DE": 60, "FR": 60, "ES": 60, "IT": 60, "NL": 60, "BE": 60,
+    "SE": 60, "NO": 60, "DK": 60, "PL": 60, "CH": 60, "AT": 60, "CZ": 60,
+    "HU": 60, "DZ": 60, "MA": 60,
+    "ZA": 120, "EG": 120, "GR": 120, "FI": 120, "RO": 120, "UA": 120,
+    "IL": 120, "BG": 120,
+    "ET": 180, "KE": 180, "TZ": 180, "UG": 180, "SA": 180, "TR": 180,
+    "RU": 180, "IQ": 180, "QA": 180, "KW": 180,
+    "IR": 210, "AE": 240, "AZ": 240, "GE": 240,
+    "PK": 300, "IN": 330, "LK": 330, "NP": 345, "BD": 360,
+    "TH": 420, "VN": 420, "ID": 420,
+    "SG": 480, "MY": 480, "PH": 480, "CN": 480, "HK": 480, "TW": 480,
+    "JP": 540, "KR": 540,
+    "AU": 600, "NZ": 780,
+    "BR": -180, "AR": -180, "CL": -180, "UY": -180,
+    "US": -300, "CA": -300, "CO": -300, "PE": -300, "EC": -300,
+    "MX": -360, "CR": -360, "GT": -360,
+}
+
+
+def _tz_offset_minutes(raw_con) -> int:
+    """Minutes to add to UTC `ts` for this session's local wall-clock time.
+
+    Priority: REWIND_TZ_OFFSET_HOURS override → dominant conn_country → UTC(0).
+    """
+    if _ENV_TZ_HOURS is not None:
+        try:
+            return int(round(float(_ENV_TZ_HOURS) * 60))
+        except ValueError:
+            pass
+    try:
+        row = raw_con.execute(
+            "SELECT conn_country FROM history WHERE conn_country IS NOT NULL "
+            "GROUP BY conn_country ORDER BY COUNT(*) DESC LIMIT 1"
+        ).fetchone()
+    except Exception:
+        row = None
+    return _COUNTRY_TZ_MIN.get(row[0] if row else None, 0)
 
 
 @app.get("/api/metrics/rhythm")
@@ -983,13 +1025,13 @@ async def get_rhythm(
 ):
     """Temporal listening patterns for the "When You Listen" chapter: plays by
     hour of day, weekday and month of year, plus daily streaks and a chronotype
-    score. Times are shifted from the stored UTC timestamp into local time
-    (LOCAL_TZ_OFFSET_HOURS, default EAT / UTC+3) so hours read as wall-clock.
+    score. Timestamps are shifted from UTC into the user's local time (derived
+    from their dominant conn_country) so hours read as wall-clock.
     """
 
     def query():
         raw_con = conn.connection.driver_connection
-        off = LOCAL_TZ_OFFSET_HOURS
+        off = _tz_offset_minutes(raw_con)
 
         def fetch(sql, params=None):
             try:
@@ -999,7 +1041,7 @@ async def get_rhythm(
 
         hourly = [0] * 24
         for h, c in fetch(
-            "SELECT EXTRACT(hour FROM ts + to_hours(?))::INTEGER AS h, COUNT(*) "
+            "SELECT EXTRACT(hour FROM ts + to_minutes(?))::INTEGER AS h, COUNT(*) "
             "FROM history WHERE ts IS NOT NULL GROUP BY h",
             [off],
         ):
@@ -1008,7 +1050,7 @@ async def get_rhythm(
 
         weekday = [0] * 7  # Mon..Sun
         for d, c in fetch(
-            "SELECT EXTRACT(isodow FROM ts + to_hours(?))::INTEGER AS d, COUNT(*) "
+            "SELECT EXTRACT(isodow FROM ts + to_minutes(?))::INTEGER AS d, COUNT(*) "
             "FROM history WHERE ts IS NOT NULL GROUP BY d",
             [off],
         ):
@@ -1017,7 +1059,7 @@ async def get_rhythm(
 
         monthly = [0] * 12  # Jan..Dec
         for m, c in fetch(
-            "SELECT EXTRACT(month FROM ts + to_hours(?))::INTEGER AS m, COUNT(*) "
+            "SELECT EXTRACT(month FROM ts + to_minutes(?))::INTEGER AS m, COUNT(*) "
             "FROM history WHERE ts IS NOT NULL GROUP BY m",
             [off],
         ):
@@ -1025,7 +1067,7 @@ async def get_rhythm(
                 monthly[int(m) - 1] = int(c)
 
         day_rows = fetch(
-            "SELECT DISTINCT CAST(ts + to_hours(?) AS DATE) AS day FROM history "
+            "SELECT DISTINCT CAST(ts + to_minutes(?) AS DATE) AS day FROM history "
             "WHERE ts IS NOT NULL ORDER BY day",
             [off],
         )
@@ -1055,6 +1097,11 @@ async def get_rhythm(
     }
 
 
+# Genre energy de-inflation penalties (see get_audio); env-tunable.
+_RNB_ENERGY_ADJ = float(os.getenv("REWIND_RNB_ENERGY_ADJ", "0.15"))
+_HIPHOP_ENERGY_ADJ = float(os.getenv("REWIND_HIPHOP_ENERGY_ADJ", "0.10"))
+
+
 @app.get("/api/metrics/audio")
 async def get_audio(
     request: Request,
@@ -1074,15 +1121,16 @@ async def get_audio(
     # Spotify over-rates 'energy' for produced urban music (dense production reads
     # as energy even for mellow songs). De-inflate by primary genre — R&B/soul most,
     # hip-hop/rap a bit — so genuinely energetic pop/latin/EDM keep their real energy.
+    # Penalties are env-tunable (REWIND_RNB_ENERGY_ADJ / REWIND_HIPHOP_ENERGY_ADJ).
     _ADJ_E = (
         "CASE "
         "WHEN lower(split_part(f.artist_genres, ',', 1)) LIKE '%r&b%' "
         "  OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%soul%' "
-        "  THEN greatest(0, f.energy - 0.15) "
+        f"  THEN greatest(0, f.energy - {_RNB_ENERGY_ADJ}) "
         "WHEN lower(split_part(f.artist_genres, ',', 1)) LIKE '%hip hop%' "
         "  OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%rap%' "
         "  OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%trap%' "
-        "  THEN greatest(0, f.energy - 0.10) "
+        f"  THEN greatest(0, f.energy - {_HIPHOP_ENERGY_ADJ}) "
         "ELSE f.energy END"
     )
 
