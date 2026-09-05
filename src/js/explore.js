@@ -69,6 +69,7 @@
     const FULL_WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const FULL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const state = { hourly: [], weekday: [], monthly: [], seasonPts: null, clockPeak: null };
+    const soundState = { tracks: [], radar: [], tempoBins: [] };
 
     function plays(n) {
         return n.toLocaleString() + (n === 1 ? ' play' : ' plays');
@@ -255,6 +256,153 @@
             .join('');
     }
 
+    /* ---- Chapter 03 — Your Sound (sample data placeholder) ---- */
+    const SAMPLE_SOUND = {
+        avg: { danceability: 0.68, energy: 0.55, valence: 0.5, acousticness: 0.3, speechiness: 0.17, liveness: 0.19 },
+        tempo_avg: 124,
+        tempo_bins: [
+            { lo: 60, hi: 80, c: 180 }, { lo: 80, hi: 100, c: 520 }, { lo: 100, hi: 120, c: 1240 },
+            { lo: 120, hi: 140, c: 1580 }, { lo: 140, hi: 160, c: 900 }, { lo: 160, hi: 180, c: 420 },
+            { lo: 180, hi: 200, c: 160 },
+        ],
+        mode: { major: 0.57 },
+        tracks: [
+            { name: 'Snooze', valence: 0.42, energy: 0.45, plays: 120 },
+            { name: 'Kill Bill', valence: 0.55, energy: 0.52, plays: 150 },
+            { name: 'No Role Modelz', valence: 0.5, energy: 0.62, plays: 110 },
+            { name: 'Nobody Gets Me', valence: 0.22, energy: 0.28, plays: 95 },
+            { name: 'Redbone', valence: 0.63, energy: 0.4, plays: 80 },
+            { name: 'Marvins Room', valence: 0.2, energy: 0.35, plays: 70 },
+            { name: 'Runaway', valence: 0.3, energy: 0.55, plays: 88 },
+            { name: 'Best Part', valence: 0.58, energy: 0.3, plays: 76 },
+            { name: 'HUMBLE.', valence: 0.52, energy: 0.82, plays: 130 },
+            { name: 'Good Days', valence: 0.6, energy: 0.48, plays: 140 },
+            { name: 'Pursuit of Happiness', valence: 0.35, energy: 0.7, plays: 60 },
+            { name: 'Sunflower', valence: 0.78, energy: 0.6, plays: 105 },
+            { name: 'Location', valence: 0.48, energy: 0.42, plays: 98 },
+            { name: 'Passionfruit', valence: 0.66, energy: 0.5, plays: 112 },
+        ],
+    };
+
+    function pct(v) {
+        return Math.round(v * 100);
+    }
+
+    /* Mood quadrant: valence (x) × energy (y), dot size by plays, ring = weighted mean. */
+    function renderMood(tracks) {
+        soundState.tracks = tracks;
+        const svg = document.getElementById('mood-svg');
+        if (!svg) return;
+        const S = 320, pad = 34, plot = S - pad * 2, mid = S / 2;
+        const px = (v) => pad + v * plot;
+        const py = (e) => pad + (1 - e) * plot;
+        const maxPlays = Math.max.apply(null, tracks.map((t) => t.plays).concat(1));
+        let g = '';
+        g += '<rect x="' + pad + '" y="' + pad + '" width="' + plot + '" height="' + plot + '" rx="12" fill="none" stroke="rgba(255,255,255,0.08)"/>';
+        g += '<line x1="' + pad + '" y1="' + mid + '" x2="' + (S - pad) + '" y2="' + mid + '" stroke="rgba(255,255,255,0.1)"/>';
+        g += '<line x1="' + mid + '" y1="' + pad + '" x2="' + mid + '" y2="' + (S - pad) + '" stroke="rgba(255,255,255,0.1)"/>';
+        const lbl = (x, y, anchor, txt) => '<text x="' + x + '" y="' + y + '" fill="rgba(255,255,255,0.32)" font-size="9" font-weight="700" text-anchor="' + anchor + '" letter-spacing="0.08em">' + txt + '</text>';
+        g += lbl(pad + 8, pad + 15, 'start', 'TURBULENT');
+        g += lbl(S - pad - 8, pad + 15, 'end', 'HYPE');
+        g += lbl(pad + 8, S - pad - 9, 'start', 'SAD');
+        g += lbl(S - pad - 8, S - pad - 9, 'end', 'CHILL');
+        g += '<text x="' + mid + '" y="' + (S - 8) + '" fill="rgba(255,255,255,0.4)" font-size="9" font-weight="600" text-anchor="middle">POSITIVITY →</text>';
+        g += '<text x="12" y="' + mid + '" fill="rgba(255,255,255,0.4)" font-size="9" font-weight="600" text-anchor="middle" transform="rotate(-90 12 ' + mid + ')">ENERGY →</text>';
+        let dots = '';
+        tracks.forEach((t, i) => {
+            const r = 4 + (t.plays / maxPlays) * 7;
+            dots += '<circle class="mood-dot" data-t="' + i + '" cx="' + px(t.valence).toFixed(1) + '" cy="' + py(t.energy).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="rgb(30,215,96)" fill-opacity="0.75"/>';
+        });
+        let sv = 0, se = 0, sp = 0;
+        tracks.forEach((t) => { sv += t.valence * t.plays; se += t.energy * t.plays; sp += t.plays; });
+        sp = sp || 1;
+        const cx = px(sv / sp), cy = py(se / sp);
+        const you = '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="10" fill="none" stroke="#fff" stroke-width="2.5"/>' +
+            '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="3.5" fill="#fff"/>';
+        svg.innerHTML = g + dots + you;
+    }
+
+    const RADAR_AXES = [
+        { key: 'danceability', label: 'Dance' },
+        { key: 'energy', label: 'Energy' },
+        { key: 'valence', label: 'Positivity' },
+        { key: 'acousticness', label: 'Acoustic' },
+        { key: 'speechiness', label: 'Speech' },
+        { key: 'liveness', label: 'Live' },
+    ];
+    function renderRadar(avg) {
+        const svg = document.getElementById('radar-svg');
+        if (!svg) return;
+        const cx = 150, cy = 150, R = 96, n = RADAR_AXES.length;
+        const ang = (i) => -Math.PI / 2 + i * ((2 * Math.PI) / n);
+        const pt = (i, r) => [cx + Math.cos(ang(i)) * R * r, cy + Math.sin(ang(i)) * R * r];
+        soundState.radar = RADAR_AXES.map((a) => ({ label: a.label, val: avg[a.key] || 0 }));
+        let g = '';
+        [0.25, 0.5, 0.75, 1].forEach((rr) => {
+            let d = '';
+            for (let i = 0; i < n; i++) { const p = pt(i, rr); d += (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }
+            g += '<path d="' + d + 'Z" fill="none" stroke="rgba(255,255,255,0.08)"/>';
+        });
+        for (let i = 0; i < n; i++) {
+            const p = pt(i, 1);
+            g += '<line x1="' + cx + '" y1="' + cy + '" x2="' + p[0].toFixed(1) + '" y2="' + p[1].toFixed(1) + '" stroke="rgba(255,255,255,0.08)"/>';
+            const lp = pt(i, 1.18);
+            const anchor = Math.abs(lp[0] - cx) < 10 ? 'middle' : lp[0] > cx ? 'start' : 'end';
+            g += '<text x="' + lp[0].toFixed(1) + '" y="' + (lp[1] + 3).toFixed(1) + '" fill="rgba(255,255,255,0.55)" font-size="9" font-weight="600" text-anchor="' + anchor + '">' + RADAR_AXES[i].label + '</text>';
+        }
+        let d = '';
+        const verts = [];
+        for (let i = 0; i < n; i++) {
+            const v = Math.max(0, Math.min(1, avg[RADAR_AXES[i].key] || 0));
+            const p = pt(i, v); verts.push(p);
+            d += (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1);
+        }
+        g += '<path d="' + d + 'Z" fill="rgba(30,215,96,0.25)" stroke="rgb(30,215,96)" stroke-width="2"/>';
+        verts.forEach((p, i) => {
+            g += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2.6" fill="rgb(30,215,96)"/>';
+            g += '<circle class="radar-dot" data-r="' + i + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="9" fill="transparent"/>';
+        });
+        svg.innerHTML = g;
+    }
+
+    function renderTempo(bins, avg) {
+        soundState.tempoBins = bins;
+        const svg = document.getElementById('tempo-svg');
+        if (!svg) return;
+        const W = 320, H = 150, padB = 16, padT = 14, padX = 6;
+        const max = Math.max.apply(null, bins.map((b) => b.c).concat(1));
+        const n = bins.length, bw = (W - padX * 2) / n;
+        let g = '';
+        bins.forEach((b, i) => {
+            const h = (b.c / max) * (H - padT - padB);
+            const x = padX + i * bw, y = H - padB - h;
+            const op = (0.35 + 0.55 * (b.c / max)).toFixed(2);
+            g += '<rect class="tempo-bar" data-b="' + i + '" x="' + (x + 2).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + (bw - 4).toFixed(1) + '" height="' + h.toFixed(1) + '" rx="3" fill="rgb(30,215,96)" fill-opacity="' + op + '"/>';
+        });
+        const lo = bins[0].lo, hi = bins[bins.length - 1].hi;
+        const ax = padX + ((avg - lo) / (hi - lo)) * (W - padX * 2);
+        g += '<line x1="' + ax.toFixed(1) + '" y1="' + (padT - 6) + '" x2="' + ax.toFixed(1) + '" y2="' + (H - padB) + '" stroke="#fff" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.85"/>';
+        g += '<text x="' + ax.toFixed(1) + '" y="' + (padT - 8) + '" fill="#fff" font-size="9" font-weight="700" text-anchor="middle">' + avg + ' avg</text>';
+        svg.innerHTML = g;
+    }
+
+    function renderSound() {
+        if (!document.getElementById('mood-svg')) return;
+        const s = SAMPLE_SOUND;
+        renderMood(s.tracks);
+        renderRadar(s.avg);
+        renderTempo(s.tempo_bins, s.tempo_avg);
+        const bpm = document.getElementById('sound-bpm');
+        if (bpm) bpm.textContent = s.tempo_avg;
+        const dance = document.getElementById('sound-dance');
+        if (dance) dance.textContent = pct(s.avg.danceability) + ' / 100';
+        const maj = pct(s.mode.major), min = 100 - maj;
+        const mEl = document.getElementById('mode-major'); if (mEl) mEl.textContent = maj;
+        const nEl = document.getElementById('mode-minor'); if (nEl) nEl.textContent = min;
+        const mb = document.getElementById('mode-major-bar'); if (mb) mb.style.width = maj + '%';
+        const nb = document.getElementById('mode-minor-bar'); if (nb) nb.style.width = min + '%';
+    }
+
     /* ---- Wire hover on all three charts (delegated, survives re-render) ---- */
     function attr(el, name) {
         return el && el.getAttribute ? el.getAttribute(name) : null;
@@ -323,6 +471,58 @@
                 hideTip();
             });
         }
+
+        const mood = document.getElementById('mood-svg');
+        if (mood) {
+            mood.addEventListener('mouseover', (e) => {
+                const a = attr(e.target, 'data-t');
+                if (a == null) return;
+                const t = soundState.tracks[+a];
+                e.target.classList.add('is-hover');
+                showTip(t.name, 'Energy ' + pct(t.energy) + ' · Positivity ' + pct(t.valence), e.clientX, e.clientY);
+            });
+            mood.addEventListener('mousemove', (e) => {
+                if (attr(e.target, 'data-t') != null) moveTip(e.clientX, e.clientY);
+            });
+            mood.addEventListener('mouseout', (e) => {
+                const a = attr(e.target, 'data-t');
+                if (a == null) return;
+                e.target.classList.remove('is-hover');
+                if (attr(e.relatedTarget, 'data-t') == null) hideTip();
+            });
+        }
+
+        const radar = document.getElementById('radar-svg');
+        if (radar) {
+            radar.addEventListener('mouseover', (e) => {
+                const a = attr(e.target, 'data-r');
+                if (a == null) return;
+                const ax = soundState.radar[+a];
+                showTip(ax.label, pct(ax.val) + '%', e.clientX, e.clientY);
+            });
+            radar.addEventListener('mousemove', (e) => {
+                if (attr(e.target, 'data-r') != null) moveTip(e.clientX, e.clientY);
+            });
+            radar.addEventListener('mouseout', (e) => {
+                if (attr(e.target, 'data-r') != null && attr(e.relatedTarget, 'data-r') == null) hideTip();
+            });
+        }
+
+        const tempo = document.getElementById('tempo-svg');
+        if (tempo) {
+            tempo.addEventListener('mouseover', (e) => {
+                const a = attr(e.target, 'data-b');
+                if (a == null) return;
+                const b = soundState.tempoBins[+a];
+                showTip(b.lo + '–' + b.hi + ' BPM', plays(b.c), e.clientX, e.clientY);
+            });
+            tempo.addEventListener('mousemove', (e) => {
+                if (attr(e.target, 'data-b') != null) moveTip(e.clientX, e.clientY);
+            });
+            tempo.addEventListener('mouseout', (e) => {
+                if (attr(e.target, 'data-b') != null && attr(e.relatedTarget, 'data-b') == null) hideTip();
+            });
+        }
     }
 
     /* ---- Side stats ---- */
@@ -387,6 +587,7 @@
         initScrollSpy();
         setupHover();
         fetchRhythm();
+        renderSound();
         window.addEventListener('rewind:data-updated', fetchRhythm);
     }
 

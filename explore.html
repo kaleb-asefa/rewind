@@ -156,10 +156,9 @@
                 <a data-chapter href="#rhythm" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">02</span> When You Listen
                 </a>
-                <span class="chapter-pill chapter-pill--soon flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap cursor-default select-none">
+                <a data-chapter href="#sound" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">03</span> Your Sound
-                    <span class="text-[9px] uppercase tracking-wider">soon</span>
-                </span>
+                </a>
                 <span class="chapter-pill chapter-pill--soon flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap cursor-default select-none">
                     <span class="num font-mono">04</span> Your Taste
                     <span class="text-[9px] uppercase tracking-wider">soon</span>
@@ -440,6 +439,109 @@
                         <div class="bg-surface-container rounded-lg p-3">
                             <div class="font-label-bold text-[10px] uppercase tracking-wider text-on-surface-variant opacity-70">Active days</div>
                             <div id="streak-active" class="font-body-lg text-on-surface">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 03 — Your Sound -->
+        <section id="sound" class="scroll-mt-32 pt-10 space-y-6">
+            <div class="reveal flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                <div>
+                    <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 03</span>
+                    <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Sound</h2>
+                    <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The audio DNA of your library — mood, energy, tempo and texture of the music you press play on.</p>
+                </div>
+                <span class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-label-bold font-label-bold border border-primary/20">
+                    <span class="material-symbols-outlined text-sm">science</span> Sample data
+                </span>
+            </div>
+
+            <!-- Hero: mood map + side stats -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+                <!-- Mood quadrant -->
+                <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter relative overflow-hidden min-h-[440px]">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Mood map</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-1">Every track placed by energy and positivity — the white ring is your center of gravity.</p>
+                    <div class="relative mt-2 flex justify-center">
+                        <svg id="mood-svg" viewBox="0 0 320 320" class="w-full max-w-[440px] h-auto"></svg>
+                    </div>
+                    <div class="absolute -bottom-16 -right-16 w-72 h-72 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+                </div>
+
+                <!-- Side quick-stats -->
+                <div class="flex flex-col gap-gutter">
+                    <div class="reveal glass-card rounded-2xl p-5">
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Average tempo</div>
+                        <div class="flex items-end gap-2 mt-1">
+                            <span id="sound-bpm" class="font-display-lg text-display-lg-mobile text-primary leading-none">—</span>
+                            <span class="font-body-lg text-body-lg text-on-surface-variant mb-1">BPM</span>
+                        </div>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mt-1">Mostly mid-tempo grooves.</div>
+                    </div>
+                    <div class="reveal glass-card rounded-2xl p-5">
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70 mb-3">Major ↔ Minor</div>
+                        <div class="flex h-3 rounded-full overflow-hidden bg-surface-container-high">
+                            <div id="mode-major-bar" class="bg-primary transition-all duration-500" style="width:0%"></div>
+                            <div id="mode-minor-bar" class="bg-primary/25 transition-all duration-500" style="width:0%"></div>
+                        </div>
+                        <div class="flex justify-between mt-2 text-[11px]">
+                            <span class="text-primary font-bold"><span id="mode-major">—</span>% major · bright</span>
+                            <span class="text-on-surface-variant"><span id="mode-minor">—</span>% minor</span>
+                        </div>
+                    </div>
+                    <div class="reveal glass-card rounded-2xl p-5 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined">directions_walk</span>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Danceability</div>
+                            <div id="sound-dance" class="font-headline-md text-headline-md text-on-surface truncate">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bento: radar / tempo / traits -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+                <!-- Audio fingerprint radar -->
+                <div class="reveal glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Audio fingerprint</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-2">Your average sound across six traits.</p>
+                    <svg id="radar-svg" viewBox="0 0 300 300" class="w-full max-w-[320px] h-auto mx-auto"></svg>
+                </div>
+
+                <!-- Tempo spread -->
+                <div class="reveal glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Tempo spread</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-2">How fast your music moves (BPM).</p>
+                    <svg id="tempo-svg" viewBox="0 0 320 150" class="w-full h-auto"></svg>
+                    <div class="flex justify-between mt-2 font-mono text-[10px] text-on-surface-variant opacity-60">
+                        <span>60</span><span>100</span><span>140</span><span>180+</span>
+                    </div>
+                </div>
+
+                <!-- Sound traits -->
+                <div class="reveal glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Sound traits</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">The texture of what you play.</p>
+                    <div class="space-y-4">
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-body-sm"><span class="text-on-surface flex items-center gap-1.5"><span class="material-symbols-outlined text-sm text-primary">acoustic</span>Acoustic</span><span class="text-primary font-bold">30%</span></div>
+                            <div class="h-2 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-primary" style="width:30%"></div></div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-body-sm"><span class="text-on-surface flex items-center gap-1.5"><span class="material-symbols-outlined text-sm text-primary">piano</span>Instrumental</span><span class="text-primary font-bold">6%</span></div>
+                            <div class="h-2 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-primary/70" style="width:6%"></div></div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-body-sm"><span class="text-on-surface flex items-center gap-1.5"><span class="material-symbols-outlined text-sm text-primary">explicit</span>Explicit</span><span class="text-primary font-bold">41%</span></div>
+                            <div class="h-2 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-primary/80" style="width:41%"></div></div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-body-sm"><span class="text-on-surface flex items-center gap-1.5"><span class="material-symbols-outlined text-sm text-primary">mic</span>Live</span><span class="text-primary font-bold">19%</span></div>
+                            <div class="h-2 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-primary/60" style="width:19%"></div></div>
                         </div>
                     </div>
                 </div>

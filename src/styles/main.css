@@ -429,6 +429,13 @@ html { scroll-behavior: smooth; }
 #season-dot, #season-vline { transition: opacity 0.15s ease; pointer-events: none; }
 .weekday-col:hover .weekday-bar { background: rgb(30, 215, 96); }
 
+/* chapter 03 charts */
+.mood-dot, .radar-dot, .tempo-bar { cursor: pointer; }
+.mood-dot { transition: fill 0.12s ease; }
+.mood-dot.is-hover { fill: #ffffff; }
+.tempo-bar { transition: fill-opacity 0.12s ease; }
+.tempo-bar:hover { fill-opacity: 1; }
+
 .rhythm-tooltip {
     position: fixed;
     z-index: 100;
