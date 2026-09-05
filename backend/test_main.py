@@ -642,6 +642,36 @@ def test_taste_returns_profile_from_track_features(tmp_path, monkeypatch):
             assert gem["plays"] >= 5
 
 
+def test_behavior_empty_when_no_history():
+    with TestClient(app) as client:
+        data = client.get("/api/metrics/behavior").json()
+        assert data["status"] == "ok"
+        assert data["shuffle"] is None
+        assert data["loops"] == []
+
+
+def test_behavior_returns_habits_from_history():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        data = client.get("/api/metrics/behavior").json()
+        assert data["status"] == "ok"
+        assert 0 <= data["shuffle"] <= 1
+        assert 0 <= data["skip_rate"] <= 1
+        att = data["attention"]
+        assert 0 <= att["under30"] <= 1
+        assert 0 <= att["partial"] <= 1
+        assert 0 <= att["finished"] <= 1
+        # Buckets partition every play, so they sum to ~1.
+        assert abs((att["under30"] + att["partial"] + att["finished"]) - 1) < 0.05
+        assert data["longest_binge_min"] >= 0
+        for loop in data["loops"]:
+            assert loop["count"] >= 2
+
+
+
 
 
 
