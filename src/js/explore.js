@@ -516,6 +516,20 @@
             ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
+    // Small square track cover with a music-note fallback; the <img> reveals on load.
+    function coverCell(id) {
+        return '<div class="relative shrink-0 w-10 h-10 rounded-md overflow-hidden bg-surface-container-high">' +
+            '<span class="material-symbols-outlined text-on-surface-variant text-lg opacity-40 absolute inset-0 flex items-center justify-center">music_note</span>' +
+            (id ? '<img class="cover-img hidden absolute inset-0 w-full h-full object-cover" data-cover-kind="track" data-cover-id="' + esc(id) + '" alt="">' : '') +
+            '</div>';
+    }
+    function loadCovers(container) {
+        if (!container || !window.loadCover) return;
+        container.querySelectorAll('img.cover-img[data-cover-id]').forEach((img) => {
+            window.loadCover(img, img.getAttribute('data-cover-kind') || 'track', img.getAttribute('data-cover-id'));
+        });
+    }
+
     function renderGenres(genres) {
         tasteState.genres = genres;
         const el = document.getElementById('genre-bars');
@@ -586,12 +600,13 @@
         }
         el.innerHTML = gems
             .map((g, i) => '<div class="gem-row flex items-center gap-3 p-2 rounded-lg cursor-pointer" data-gem="' + i + '">' +
-                '<span class="material-symbols-outlined text-primary text-lg shrink-0">diamond</span>' +
+                coverCell(g.id) +
                 '<div class="min-w-0">' +
                 '<div class="font-body-sm text-body-sm text-on-surface truncate">' + esc(g.name) + '</div>' +
                 '<div class="font-body-sm text-[11px] text-on-surface-variant opacity-70 truncate">' + esc(g.artist) + '</div>' +
                 '</div></div>')
             .join('');
+        loadCovers(el);
     }
 
     function renderTaste(t) {
@@ -694,7 +709,7 @@
         }
         el.innerHTML = loops
             .map((l) => '<div class="gem-row flex items-center gap-3 p-2 rounded-lg">' +
-                '<span class="material-symbols-outlined text-primary text-lg shrink-0">repeat</span>' +
+                coverCell(l.id) +
                 '<div class="min-w-0 flex-1">' +
                 '<div class="font-body-sm text-body-sm text-on-surface truncate">' + esc(l.name) + '</div>' +
                 '<div class="font-body-sm text-[11px] text-on-surface-variant opacity-70 truncate">' + esc(l.artist) + '</div>' +
@@ -702,6 +717,7 @@
                 '<span class="font-mono text-[11px] text-primary shrink-0">×' + l.count + '</span>' +
                 '</div>')
             .join('');
+        loadCovers(el);
     }
 
     function renderBehavior(b) {

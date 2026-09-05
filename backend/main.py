@@ -1310,12 +1310,12 @@ async def get_taste(conn: Connection = Depends(get_db)):
         gems = []
         try:
             gemrows = raw_con.execute(
-                "SELECT any_value(h.track_name), any_value(h.artist_name), COUNT(*) AS plays "
+                "SELECT f.track_id, any_value(h.track_name), any_value(h.artist_name), COUNT(*) AS plays "
                 + _JOIN + " AND f.popularity IS NOT NULL AND f.popularity < 0.4 "
                 "AND h.track_name IS NOT NULL "
                 "GROUP BY f.track_id HAVING COUNT(*) >= 5 ORDER BY plays DESC LIMIT 4"
             ).fetchall()
-            gems = [{"name": r[0], "artist": r[1] or "", "plays": int(r[2])} for r in gemrows]
+            gems = [{"name": r[1], "artist": r[2] or "", "plays": int(r[3]), "id": r[0]} for r in gemrows]
         except Exception:
             gems = []
 
@@ -1402,13 +1402,14 @@ async def get_behavior(conn: Connection = Depends(get_db)):
                 "  SELECT ts, track_uri, track_name, artist_name, ms_played, "
                 "         LAG(track_uri) OVER (ORDER BY ts) AS prev_uri "
                 "  FROM history WHERE track_uri LIKE 'spotify:track:%' AND ts IS NOT NULL"
-                ") SELECT any_value(track_name), any_value(artist_name), COUNT(*) AS loops "
+                ") SELECT split_part(track_uri, ':', 3) AS id, any_value(track_name), "
+                "any_value(artist_name), COUNT(*) AS loops "
                 "FROM o WHERE track_uri = prev_uri AND ms_played >= 30000 "
                 "GROUP BY track_uri HAVING COUNT(*) >= 2 ORDER BY loops DESC LIMIT 4"
             ).fetchall()
             loops = [
-                {"name": r[0], "artist": r[1] or "", "count": int(r[2])}
-                for r in lrows if r[0]
+                {"name": r[1], "artist": r[2] or "", "count": int(r[3]), "id": r[0]}
+                for r in lrows if r[1]
             ]
         except Exception:
             loops = []
