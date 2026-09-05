@@ -311,7 +311,7 @@
     }
 
     /* Mood map: positivity (x) × energy (y), dot size by plays, ring = your average. */
-    function renderMood(tracks, sweet) {
+    function renderMood(tracks, sweet, center) {
         soundState.tracks = tracks;
         const svg = document.getElementById('mood-svg');
         if (!svg) return;
@@ -338,7 +338,9 @@
         let sv = 0, se = 0, sp = 0;
         tracks.forEach((t) => { sv += t.valence * t.plays; se += t.energy * t.plays; sp += t.plays; });
         sp = sp || 1;
-        const cx = px(sv / sp), cy = py(se / sp);
+        const ringV = center && typeof center.v === 'number' ? center.v : sv / sp;
+        const ringE = center && typeof center.e === 'number' ? center.e : se / sp;
+        const cx = px(ringV), cy = py(ringE);
         const you = '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="10" fill="none" stroke="#fff" stroke-width="2.5"/>' +
             '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="3.5" fill="#fff"/>';
         svg.innerHTML = g + dots + you;
@@ -431,17 +433,29 @@
         Moody: 'slow, emotional songs',
         Intense: 'dark, high-energy tracks',
     };
-    function renderSound() {
+    async function fetchSound() {
         if (!document.getElementById('mood-svg')) return;
-        const s = SAMPLE_SOUND;
-        const vibe = computeVibe(s.tracks);
-        renderMood(s.tracks, VIBE_SWEET[vibe.zone]);
-        renderMoodMix(vibe.mix);
+        let s = SAMPLE_SOUND;
+        if (window.fetchWithTimeout) {
+            try {
+                const res = await window.fetchWithTimeout('/api/metrics/audio');
+                if (res && res.ok && res.data && res.data.avg && res.data.tracks && res.data.tracks.length) {
+                    s = res.data;
+                }
+            } catch (_e) {
+                /* keep sample fallback */
+            }
+        }
+        renderSound(s);
+    }
+    function renderSound(s) {
+        // Vibe word/zone come from the average so they agree with the sliders.
+        const zone = moodZone(s.avg.valence, s.avg.energy);
+        renderMood(s.tracks, VIBE_SWEET[zone], { v: s.avg.valence, e: s.avg.energy });
         renderVibe(s.avg);
         renderPace(s.tempo_avg);
-        renderPlainWords(s.avg, s.mode);
-        setText('vibe-word', VIBE_WORD[vibe.zone]);
-        setText('vibe-phrase', 'Most of your music is ' + VIBE_PHRASE[vibe.zone] + '.');
+        setText('vibe-word', VIBE_WORD[zone]);
+        setText('vibe-phrase', 'Most of your music is ' + VIBE_PHRASE[zone] + '.');
         setText('pace-word', paceWord(s.tempo_avg));
         const maj = pct(s.mode.major), min = 100 - maj;
         setText('mode-major', maj);
@@ -618,8 +632,9 @@
         initScrollSpy();
         setupHover();
         fetchRhythm();
-        renderSound();
+        fetchSound();
         window.addEventListener('rewind:data-updated', fetchRhythm);
+        window.addEventListener('rewind:data-updated', fetchSound);
     }
 
     if (document.readyState === 'loading') {

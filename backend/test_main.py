@@ -515,6 +515,68 @@ def test_rhythm_returns_patterns():
         assert streak["longest"] >= streak["current"]
 
 
+def test_audio_empty_when_unenriched():
+    with TestClient(app) as client:
+        data = client.get("/api/metrics/audio").json()
+        assert data["status"] == "ok"
+        assert data["avg"] is None
+        assert data["tracks"] == []
+        assert data["coverage"] == 0.0
+
+
+def test_audio_returns_profile_from_track_features(tmp_path, monkeypatch):
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        engine = app.state.engine
+        with engine.connect() as conn:
+            raw = conn.connection.driver_connection
+            ids = [
+                r[0]
+                for r in raw.execute(
+                    "SELECT DISTINCT replace(track_uri, 'spotify:track:', '') FROM history "
+                    "WHERE track_uri LIKE 'spotify:track:%' LIMIT 5"
+                ).fetchall()
+            ]
+        assert len(ids) >= 3
+
+        fixture = str(tmp_path / "audio_fixture.parquet")
+        fx = duckdb.connect()
+        fx.execute(
+            "CREATE TABLE c (track_id VARCHAR, track_name VARCHAR, energy DOUBLE, "
+            "valence DOUBLE, danceability DOUBLE, acousticness DOUBLE, "
+            "instrumentalness DOUBLE, tempo DOUBLE, mode INTEGER)"
+        )
+        fx.executemany(
+            "INSERT INTO c VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [(i, f"name_{i}", 0.6, 0.4, 0.7, 0.2, 0.05, 120.0, 1) for i in ids],
+        )
+        fx.execute(f"COPY c TO '{fixture}' (FORMAT PARQUET)")
+        fx.close()
+        monkeypatch.setattr(catalog, "CATALOG_PATH", fixture)
+
+        with engine.connect() as conn:
+            main._enrich_session(conn)
+
+        data = client.get("/api/metrics/audio").json()
+        assert data["status"] == "ok"
+        assert data["avg"] is not None
+        assert 0 <= data["avg"]["energy"] <= 1
+        assert data["avg"]["vocal"] == round(1 - 0.05, 3)
+        assert data["tempo_avg"] == 120
+        assert data["mode"]["major"] == 1.0
+        assert data["matched"] > 0
+        assert 0 < data["coverage"] <= 1
+        assert len(data["tracks"]) >= 1
+        for t in data["tracks"]:
+            assert 0 <= t["valence"] <= 1
+            assert 0 <= t["energy"] <= 1
+            assert t["plays"] >= 1
+
+
+
 
 
 

@@ -1053,3 +1053,89 @@ async def get_rhythm(
         "streak": _listening_streaks(days),
         "total_streams": total_streams,
     }
+
+
+@app.get("/api/metrics/audio")
+async def get_audio(
+    request: Request,
+    conn: Connection = Depends(get_db),
+):
+    """Audio-feature profile for the "Your Sound" chapter, from the enriched
+    track_features slice: play-weighted average mood/energy/etc., per-track
+    valence/energy for the mood map, and catalog coverage. Empty when the
+    track_features slice is missing (unenriched session).
+    """
+
+    _JOIN = (
+        "FROM history h JOIN track_features f "
+        "ON split_part(h.track_uri, ':', 3) = f.track_id "
+        "WHERE h.track_uri LIKE 'spotify:track:%'"
+    )
+
+    def query():
+        raw_con = conn.connection.driver_connection
+        try:
+            agg = raw_con.execute(
+                "SELECT AVG(f.energy), AVG(f.valence), AVG(f.danceability), "
+                "AVG(f.acousticness), AVG(f.instrumentalness), AVG(f.tempo), "
+                "AVG(CASE WHEN f.mode = 1 THEN 1.0 ELSE 0.0 END), COUNT(*) " + _JOIN
+            ).fetchone()
+        except Exception:
+            return None
+        if not agg or not agg[7]:
+            return None
+        energy, valence, dance, acoustic, instr, tempo, major, matched = agg
+
+        try:
+            trows = raw_con.execute(
+                "SELECT any_value(h.track_name), f.valence, f.energy, COUNT(*) AS plays "
+                + _JOIN + " AND h.track_name IS NOT NULL "
+                "AND f.valence IS NOT NULL AND f.energy IS NOT NULL "
+                "GROUP BY f.track_id, f.valence, f.energy ORDER BY plays DESC LIMIT 24"
+            ).fetchall()
+        except Exception:
+            trows = []
+
+        try:
+            total = raw_con.execute(
+                "SELECT COUNT(*) FROM history WHERE track_uri LIKE 'spotify:track:%'"
+            ).fetchone()[0]
+        except Exception:
+            total = 0
+
+        return {
+            "avg": {
+                "energy": round(energy or 0, 3),
+                "valence": round(valence or 0, 3),
+                "danceability": round(dance or 0, 3),
+                "acousticness": round(acoustic or 0, 3),
+                "vocal": round(1 - (instr or 0), 3),
+            },
+            "tempo_avg": round(tempo or 0),
+            "mode": {"major": round(major or 0, 3)},
+            "tracks": [
+                {
+                    "name": r[0],
+                    "valence": round(r[1], 3),
+                    "energy": round(r[2], 3),
+                    "plays": int(r[3]),
+                }
+                for r in trows
+            ],
+            "matched": int(matched),
+            "total": int(total),
+        }
+
+    res = await run_in_threadpool(query)
+    if not res:
+        return {
+            "status": "ok",
+            "avg": None,
+            "tracks": [],
+            "coverage": 0.0,
+            "matched": 0,
+            "total": 0,
+        }
+    total = res["total"]
+    res["coverage"] = round(res["matched"] / total, 4) if total else 0.0
+    return {"status": "ok", **res}
