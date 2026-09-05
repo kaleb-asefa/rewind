@@ -64,8 +64,50 @@
         return hr + ' ' + ampm;
     }
 
+    /* ---- Chart data + labels shared with hover handlers ---- */
+    const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const FULL_WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const FULL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const state = { hourly: [], weekday: [], monthly: [], seasonPts: null, clockPeak: null };
+
+    function plays(n) {
+        return n.toLocaleString() + (n === 1 ? ' play' : ' plays');
+    }
+
+    /* ---- Shared cursor tooltip (clamped to the viewport) ---- */
+    let tipEl = null;
+    function showTip(title, value, x, y) {
+        if (!tipEl) {
+            tipEl = document.createElement('div');
+            tipEl.className = 'rhythm-tooltip';
+            document.body.appendChild(tipEl);
+        }
+        tipEl.innerHTML = '<span class="rt-title"></span><span class="rt-val"></span>';
+        tipEl.firstChild.textContent = title;
+        tipEl.lastChild.textContent = value;
+        tipEl.classList.add('visible');
+        moveTip(x, y);
+    }
+    function moveTip(x, y) {
+        if (!tipEl) return;
+        const m = 8;
+        const w = tipEl.offsetWidth;
+        const h = tipEl.offsetHeight;
+        let left = x - w / 2;
+        let top = y - h - 14;
+        left = Math.max(m, Math.min(left, window.innerWidth - w - m));
+        if (top < m) top = y + 18;
+        top = Math.max(m, Math.min(top, window.innerHeight - h - m));
+        tipEl.style.left = left + 'px';
+        tipEl.style.top = top + 'px';
+    }
+    function hideTip() {
+        if (tipEl) tipEl.classList.remove('visible');
+    }
+
     /* ---- Radial listening clock ---- */
     function renderClock(hours) {
+        state.hourly = hours;
         const svg = document.getElementById('clock-svg');
         if (!svg) return;
         const cx = 150, cy = 150, inner = 62, maxLen = 62, minLen = 8;
@@ -75,30 +117,58 @@
         hours.forEach((v, i) => {
             if (v > hours[peak]) peak = i;
         });
-        let markup = '';
+        state.clockPeak = hasData ? peak : null;
+        let bars = '';
+        let hits = '';
         for (let i = 0; i < 24; i++) {
             const v = hours[i] / max;
             const ang = ((i * 15 - 90) * Math.PI) / 180;
+            const cos = Math.cos(ang), sin = Math.sin(ang);
             const len = minLen + v * maxLen;
-            const x1 = cx + Math.cos(ang) * inner;
-            const y1 = cy + Math.sin(ang) * inner;
-            const x2 = cx + Math.cos(ang) * (inner + len);
-            const y2 = cy + Math.sin(ang) * (inner + len);
+            const x1 = cx + cos * inner;
+            const y1 = cy + sin * inner;
+            const x2 = cx + cos * (inner + len);
+            const y2 = cy + sin * (inner + len);
             const isPeak = hasData && i === peak;
             const stroke = isPeak ? '#ffffff' : 'rgb(30,215,96)';
             const op = isPeak ? 1 : (0.25 + v * 0.7).toFixed(2);
             const w = isPeak ? 8 : 6;
-            markup += '<line class="clock-bar" x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
+            bars += '<line class="clock-bar" data-h="' + i + '" x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
                 '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) +
                 '" stroke="' + stroke + '" stroke-opacity="' + op + '" stroke-width="' + w + '" />';
+            const hitLen = Math.max(len, 30);
+            const hx2 = cx + cos * (inner + hitLen);
+            const hy2 = cy + sin * (inner + hitLen);
+            hits += '<line class="clock-hit" data-h="' + i + '" x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
+                '" x2="' + hx2.toFixed(1) + '" y2="' + hy2.toFixed(1) +
+                '" stroke="transparent" stroke-width="15" />';
         }
-        svg.innerHTML = markup;
+        svg.innerHTML = bars + hits; // hit lines on top capture hover
         const label = document.getElementById('clock-peak');
         if (label) label.textContent = hasData ? fmtHour(peak) : '—';
+        resetCenter();
+    }
+
+    function highlightSpoke(i, on) {
+        const bar = document.querySelector('#clock-svg .clock-bar[data-h="' + i + '"]');
+        if (bar) bar.classList.toggle('is-hover', on);
+    }
+    function setCenter(i) {
+        const label = document.getElementById('clock-peak');
+        const cap = document.getElementById('clock-caption');
+        if (label) label.textContent = fmtHour(i);
+        if (cap) cap.textContent = plays(state.hourly[i] || 0);
+    }
+    function resetCenter() {
+        const label = document.getElementById('clock-peak');
+        const cap = document.getElementById('clock-caption');
+        if (cap) cap.textContent = 'Peak hour';
+        if (label) label.textContent = state.clockPeak != null ? fmtHour(state.clockPeak) : '—';
     }
 
     /* ---- Seasonal curve ---- */
     function renderSeason(months) {
+        state.monthly = months;
         const svg = document.getElementById('season-svg');
         if (!svg) return;
         const W = 320, H = 110, pad = 8;
@@ -109,6 +179,7 @@
             const y = H - pad - (v / max) * (H - pad * 2);
             return [x, y];
         });
+        state.seasonPts = pts;
         const line = pts
             .map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1))
             .join(' ');
@@ -116,6 +187,12 @@
         const first = pts[0];
         const area = line + ' L' + last[0].toFixed(1) + ' ' + (H - pad) +
             ' L' + first[0].toFixed(1) + ' ' + (H - pad) + ' Z';
+        let hits = '';
+        for (let i = 0; i < months.length; i++) {
+            const x = pad + i * step - step / 2;
+            hits += '<rect class="season-hit" data-m="' + i + '" x="' + x.toFixed(1) +
+                '" y="0" width="' + step.toFixed(1) + '" height="' + H + '" fill="transparent" />';
+        }
         svg.innerHTML =
             '<defs><linearGradient id="season-fill" x1="0" y1="0" x2="0" y2="1">' +
             '<stop offset="0%" stop-color="rgb(30,215,96)" stop-opacity="0.35"/>' +
@@ -123,12 +200,40 @@
             '</linearGradient></defs>' +
             '<path d="' + area + '" fill="url(#season-fill)"/>' +
             '<path d="' + line + '" fill="none" stroke="rgb(30,215,96)" stroke-width="2.5" ' +
-            'stroke-linecap="round" stroke-linejoin="round"/>';
+            'stroke-linecap="round" stroke-linejoin="round"/>' +
+            '<line id="season-vline" x1="0" y1="0" x2="0" y2="' + H + '" stroke="rgb(30,215,96)" ' +
+            'stroke-opacity="0.3" stroke-width="1" style="opacity:0" />' +
+            '<circle id="season-dot" r="4.5" fill="#fff" stroke="rgb(30,215,96)" stroke-width="2.5" style="opacity:0" />' +
+            hits;
+    }
+
+    function showSeasonPoint(i) {
+        const pts = state.seasonPts;
+        if (!pts || !pts[i]) return;
+        const dot = document.getElementById('season-dot');
+        const vline = document.getElementById('season-vline');
+        const x = pts[i][0].toFixed(1);
+        if (dot) {
+            dot.setAttribute('cx', x);
+            dot.setAttribute('cy', pts[i][1].toFixed(1));
+            dot.style.opacity = '1';
+        }
+        if (vline) {
+            vline.setAttribute('x1', x);
+            vline.setAttribute('x2', x);
+            vline.style.opacity = '1';
+        }
+    }
+    function hideSeasonPoint() {
+        const dot = document.getElementById('season-dot');
+        const vline = document.getElementById('season-vline');
+        if (dot) dot.style.opacity = '0';
+        if (vline) vline.style.opacity = '0';
     }
 
     /* ---- Weekday bars ---- */
-    const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     function renderWeekday(weekday) {
+        state.weekday = weekday;
         const el = document.getElementById('weekday-bars');
         if (!el) return;
         const max = Math.max.apply(null, weekday) || 1;
@@ -140,14 +245,84 @@
             .map((v, i) => {
                 const h = Math.max(4, Math.round((v / max) * 100));
                 const top = i === busiest && v > 0;
-                const barCls = top ? 'bg-primary' : 'bg-primary/30 hover:bg-primary';
+                const barCls = top ? 'bg-primary' : 'bg-primary/30';
                 const lblCls = top ? 'text-primary font-bold' : 'text-on-surface-variant';
-                return '<div class="flex-1 flex flex-col items-center gap-2 h-full justify-end">' +
-                    '<div class="w-full rounded-t-md ' + barCls + ' transition-colors" style="height:' + h + '%"></div>' +
+                return '<div class="weekday-col flex-1 flex flex-col items-center gap-2 h-full justify-end cursor-pointer" data-d="' + i + '">' +
+                    '<div class="weekday-bar w-full rounded-t-md ' + barCls + ' transition-colors" style="height:' + h + '%"></div>' +
                     '<span class="font-mono text-[10px] ' + lblCls + '">' + WEEKDAYS[i] + '</span>' +
                     '</div>';
             })
             .join('');
+    }
+
+    /* ---- Wire hover on all three charts (delegated, survives re-render) ---- */
+    function attr(el, name) {
+        return el && el.getAttribute ? el.getAttribute(name) : null;
+    }
+    function setupHover() {
+        const clock = document.getElementById('clock-svg');
+        if (clock) {
+            clock.addEventListener('mouseover', (e) => {
+                const a = attr(e.target, 'data-h');
+                if (a == null) return;
+                const i = +a;
+                highlightSpoke(i, true);
+                setCenter(i);
+                showTip(fmtHour(i), plays(state.hourly[i] || 0), e.clientX, e.clientY);
+            });
+            clock.addEventListener('mousemove', (e) => {
+                if (attr(e.target, 'data-h') != null) moveTip(e.clientX, e.clientY);
+            });
+            clock.addEventListener('mouseout', (e) => {
+                const a = attr(e.target, 'data-h');
+                if (a == null) return;
+                highlightSpoke(+a, false);
+                if (attr(e.relatedTarget, 'data-h') == null) {
+                    hideTip();
+                    resetCenter();
+                }
+            });
+        }
+
+        const season = document.getElementById('season-svg');
+        if (season) {
+            season.addEventListener('mouseover', (e) => {
+                const a = attr(e.target, 'data-m');
+                if (a == null) return;
+                const i = +a;
+                showSeasonPoint(i);
+                showTip(FULL_MONTHS[i], plays(state.monthly[i] || 0), e.clientX, e.clientY);
+            });
+            season.addEventListener('mousemove', (e) => {
+                if (attr(e.target, 'data-m') != null) moveTip(e.clientX, e.clientY);
+            });
+            season.addEventListener('mouseout', (e) => {
+                if (attr(e.target, 'data-m') == null) return;
+                if (attr(e.relatedTarget, 'data-m') == null) {
+                    hideSeasonPoint();
+                    hideTip();
+                }
+            });
+        }
+
+        const wk = document.getElementById('weekday-bars');
+        if (wk) {
+            const colOf = (t) => (t && t.closest ? t.closest('[data-d]') : null);
+            wk.addEventListener('mouseover', (e) => {
+                const col = colOf(e.target);
+                if (!col) return;
+                const i = +col.getAttribute('data-d');
+                showTip(FULL_WEEKDAYS[i], plays(state.weekday[i] || 0), e.clientX, e.clientY);
+            });
+            wk.addEventListener('mousemove', (e) => {
+                if (colOf(e.target)) moveTip(e.clientX, e.clientY);
+            });
+            wk.addEventListener('mouseout', (e) => {
+                const col = colOf(e.target);
+                if (col && col.contains(e.relatedTarget)) return;
+                hideTip();
+            });
+        }
     }
 
     /* ---- Side stats ---- */
@@ -210,6 +385,7 @@
     function init() {
         initReveal();
         initScrollSpy();
+        setupHover();
         fetchRhythm();
         window.addEventListener('rewind:data-updated', fetchRhythm);
     }
