@@ -824,6 +824,82 @@ def test_over_time_returns_years_and_catalog(tmp_path, monkeypatch):
             assert point["period"] and 1900 < point["avg_year"] < 2100
 
 
+def test_evolution_empty_when_no_history():
+    with TestClient(app) as client:
+        data = client.get("/api/metrics/evolution").json()
+        assert data == {
+            "status": "ok",
+            "genre_evolution": {"periods": [], "genres": []},
+            "mood_trend": [],
+            "day_night": {},
+            "mainstream_trend": [],
+        }
+
+
+def test_evolution_returns_trends_from_track_features(tmp_path, monkeypatch):
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")},
+            )
+
+        engine = app.state.engine
+        with engine.connect() as conn:
+            raw = conn.connection.driver_connection
+            ids = [
+                r[0]
+                for r in raw.execute(
+                    "SELECT DISTINCT replace(track_uri, 'spotify:track:', '') FROM history "
+                    "WHERE track_uri LIKE 'spotify:track:%' LIMIT 8"
+                ).fetchall()
+            ]
+        assert len(ids) >= 4
+
+        fixture = str(tmp_path / "evolution_fixture.parquet")
+        fx = duckdb.connect()
+        fx.execute(
+            "CREATE TABLE c (track_id VARCHAR, track_name VARCHAR, artist_name VARCHAR, "
+            "artist_genres VARCHAR, valence DOUBLE, energy DOUBLE, popularity DOUBLE)"
+        )
+        rows = []
+        for idx, tid in enumerate(ids):
+            genre = "conscious hip hop, rap" if idx % 2 == 0 else "r&b, pop"
+            rows.append((tid, f"name_{idx}", f"artist_{idx}", genre, 0.5, 0.6, 0.7))
+        fx.executemany("INSERT INTO c VALUES (?, ?, ?, ?, ?, ?, ?)", rows)
+        fx.execute(f"COPY c TO '{fixture}' (FORMAT PARQUET)")
+        fx.close()
+        monkeypatch.setattr(catalog, "CATALOG_PATH", fixture)
+
+        with engine.connect() as conn:
+            main._enrich_session(conn)
+
+        data = client.get("/api/metrics/evolution").json()
+        assert data["status"] == "ok"
+        evo = data["genre_evolution"]
+        assert evo["periods"] and evo["genres"]
+        n = len(evo["periods"])
+        names = [g["name"] for g in evo["genres"]]
+        assert "Hip-Hop" in names and "R&B" in names
+        for g in evo["genres"]:
+            assert len(g["shares"]) == n
+            assert all(0 <= s <= 1 for s in g["shares"])
+        # Each period is a 100% stack, so its shares sum to ~1.
+        for j in range(n):
+            assert abs(sum(g["shares"][j] for g in evo["genres"]) - 1) < 0.02
+
+        for point in data["mood_trend"]:
+            assert point["period"] and 0 <= point["valence"] <= 1
+        for point in data["mainstream_trend"]:
+            assert point["period"] and 0 <= point["popularity"] <= 1
+        for key in ("morning", "night"):
+            if key in data["day_night"]:
+                assert 0 <= data["day_night"][key]["energy"] <= 1
+
+
 
 
 
