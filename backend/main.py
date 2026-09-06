@@ -1437,3 +1437,125 @@ async def get_behavior(conn: Connection = Depends(get_db)):
             "loops": [],
         }
     return {"status": "ok", **res}
+
+
+@app.get("/api/metrics/discovery")
+async def get_discovery(conn: Connection = Depends(get_db)):
+    """Discovery and loyalty patterns from history, with no catalog dependency.
+
+    Artists count as new for all plays in the month they first appear. A
+    rediscovery is a track played again after a 60-day gap. Momentum compares
+    the latest 90 days against the preceding 90-day period.
+    """
+
+    def query():
+        raw_con = conn.connection.driver_connection
+        try:
+            summary = raw_con.execute(
+                """
+                WITH plays AS (
+                    SELECT artist_name, ts, date_trunc('month', ts) AS month
+                    FROM history
+                    WHERE artist_name IS NOT NULL AND ts IS NOT NULL
+                ), first_month AS (
+                    SELECT artist_name, MIN(month) AS first_month
+                    FROM plays GROUP BY artist_name
+                ), artist_counts AS (
+                    SELECT artist_name, COUNT(*) AS plays
+                    FROM plays GROUP BY artist_name
+                ), monthly_new AS (
+                    SELECT month, COUNT(DISTINCT artist_name) AS artists
+                    FROM plays JOIN first_month USING (artist_name)
+                    WHERE month = first_month GROUP BY month
+                )
+                SELECT
+                    COALESCE(AVG((month = first_month)::INTEGER), 0),
+                    COALESCE((SELECT AVG(artists) FROM monthly_new), 0),
+                    COALESCE(AVG((plays = 1)::INTEGER), 0),
+                    COUNT(*)
+                FROM plays
+                JOIN first_month USING (artist_name)
+                JOIN artist_counts USING (artist_name)
+                """
+            ).fetchone()
+        except Exception:
+            return None
+        if not summary or not summary[3]:
+            return None
+
+        rediscoveries = []
+        try:
+            rows = raw_con.execute(
+                """
+                WITH ordered AS (
+                    SELECT track_uri, track_name, artist_name, ts,
+                           LAG(ts) OVER (PARTITION BY track_uri ORDER BY ts) AS previous_ts
+                    FROM history
+                    WHERE track_uri LIKE 'spotify:track:%'
+                      AND track_name IS NOT NULL AND artist_name IS NOT NULL AND ts IS NOT NULL
+                ), returning_tracks AS (
+                    SELECT DISTINCT track_uri
+                    FROM ordered
+                    WHERE date_diff('day', previous_ts, ts) >= 60
+                )
+                SELECT ANY_VALUE(h.track_name), ANY_VALUE(h.artist_name), COUNT(*) AS plays
+                FROM history h JOIN returning_tracks r USING (track_uri)
+                GROUP BY h.track_uri
+                ORDER BY plays DESC, 1
+                LIMIT 4
+                """
+            ).fetchall()
+            rediscoveries = [
+                {"name": row[0], "artist": row[1], "plays": int(row[2])}
+                for row in rows
+            ]
+        except Exception:
+            pass
+
+        rising = []
+        try:
+            rows = raw_con.execute(
+                """
+                WITH bounds AS (
+                    SELECT MAX(ts) AS latest FROM history WHERE ts IS NOT NULL
+                ), artist_plays AS (
+                    SELECT artist_name,
+                           COUNT(*) FILTER (WHERE ts > latest - INTERVAL 90 DAY) AS recent,
+                           COUNT(*) FILTER (
+                               WHERE ts > latest - INTERVAL 180 DAY
+                                 AND ts <= latest - INTERVAL 90 DAY
+                           ) AS previous
+                    FROM history CROSS JOIN bounds
+                    WHERE artist_name IS NOT NULL AND ts IS NOT NULL
+                    GROUP BY artist_name
+                )
+                SELECT artist_name, ROUND((recent - previous) * 100.0 / previous)::INTEGER
+                FROM artist_plays
+                WHERE previous >= 2 AND recent > previous
+                ORDER BY 2 DESC, recent DESC, artist_name
+                LIMIT 4
+                """
+            ).fetchall()
+            rising = [{"name": row[0], "share": int(row[1])} for row in rows]
+        except Exception:
+            pass
+
+        return {
+            "new_artist_share": round(float(summary[0] or 0), 3),
+            "new_artists_monthly": round(float(summary[1] or 0), 1),
+            "one_off_share": round(float(summary[2] or 0), 3),
+            "rediscoveries": rediscoveries,
+            "rising": rising,
+        }
+
+    res = await run_in_threadpool(query)
+    if not res:
+        return {
+            "status": "ok",
+            "new_artist_share": 0.0,
+            "new_artists_monthly": 0.0,
+            "one_off_share": 0.0,
+            "rediscoveries": [],
+            "rising": [],
+        }
+    return {"status": "ok", **res}

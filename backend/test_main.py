@@ -671,6 +671,43 @@ def test_behavior_returns_habits_from_history():
             assert loop["count"] >= 2
 
 
+def test_discovery_empty_when_no_history():
+    with TestClient(app) as client:
+        data = client.get("/api/metrics/discovery").json()
+        assert data == {
+            "status": "ok",
+            "new_artist_share": 0.0,
+            "new_artists_monthly": 0.0,
+            "one_off_share": 0.0,
+            "rediscoveries": [],
+            "rising": [],
+        }
+
+
+def test_discovery_returns_history_patterns():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")},
+            )
+
+        data = client.get("/api/metrics/discovery").json()
+        assert data["status"] == "ok"
+        assert 0 <= data["new_artist_share"] <= 1
+        assert data["new_artists_monthly"] >= 0
+        assert 0 <= data["one_off_share"] <= 1
+        for item in data["rediscoveries"]:
+            assert item["name"] and item["artist"]
+            assert item["plays"] >= 2
+        for item in data["rising"]:
+            assert item["name"]
+            assert item["share"] > 0
+
+
 
 
 
