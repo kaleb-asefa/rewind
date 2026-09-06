@@ -76,9 +76,7 @@ These are common suggestions that are deliberately not being built yet. Do not i
   - `js/api.js` — centralized API client with timeout support and error handling
   - `js/share.js` — builds the shareable "Your Rewind" snapshot card and exports it as a PNG
   - `js/total_time.js` — total listening time metric component & skeleton state handler
-  - `js/top_artist.js` — top artist metric card renderer
-  - `js/top_album.js` — top album metric card renderer
-  - `js/top_track.js` — top track metric card renderer
+  - `js/top_card.js` — shared "Top X" card factory (`initTopCard`) rendering top artist/album/track
   - `js/heatmap.js` — GitHub-style listening activity heatmap component
   - `js/upload.js` — multi-file upload drag-and-drop handler & status feedback
   - `js/theme.js` — dark mode theme toggler & local storage persistence
