@@ -1442,4 +1442,144 @@ async def get_deep_cuts(conn: Connection = Depends(get_db)):
             "no_skip": {},
         }
     return {"status": "ok", **res}
+
+
+@router.get("/api/metrics/wrapped")
+async def get_wrapped(conn: Connection = Depends(get_db)):
+    """Finale personality synthesis + song-length extremes. Personality traits
+    come from history (loyalty, chronotype, skip, shuffle) plus one catalog trait
+    (mainstream); longest/shortest song need the track_features duration.
+    """
+
+    def query():
+        raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con)  # int minutes; safe to inline
+        music = "WHERE track_uri LIKE 'spotify:track:%' AND ts IS NOT NULL"
+
+        # Loyalty concentration (top 10 artists' share of plays).
+        try:
+            row = raw_con.execute(
+                """
+                WITH artist_plays AS (
+                    SELECT artist_name, COUNT(*) AS plays FROM history
+                    WHERE artist_name IS NOT NULL AND track_uri LIKE 'spotify:track:%'
+                    GROUP BY artist_name
+                ), ranked AS (
+                    SELECT plays, ROW_NUMBER() OVER (ORDER BY plays DESC) AS rn FROM artist_plays
+                )
+                SELECT COALESCE(SUM(plays) FILTER (WHERE rn <= 10), 0), COALESCE(SUM(plays), 0)
+                FROM ranked
+                """
+            ).fetchone()
+        except Exception:
+            return None
+        if not row or not row[1]:
+            return None
+        top10_share = row[0] / row[1]
+
+        # Chronotype from the hourly distribution.
+        hourly = [0] * 24
+        try:
+            for h, c in raw_con.execute(
+                f"SELECT EXTRACT(hour FROM ts + to_minutes({off}))::INTEGER AS h, COUNT(*) "
+                f"FROM history {music} GROUP BY h"
+            ).fetchall():
+                if h is not None and 0 <= int(h) <= 23:
+                    hourly[int(h)] = int(c)
+        except Exception:
+            pass
+        chrono = _chronotype(hourly)
+
+        # Skip + shuffle behaviour.
+        try:
+            beh = raw_con.execute(
+                "SELECT AVG(CASE WHEN reason_end = 'fwdbtn' THEN 1.0 ELSE 0.0 END), "
+                "AVG(CASE WHEN shuffle THEN 1.0 ELSE 0.0 END) "
+                "FROM history WHERE track_uri LIKE 'spotify:track:%'"
+            ).fetchone()
+            skip_rate = float(beh[0]) if beh and beh[0] is not None else 0.0
+            shuffle = float(beh[1]) if beh and beh[1] is not None else 0.0
+        except Exception:
+            skip_rate, shuffle = 0.0, 0.0
+
+        # Mainstream (catalog popularity).
+        avg_pop = None
+        try:
+            p = raw_con.execute(
+                "SELECT AVG(f.popularity) FROM history h JOIN track_features f "
+                "ON split_part(h.track_uri, ':', 3) = f.track_id "
+                "WHERE h.track_uri LIKE 'spotify:track:%' AND f.popularity IS NOT NULL"
+            ).fetchone()[0]
+            avg_pop = float(p) if p is not None else None
+        except Exception:
+            avg_pop = None
+
+        def skip_label(s):
+            return "Restless" if s >= 0.4 else "Selective" if s >= 0.2 else "Locked in"
+
+        def shuffle_label(s):
+            return "Shuffler" if s >= 0.6 else "A bit of both" if s >= 0.35 else "Curator"
+
+        personality = [
+            {
+                "label": "Explorer" if (1 - top10_share) >= 0.5 else "Loyalist",
+                "left": "Loyalist", "right": "Explorer",
+                "position": round(1 - top10_share, 3), "icon": "explore",
+            },
+            {
+                "label": chrono["label"] or "Balanced",
+                "left": "Early bird", "right": "Night owl",
+                "position": round(chrono["position"], 3), "icon": "bedtime",
+            },
+            {
+                "label": skip_label(skip_rate),
+                "left": "Restless", "right": "Focused",
+                "position": round(1 - skip_rate, 3), "icon": "center_focus_strong",
+            },
+            {
+                "label": shuffle_label(shuffle),
+                "left": "Curator", "right": "Shuffler",
+                "position": round(shuffle, 3), "icon": "shuffle",
+            },
+        ]
+        if avg_pop is not None:
+            personality.insert(1, {
+                "label": "Mainstream" if avg_pop >= 0.5 else "Underground",
+                "left": "Underground", "right": "Mainstream",
+                "position": round(avg_pop, 3), "icon": "trending_up",
+            })
+
+        # Longest / shortest song (>= 30s to skip fragments), from catalog duration.
+        def extreme(order):
+            try:
+                r = raw_con.execute(
+                    f"SELECT split_part(h.track_uri, ':', 3) AS id, any_value(h.track_name), "
+                    f"any_value(h.artist_name), CAST(any_value(f.duration) AS INTEGER) AS secs "
+                    f"FROM history h JOIN track_features f "
+                    f"ON split_part(h.track_uri, ':', 3) = f.track_id "
+                    f"WHERE h.track_uri LIKE 'spotify:track:%' AND h.track_name IS NOT NULL "
+                    f"AND f.duration IS NOT NULL AND f.duration >= 30 "
+                    f"GROUP BY id ORDER BY secs {order} LIMIT 1"
+                ).fetchone()
+            except Exception:
+                return {}
+            if not r:
+                return {}
+            return {"name": r[1], "artist": r[2] or "", "id": r[0], "seconds": int(r[3])}
+
+        return {
+            "personality": personality,
+            "longest_track": extreme("DESC"),
+            "shortest_track": extreme("ASC"),
+        }
+
+    res = await run_in_threadpool(query)
+    if not res:
+        return {
+            "status": "ok",
+            "personality": [],
+            "longest_track": {},
+            "shortest_track": {},
+        }
+    return {"status": "ok", **res}
     return {"status": "ok", **res}

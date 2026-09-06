@@ -1010,6 +1010,79 @@ def test_deep_cuts_returns_history_patterns():
         assert 0 <= no_skip["skip_rate"] <= 1
 
 
+def test_wrapped_empty_when_no_history():
+    with TestClient(app) as client:
+        data = client.get("/api/metrics/wrapped").json()
+        assert data == {
+            "status": "ok",
+            "personality": [],
+            "longest_track": {},
+            "shortest_track": {},
+        }
+
+
+def test_wrapped_returns_personality_and_extremes(tmp_path, monkeypatch):
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")},
+            )
+
+        # Personality is history-driven (>= 4 traits before enrichment).
+        data = client.get("/api/metrics/wrapped").json()
+        assert data["status"] == "ok"
+        assert len(data["personality"]) >= 4
+        for trait in data["personality"]:
+            assert trait["label"] and trait["left"] and trait["right"] and trait["icon"]
+            assert 0 <= trait["position"] <= 1
+
+        # Enrich with popularity + duration so the mainstream trait and extremes fill.
+        engine = app.state.engine
+        with engine.connect() as conn:
+            raw = conn.connection.driver_connection
+            ids = [
+                r[0]
+                for r in raw.execute(
+                    "SELECT replace(track_uri, 'spotify:track:', '') AS id, COUNT(*) AS c "
+                    "FROM history WHERE track_uri LIKE 'spotify:track:%' "
+                    "GROUP BY id ORDER BY c DESC LIMIT 8"
+                ).fetchall()
+            ]
+        assert len(ids) >= 4
+
+        fixture = str(tmp_path / "wrapped_fixture.parquet")
+        fx = duckdb.connect()
+        fx.execute(
+            "CREATE TABLE c (track_id VARCHAR, track_name VARCHAR, artist_name VARCHAR, "
+            "popularity DOUBLE, duration DOUBLE)"
+        )
+        rows = [
+            (tid, f"name_{idx}", f"artist_{idx}", 0.7, 200 + idx * 20)
+            for idx, tid in enumerate(ids)
+        ]
+        fx.executemany("INSERT INTO c VALUES (?, ?, ?, ?, ?)", rows)
+        fx.execute(f"COPY c TO '{fixture}' (FORMAT PARQUET)")
+        fx.close()
+        monkeypatch.setattr(catalog, "CATALOG_PATH", fixture)
+
+        with engine.connect() as conn:
+            main._enrich_session(conn)
+
+        data = client.get("/api/metrics/wrapped").json()
+        assert any(t["right"] == "Mainstream" for t in data["personality"])
+
+        longest = data["longest_track"]
+        shortest = data["shortest_track"]
+        assert longest["name"] and longest["id"] and len(longest["id"]) == 22
+        assert shortest["name"] and shortest["id"]
+        assert shortest["seconds"] >= 30
+        assert longest["seconds"] >= shortest["seconds"]
+
+
 
 
 
