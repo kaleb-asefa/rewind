@@ -78,6 +78,7 @@ These are common suggestions that are deliberately not being built yet. Do not i
   - `js/total_time.js` — total listening time metric component & skeleton state handler
   - `js/top_card.js` — shared "Top X" card factory (`initTopCard`) rendering top artist/album/track
   - `js/heatmap.js` — GitHub-style listening activity heatmap component
+  - `js/explore/` — Explore page chapter modules on a shared `window.RewindExplore` namespace: `core.js` (helpers, tooltip, reveal/scroll-spy, chapter registry) + one file per chapter (`rhythm`, `sound`, `taste`, `behavior`, `discovery`, `life`)
   - `js/upload.js` — multi-file upload drag-and-drop handler & status feedback
   - `js/theme.js` — dark mode theme toggler & local storage persistence
   - `js/spotlight.js` — spotlight search and keyboard shortcuts handler
