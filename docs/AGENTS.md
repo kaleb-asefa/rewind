@@ -80,6 +80,7 @@ These are common suggestions that are deliberately not being built yet. Do not i
   - `design.md` — visual design system (source of truth for styling)
   - `CODE_QUALITY.md` — code quality & engineering rules for all new code (backend + frontend); read before building
   - `UI_GUIDELINES.md` — UI copy & visual/clutter rules
+  - `CHARTS.md` — Charts feature spec + creative numbered-leaderboard idea catalog (planned)
   - `BACKEND.md` — backend architecture and data-handling decisions
   - `SCHEMA.md` — data schema and column-by-column storage decisions
   - `AGENTS.md` — this file
