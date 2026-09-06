@@ -746,6 +746,84 @@ def test_listening_life_returns_history_moments():
         assert all(item["date"] and item["track"] for item in data["milestones"])
 
 
+def test_over_time_empty_when_no_history():
+    with TestClient(app) as client:
+        data = client.get("/api/metrics/over-time").json()
+        assert data == {
+            "status": "ok",
+            "years": [],
+            "music_age": {},
+            "time_machine": {},
+            "nostalgia": [],
+        }
+
+
+def test_over_time_returns_years_and_catalog(tmp_path, monkeypatch):
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")},
+            )
+
+        # Years come from history alone (work before enrichment).
+        data = client.get("/api/metrics/over-time").json()
+        assert data["status"] == "ok"
+        assert len(data["years"]) >= 1
+        for y in data["years"]:
+            assert isinstance(y["year"], int)
+            assert y["top_artist"]["name"]
+            assert y["top_track"]["name"] and y["top_track"]["id"]
+            assert y["summer_track"]["name"]
+
+        # Enrich with a fixture carrying release years so the catalog parts populate.
+        engine = app.state.engine
+        with engine.connect() as conn:
+            raw = conn.connection.driver_connection
+            ids = [
+                r[0]
+                for r in raw.execute(
+                    "SELECT DISTINCT replace(track_uri, 'spotify:track:', '') FROM history "
+                    "WHERE track_uri LIKE 'spotify:track:%' LIMIT 8"
+                ).fetchall()
+            ]
+        assert len(ids) >= 4
+
+        fixture = str(tmp_path / "over_time_fixture.parquet")
+        fx = duckdb.connect()
+        fx.execute(
+            "CREATE TABLE c (track_id VARCHAR, track_name VARCHAR, artist_name VARCHAR, "
+            "release_year INTEGER)"
+        )
+        rows = []
+        for idx, tid in enumerate(ids):
+            year = 1975 if idx == 0 else 2024 if idx == 1 else 2000 + idx
+            rows.append((tid, f"name_{idx}", f"artist_{idx}", year))
+        fx.executemany("INSERT INTO c VALUES (?, ?, ?, ?)", rows)
+        fx.execute(f"COPY c TO '{fixture}' (FORMAT PARQUET)")
+        fx.close()
+        monkeypatch.setattr(catalog, "CATALOG_PATH", fixture)
+
+        with engine.connect() as conn:
+            main._enrich_session(conn)
+
+        data = client.get("/api/metrics/over-time").json()
+        age = data["music_age"]
+        assert 0 <= age["fresh_share"] <= 1
+        assert 1900 < age["avg_year"] < 2100
+
+        machine = data["time_machine"]
+        assert machine["oldest"]["year"] == 1975
+        assert machine["oldest"]["year"] <= machine["newest"]["year"]
+
+        assert data["nostalgia"]
+        for point in data["nostalgia"]:
+            assert point["period"] and 1900 < point["avg_year"] < 2100
+
+
 
 
 
