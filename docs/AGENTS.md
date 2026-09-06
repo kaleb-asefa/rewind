@@ -37,6 +37,15 @@ All visual design must follow the Spotify-inspired design system in `docs/design
 
 **Reference designs (Behance, Dribbble, or similar) may only be used to inform visual style** — spacing, color treatment, component shape, micro-interactions. **They must never be used to change scope, add sections, or restructure the project.** If a reference design suggests a different layout or new feature, treat that as inspiration to note and ask about — not something to implement automatically. This is the single most important rule in this document: a project has drifted into being rebuilt as a different product before because an agent adapted a reference design's *content*, not just its *style*.
 
+## Code Quality — Follow `docs/CODE_QUALITY.md`
+
+All new code (backend and frontend) must follow the engineering rules in `docs/CODE_QUALITY.md`:
+keep `main.py` thin with domain routers + framework-free `metrics.py`; one component per file
+(use a factory for duplicates); route all frontend fetches through `window.fetchWithTimeout`
+(never hardcode the API host); no user input in SQL; escape data-derived HTML; keep tests green.
+The doc also tracks known tech debt (CORS, hardcoded API host) — check it before building and
+update it when debt is added or paid down.
+
 ## Fixed Scope — Overview Page
 
 The Overview page shows exactly these metrics. No more, no less, unless explicitly requested:
@@ -69,6 +78,8 @@ These are common suggestions that are deliberately not being built yet. Do not i
 - `overview.html` — analytics dashboard & single-page application host
 - `docs/` — all project documentation
   - `design.md` — visual design system (source of truth for styling)
+  - `CODE_QUALITY.md` — code quality & engineering rules for all new code (backend + frontend); read before building
+  - `UI_GUIDELINES.md` — UI copy & visual/clutter rules
   - `BACKEND.md` — backend architecture and data-handling decisions
   - `SCHEMA.md` — data schema and column-by-column storage decisions
   - `AGENTS.md` — this file
