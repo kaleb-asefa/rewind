@@ -1805,3 +1805,53 @@ async def get_chart(
     if not res:
         return {**base, "items": [], "years": []}
     return {**base, **res}
+
+
+# ── Superlatives: "Top-10 records" per year / all-time ────────────────────────
+def _superlative_obsession(raw_con, off, clause, limit):
+    """Tracks ranked by the most plays crammed into a single day. Only ≥30s
+    plays count, so a skipped auto-repeat can't masquerade as an obsession.
+    """
+    try:
+        rows = raw_con.execute(
+            "SELECT arg_max(name, plays) AS name, arg_max(artist, plays) AS artist, id, "
+            "max(plays) AS plays, arg_max(day, plays) AS day FROM ("
+            "SELECT split_part(track_uri, ':', 3) AS id, "
+            "any_value(track_name) AS name, any_value(artist_name) AS artist, "
+            f"CAST(ts + to_minutes({off}) AS DATE) AS day, COUNT(*) AS plays "
+            "FROM history WHERE track_uri LIKE 'spotify:track:%' AND track_name IS NOT NULL "
+            f"AND ts IS NOT NULL AND ms_played >= 30000{clause} GROUP BY id, day) "
+            f"GROUP BY id ORDER BY plays DESC, name LIMIT {int(limit)}"
+        ).fetchall()
+    except Exception:
+        return []
+    return [
+        {"rank": i, "name": r[0], "artist": r[1], "id": r[2], "count": int(r[3]), "date": str(r[4])}
+        for i, r in enumerate(rows, start=1)
+    ]
+
+
+@router.get("/api/metrics/superlatives")
+async def get_superlatives(
+    range: str = "all",
+    limit: int = 10,
+    conn: Connection = Depends(get_db),
+):
+    """History-only "records" for the Charts superlatives section, viewable
+    per year or all-time. Currently: Obsession of the Day (more to come)."""
+    rng = range.lower()
+    if rng not in ("all", "4w", "6m") and not (rng.isdigit() and len(rng) == 4):
+        raise HTTPException(status_code=400, detail="Invalid range for superlatives.")
+    limit = max(1, min(int(limit), 50))
+
+    def query():
+        raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con)
+        clause = _chart_range_clause(rng, off)
+        return {
+            "obsession": _superlative_obsession(raw_con, off, clause, limit),
+            "years": _chart_years(raw_con, off),
+        }
+
+    res = await run_in_threadpool(query)
+    return {"status": "ok", "range": rng, **res}

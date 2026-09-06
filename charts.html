@@ -106,6 +106,7 @@
     <script src="src/js/theme.js"></script>
     <script src="src/js/api.js" defer></script>
     <script src="src/js/charts.js" defer></script>
+    <script src="src/js/charts_superlatives.js" defer></script>
 </head>
 <body class="bg-background text-on-background antialiased min-h-screen flex flex-col">
 
@@ -215,6 +216,28 @@
                 <span class="material-symbols-outlined text-lg">upload</span> Upload data
             </a>
         </div>
+
+        <!-- Superlatives — "your records" as Top-10 lists, per year or all-time -->
+        <section id="superlatives" class="pt-8 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <span class="text-primary font-label-bold text-label-bold tracking-widest uppercase">Superlatives</span>
+                    <h2 class="font-headline-md text-headline-md font-bold tracking-tight text-on-surface">Your records</h2>
+                </div>
+                <div id="super-range-tabs" class="flex items-center gap-1 p-1 bg-surface-container-high rounded-full overflow-x-auto max-w-full"></div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+                <div class="glass-card rounded-2xl p-gutter">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">local_fire_department</span>
+                        <h3 class="font-headline-md text-headline-md text-on-surface">Obsession of the day</h3>
+                    </div>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">The track you played most in a single day.</p>
+                    <div id="obsession-list" class="space-y-1"></div>
+                </div>
+            </div>
+        </section>
 
     </main>
 

@@ -1235,6 +1235,57 @@ def test_chart_merges_artist_name_variants():
     assert sum(1 for r in rows if r["name"].lower().startswith("beyonc")) == 1
 
 
+def test_superlative_obsession_counts_peak_day_and_ignores_skips():
+    from routers.explore import _superlative_obsession
+
+    con = duckdb.connect()
+    con.execute(
+        "CREATE TABLE history (track_uri VARCHAR, track_name VARCHAR, "
+        "artist_name VARCHAR, ts TIMESTAMP, ms_played BIGINT)"
+    )
+    con.execute(
+        "INSERT INTO history VALUES "
+        "('spotify:track:aaa','Loved','Artist A', TIMESTAMP '2024-02-03 10:00', 120000),"
+        "('spotify:track:aaa','Loved','Artist A', TIMESTAMP '2024-02-03 11:00', 120000),"
+        "('spotify:track:aaa','Loved','Artist A', TIMESTAMP '2024-02-03 12:00', 120000),"
+        "('spotify:track:aaa','Loved','Artist A', TIMESTAMP '2024-02-05 09:00', 120000),"
+        "('spotify:track:bbb','Skipped','Artist B', TIMESTAMP '2024-02-04 09:00', 5000),"
+        "('spotify:track:bbb','Skipped','Artist B', TIMESTAMP '2024-02-04 09:05', 5000)"
+    )
+    rows = _superlative_obsession(con, 0, "", 10)
+    con.close()
+
+    assert len(rows) == 1                    # only the qualifying track
+    assert rows[0]["name"] == "Loved"
+    assert rows[0]["count"] == 3             # 3 plays on the peak day
+    assert rows[0]["date"] == "2024-02-03"
+    assert rows[0]["id"] == "aaa"
+    assert all(r["name"] != "Skipped" for r in rows)  # <30s plays never count
+
+
+def test_superlatives_endpoint():
+    with TestClient(app) as client:
+        assert client.get("/api/metrics/superlatives").json()["obsession"] == []
+
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        data = client.get("/api/metrics/superlatives?limit=10").json()
+        assert data["status"] == "ok"
+        assert data["range"] == "all"
+        obs = data["obsession"]
+        assert 1 <= len(obs) <= 10
+        assert obs[0]["rank"] == 1
+        assert obs[0]["count"] >= 1
+        assert obs[0]["name"] and obs[0]["id"]
+        assert len(obs[0]["date"]) == 10  # YYYY-MM-DD
+        counts = [o["count"] for o in obs]
+        assert all(counts[i] >= counts[i + 1] for i in range(len(counts) - 1))
+        assert client.get("/api/metrics/superlatives?range=bogus").status_code == 400
+
+
+
 
 
 
