@@ -17,7 +17,7 @@ Implementation active in `backend/`. FastAPI + DuckDB + SQLAlchemy Core engine s
 
 On upload (`POST /api/upload`), the backend ingests single or multiple Spotify Extended Streaming History JSON files (`files: list[UploadFile]`) into DuckDB:
 1. Uploaded files are written to temporary files and inspected via `read_json_auto(?, union_by_name=True)`.
-2. Existing JSON keys are matched against the defined schema mapping (`MAPPING` in `main.py`).
+2. Existing JSON keys are matched against the defined schema mapping (`MAPPING` in `routers/upload.py`).
 3. Fields present in the export are safely converted via `TRY_CAST({col} AS {dtype})`, while missing schema fields default to `CAST(NULL AS {dtype})`.
 4. The schema-normalized dataset is appended into the `history` table.
 5. `table_registry.reset()` is invoked so reflected tables pick up new data cleanly.

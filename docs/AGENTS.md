@@ -83,7 +83,11 @@ These are common suggestions that are deliberately not being built yet. Do not i
   - `js/spotlight.js` — spotlight search and keyboard shortcuts handler
 - `backend/` — FastAPI backend implementation
   - `database.py` — Engine lifespan, TableRegistry, and `get_db` connection dependency
-  - `main.py` — FastAPI application & API endpoints (`/api/upload`, `/api/metrics/*`)
+  - `main.py` — thin app entrypoint: middleware + `include_router` wiring only
+  - `metrics.py` — framework-free computation helpers (ranking, bar-race, heatmap, streaks, chronotype, timezone, genre bucketing)
+  - `routers/upload.py` — `/api/upload` ingest + enrich and `/api/image` cover art (holds `MAPPING`)
+  - `routers/overview.py` — overview metrics (`total-time`, `top-*`, `total-songs`, `active-day`, `heatmap`)
+  - `routers/explore.py` — explore metrics (`artist-rank`, `track-rank`, `bar-race`, `rhythm`, `audio`, `taste`, `behavior`, `discovery`, `listening-life`)
   - `test_main.py` — Pytest test suite covering upload and metric endpoints
   - `pyproject.toml` — dependencies managed via `uv`
 - `data/` — persistent data storage
