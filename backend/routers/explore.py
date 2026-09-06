@@ -1587,4 +1587,206 @@ async def get_wrapped(conn: Connection = Depends(get_db)):
             "shortest_track": {},
         }
     return {"status": "ok", **res}
-    return {"status": "ok", **res}
+
+
+# ── Charts: numbered leaderboards ─────────────────────────────────────────────
+_CHART_SPECS = {
+    "artist": {
+        "select": "artist_name AS name, NULL AS artist, NULL AS id",
+        "group": "artist_name",
+        "where": "artist_name IS NOT NULL",
+    },
+    "track": {
+        "select": (
+            "any_value(track_name) AS name, any_value(artist_name) AS artist, "
+            "split_part(track_uri, ':', 3) AS id"
+        ),
+        "group": "split_part(track_uri, ':', 3)",
+        "where": "track_uri LIKE 'spotify:track:%' AND track_name IS NOT NULL",
+    },
+    "album": {
+        "select": "album_name AS name, artist_name AS artist, NULL AS id",
+        "group": "album_name, artist_name",
+        "where": "album_name IS NOT NULL",
+    },
+}
+
+
+def _chart_range_clause(rng: str, off: int) -> str:
+    """History WHERE fragment for a range. `off`/year are internal ints → safe to inline."""
+    if rng == "all":
+        return ""
+    if rng == "4w":
+        return " AND ts >= (SELECT max(ts) FROM history) - to_days(28)"
+    if rng == "6m":
+        return " AND ts >= (SELECT max(ts) FROM history) - to_months(6)"
+    return f" AND EXTRACT(year FROM ts + to_minutes({off})) = {int(rng)}"
+
+
+def _chart_rank_history(raw_con, entity, order_col, clause, limit):
+    spec = _CHART_SPECS[entity]
+    limit_sql = f" LIMIT {int(limit)}" if limit else ""
+    rows = raw_con.execute(
+        f"SELECT {spec['select']}, SUM(ms_played) AS ms, COUNT(*) AS streams "
+        f"FROM history WHERE {spec['where']}{clause} "
+        f"GROUP BY {spec['group']} ORDER BY {order_col} DESC, 1{limit_sql}"
+    ).fetchall()
+    return [
+        {"name": r[0], "artist": r[1], "id": r[2], "ms": int(r[3] or 0), "streams": int(r[4])}
+        for r in rows
+    ]
+
+
+def _chart_rank_genre(raw_con, order_col, clause):
+    join = (
+        "FROM history h JOIN track_features f "
+        "ON split_part(h.track_uri, ':', 3) = f.track_id "
+        "WHERE h.track_uri LIKE 'spotify:track:%' "
+        "AND f.artist_genres IS NOT NULL AND f.artist_genres <> ''"
+    )
+    rows = raw_con.execute(
+        "SELECT lower(split_part(f.artist_genres, ',', 1)) AS g, "
+        f"SUM(h.ms_played) AS ms, COUNT(*) AS streams {join}{clause} GROUP BY g"
+    ).fetchall()
+    buckets: dict = {}
+    for raw, ms, streams in rows:
+        label = _umbrella_genre(raw)
+        if not label:
+            continue
+        b = buckets.setdefault(label, [0, 0])
+        b[0] += int(ms or 0)
+        b[1] += int(streams or 0)
+    idx = 0 if order_col == "ms" else 1
+    ranked = sorted(buckets.items(), key=lambda kv: kv[1][idx], reverse=True)
+    return [{"name": name, "artist": None, "id": None, "ms": v[0], "streams": v[1]} for name, v in ranked]
+
+
+def _chart_key(entity, item):
+    if entity == "track":
+        return item["id"]
+    if entity == "album":
+        return (item["name"], item["artist"])
+    return item["name"]  # artist, genre
+
+
+def _chart_years(raw_con, off):
+    try:
+        return [
+            int(r[0])
+            for r in raw_con.execute(
+                f"SELECT DISTINCT EXTRACT(year FROM ts + to_minutes({off}))::INTEGER AS y "
+                "FROM history WHERE ts IS NOT NULL ORDER BY y DESC"
+            ).fetchall()
+        ]
+    except Exception:
+        return []
+
+
+def _chart_attach_ids(raw_con, entity, items):
+    """Fill artist_id / album_id from track_features so covers can lazy-load."""
+    if entity in ("track", "genre"):
+        return
+    try:
+        if entity == "artist":
+            id_map = {
+                r[0]: r[1]
+                for r in raw_con.execute(
+                    "SELECT artist_name, MAX(artist_id) FROM track_features "
+                    "WHERE artist_id IS NOT NULL GROUP BY artist_name"
+                ).fetchall()
+            }
+            for it in items:
+                it["id"] = id_map.get(it["name"])
+        else:  # album
+            id_map = {
+                (r[0], r[1]): r[2]
+                for r in raw_con.execute(
+                    "SELECT album_name, artist_name, MAX(album_id) FROM track_features "
+                    "WHERE album_id IS NOT NULL GROUP BY album_name, artist_name"
+                ).fetchall()
+            }
+            for it in items:
+                it["id"] = id_map.get((it["name"], it["artist"]))
+    except Exception:
+        pass
+
+
+@router.get("/api/metrics/chart")
+async def get_chart(
+    entity: str = "artist",
+    sort: str = "minutes",
+    limit: int = 100,
+    range: str = "all",
+    conn: Connection = Depends(get_db),
+):
+    """Numbered Top-N leaderboard for artist / track / album / genre, ranked by
+    minutes or streams, over all time / a year / the last 4 weeks / 6 months.
+    Genres need the enriched track_features slice → empty items when unenriched.
+    """
+    entity = entity.lower()
+    sort = sort.lower()
+    if entity not in ("artist", "track", "album", "genre"):
+        raise HTTPException(status_code=400, detail="Invalid entity for chart.")
+    if sort not in ("minutes", "streams"):
+        raise HTTPException(status_code=400, detail="Invalid sort for chart.")
+    rng = range.lower()
+    if rng not in ("all", "4w", "6m") and not (rng.isdigit() and len(rng) == 4):
+        raise HTTPException(status_code=400, detail="Invalid range for chart.")
+    limit = max(1, min(int(limit), 200))
+    order_col = "ms" if sort == "minutes" else "streams"
+
+    def query():
+        raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con)
+        clause = _chart_range_clause(rng, off)
+
+        try:
+            if entity == "genre":
+                main = _chart_rank_genre(raw_con, order_col, clause)[:limit]
+            else:
+                main = _chart_rank_history(raw_con, entity, order_col, clause, limit)
+        except Exception:
+            return None
+
+        if not main:
+            return {"items": [], "years": _chart_years(raw_con, off)}
+
+        _chart_attach_ids(raw_con, entity, main)
+
+        # Previous-period ranks power ▲▼ movement; only defined for a given year.
+        prev_map = {}
+        if rng.isdigit():
+            try:
+                prev_clause = _chart_range_clause(str(int(rng) - 1), off)
+                prev = (
+                    _chart_rank_genre(raw_con, order_col, prev_clause)
+                    if entity == "genre"
+                    else _chart_rank_history(raw_con, entity, order_col, prev_clause, 0)
+                )
+                for i, it in enumerate(prev, start=1):
+                    prev_map[_chart_key(entity, it)] = i
+            except Exception:
+                prev_map = {}
+
+        max_val = main[0][order_col] or 1
+        items = []
+        for i, it in enumerate(main, start=1):
+            items.append(
+                {
+                    "rank": i,
+                    "name": it["name"],
+                    "artist": it["artist"],
+                    "id": it["id"],
+                    "minutes": round(it["ms"] / 60000, 2),
+                    "streams": it["streams"],
+                    "share": round(it[order_col] / max_val, 4),
+                    "prev_rank": prev_map.get(_chart_key(entity, it)),
+                }
+            )
+        return {"items": items, "years": _chart_years(raw_con, off)}
+
+    res = await run_in_threadpool(query)
+    base = {"status": "ok", "entity": entity, "sort": sort, "range": rng}
+    if not res:
+        return {**base, "items": [], "years": []}
+    return {**base, **res}

@@ -1083,6 +1083,134 @@ def test_wrapped_returns_personality_and_extremes(tmp_path, monkeypatch):
         assert longest["seconds"] >= shortest["seconds"]
 
 
+def test_chart_empty_when_no_history():
+    with TestClient(app) as client:
+        data = client.get("/api/metrics/chart?entity=artist").json()
+        assert data["status"] == "ok"
+        assert data["entity"] == "artist"
+        assert data["sort"] == "minutes"
+        assert data["range"] == "all"
+        assert data["items"] == []
+        assert data["years"] == []
+
+
+def test_chart_ranks_artists_from_history():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        data = client.get("/api/metrics/chart?entity=artist&sort=minutes&limit=10").json()
+        assert data["status"] == "ok"
+        items = data["items"]
+        assert 1 <= len(items) <= 10
+        assert items[0]["rank"] == 1
+        assert items[0]["name"] is not None
+        assert items[0]["minutes"] > 0
+        assert items[0]["share"] == 1.0  # top item is the reference for the share bar
+        # Ranks are contiguous 1..N and minutes are non-increasing.
+        assert [it["rank"] for it in items] == list(range(1, len(items) + 1))
+        mins = [it["minutes"] for it in items]
+        assert all(mins[i] >= mins[i + 1] for i in range(len(mins) - 1))
+        # All-time has no previous period → movement undefined.
+        assert all(it["prev_rank"] is None for it in items)
+        assert len(data["years"]) >= 1
+
+
+def test_chart_sort_streams_reorders():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        by_streams = client.get("/api/metrics/chart?entity=artist&sort=streams&limit=10").json()
+        assert by_streams["sort"] == "streams"
+        streams = [it["streams"] for it in by_streams["items"]]
+        assert all(streams[i] >= streams[i + 1] for i in range(len(streams) - 1))
+
+
+def test_chart_track_album_and_invalid():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        track = client.get("/api/metrics/chart?entity=track&limit=5").json()
+        assert track["items"][0]["artist"] is not None
+        assert track["items"][0]["id"] and len(track["items"][0]["id"]) == 22
+
+        album = client.get("/api/metrics/chart?entity=album&limit=5").json()
+        assert album["items"][0]["artist"] is not None
+
+        assert client.get("/api/metrics/chart?entity=bogus").status_code == 400
+        assert client.get("/api/metrics/chart?entity=artist&sort=bogus").status_code == 400
+        assert client.get("/api/metrics/chart?entity=artist&range=bogus").status_code == 400
+
+
+def test_chart_year_range_reports_movement():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")})
+
+        years = client.get("/api/metrics/chart?entity=artist").json()["years"]
+        assert len(years) >= 2
+        # Pick a year that has a prior year in the data so movement is defined.
+        target = sorted(years)[-1]
+        data = client.get(f"/api/metrics/chart?entity=artist&range={target}&limit=10").json()
+        assert data["range"] == str(target)
+        assert len(data["items"]) >= 1
+        # prev_rank is either an int (was present last year) or None (NEW / absent).
+        for it in data["items"]:
+            assert it["prev_rank"] is None or isinstance(it["prev_rank"], int)
+
+
+def test_chart_genre_from_track_features(tmp_path, monkeypatch):
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")})
+
+        # Unenriched → genre chart is empty (frontend keeps its sample).
+        assert client.get("/api/metrics/chart?entity=genre").json()["items"] == []
+
+        engine = app.state.engine
+        with engine.connect() as conn:
+            raw = conn.connection.driver_connection
+            ids = [
+                r[0]
+                for r in raw.execute(
+                    "SELECT DISTINCT replace(track_uri, 'spotify:track:', '') FROM history "
+                    "WHERE track_uri LIKE 'spotify:track:%' LIMIT 6"
+                ).fetchall()
+            ]
+        assert len(ids) >= 4
+
+        fixture = str(tmp_path / "chart_genre_fixture.parquet")
+        fx = duckdb.connect()
+        fx.execute(
+            "CREATE TABLE c (track_id VARCHAR, track_name VARCHAR, artist_name VARCHAR, "
+            "artist_genres VARCHAR, artist_id VARCHAR, album_name VARCHAR, album_id VARCHAR)"
+        )
+        rows = []
+        for idx, tid in enumerate(ids):
+            genre = "conscious hip hop, rap" if idx % 2 == 0 else "r&b, pop"
+            rows.append((tid, f"name_{idx}", f"artist_{idx}", genre, f"aid_{idx}", f"album_{idx}", f"alid_{idx}"))
+        fx.executemany("INSERT INTO c VALUES (?, ?, ?, ?, ?, ?, ?)", rows)
+        fx.execute(f"COPY c TO '{fixture}' (FORMAT PARQUET)")
+        fx.close()
+        monkeypatch.setattr(catalog, "CATALOG_PATH", fixture)
+
+        with engine.connect() as conn:
+            main._enrich_session(conn)
+
+        data = client.get("/api/metrics/chart?entity=genre&sort=streams").json()
+        names = [it["name"] for it in data["items"]]
+        assert "Hip-Hop" in names and "R&B" in names
+        assert data["items"][0]["rank"] == 1
+        assert data["items"][0]["share"] == 1.0
+
+
 
 
 

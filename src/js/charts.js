@@ -112,6 +112,8 @@
     // ── state ───────────────────────────────────────────────────────────────
     const state = { entity: "artist", sort: "minutes", depth: 20, range: "all", search: "" };
     const cache = {};
+    let apiYears = null;   // real years from the backend, once known
+    let yearsSynced = false;
 
     // ── helpers ──────────────────────────────────────────────────────────────
     function esc(s) {
@@ -170,8 +172,9 @@
         if (window.fetchWithTimeout) {
             const q = "/api/metrics/chart?entity=" + entity + "&sort=" + sort + "&limit=100&range=" + range;
             const res = await window.fetchWithTimeout(q).catch(() => null);
-            if (res && res.ok && res.data && Array.isArray(res.data.items) && res.data.items.length) {
-                items = res.data.items;
+            if (res && res.ok && res.data) {
+                if (Array.isArray(res.data.items) && res.data.items.length) items = res.data.items;
+                if (Array.isArray(res.data.years) && res.data.years.length) apiYears = res.data.years.map(String);
             }
         }
         if (!items) {
@@ -277,6 +280,7 @@
 
         const { entity, sort, range, search } = state;
         const full = await getList(entity, sort, range);
+        syncYears();
 
         updateHeading();
 
@@ -380,10 +384,11 @@
         });
     }
 
-    function buildRangeTabs() {
+    function buildRangeTabs(years) {
         const el = document.getElementById("range-tabs");
         if (!el) return;
-        const tabs = [{ v: "all", label: "All-time" }].concat(AVAILABLE_YEARS.map((y) => ({ v: y, label: y })));
+        const list = (years && years.length ? years : AVAILABLE_YEARS).map(String);
+        const tabs = [{ v: "all", label: "All-time" }].concat(list.map((y) => ({ v: y, label: y })));
         el.innerHTML = tabs
             .map((t) => '<button data-range="' + t.v + '" class="range-tab px-3.5 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap transition-all">' + t.label + "</button>")
             .join("");
@@ -391,6 +396,14 @@
             btn.addEventListener("click", () => { state.range = btn.getAttribute("data-range"); setActive(el, "data-range", state.range); render(); });
         });
         setActive(el, "data-range", state.range);
+    }
+
+    // Rebuild the range pills from the real backend years, once we have them.
+    function syncYears() {
+        if (yearsSynced || !apiYears || !apiYears.length) return;
+        yearsSynced = true;
+        if (state.range !== "all" && apiYears.indexOf(state.range) === -1) state.range = "all";
+        buildRangeTabs(apiYears);
     }
 
     function buildDepthTabs() {
@@ -456,6 +469,8 @@
         render();
         window.addEventListener("rewind:data-updated", () => {
             for (const k in cache) { if (k.indexOf("sample:") !== 0) delete cache[k]; }
+            apiYears = null;
+            yearsSynced = false;
             render();
         });
     }

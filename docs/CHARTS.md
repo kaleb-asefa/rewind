@@ -1,6 +1,10 @@
 # Rewind — Charts (Numbered Leaderboards)
 
-Spec + idea catalog for the **Charts** feature. Status: **planned, not built.**
+Spec + idea catalog for the **Charts** feature.
+Status: **core built** — `charts.html` + `src/js/charts.js` + `GET /api/metrics/chart`
+(Artists / Tracks / Albums / Genres, minutes/streams sort, all-time + per-year range,
+depth toggle, find-your-rank search, podium, movement arrows). Superlative and creative
+charts in §3.2–§3.7 are **not built yet**.
 Follow `docs/UI_GUIDELINES.md` (copy/clutter) and `docs/CODE_QUALITY.md` (engineering) when building.
 
 ---
@@ -168,11 +172,10 @@ Frontend: one `charts.js` (or `charts/` namespace mirroring `explore/`) with a s
 
 ## 5. Build order
 
-1. **Core rankings** — Top Artists / Tracks / Albums numbered lists + depth + sort toggles (§3.1).
-2. **Find-your-rank search** (§2).
-3. **Per-year time selector** (`range` param) — unlocks the per-year + total pattern everywhere.
+1. ~~**Core rankings** — Top Artists / Tracks / Albums numbered lists + depth + sort toggles (§3.1).~~ **Done.**
+2. ~~**Find-your-rank search** (§2).~~ **Done.**
+3. ~~**Per-year time selector** (`range` param).~~ **Done** (all-time + real years; 4w/6m supported by the endpoint, not yet surfaced in the UI).
 4. **Superlative charts** (§3.2), starting with **Obsession of the Day** (the requested example).
-5. Podium, ▲▼ movement, expandable rows, then the remaining catalog (§3.3–3.7).
+5. Podium ~~+ ▲▼ movement~~ (**done**), expandable rows, then the remaining catalog (§3.3–3.7).
 
-Steps 1–2 already deliver the "look up any artist's rank" experience. Step 3–4 deliver the
-"Top 10 per year, then total" superlatives.
+Steps 1–3 are live. Next up: the "Top 10 per year, then total" superlatives (§3.2).
