@@ -1211,6 +1211,31 @@ def test_chart_genre_from_track_features(tmp_path, monkeypatch):
         assert data["items"][0]["share"] == 1.0
 
 
+def test_chart_merges_artist_name_variants():
+    # Stylized spellings of one artist ("Giveon" vs "GIVĒON") must collapse
+    # into a single row, keeping the most-played spelling.
+    from routers.explore import _chart_rank_history
+
+    con = duckdb.connect()
+    con.execute("CREATE TABLE history (artist_name VARCHAR, ms_played BIGINT)")
+    con.execute(
+        "INSERT INTO history VALUES ('Giveon', 100000), ('Giveon', 100000), "
+        "('GIV\u0112ON', 50000), ('Beyoncé', 30000), ('Beyonce', 20000)"
+    )
+    rows = _chart_rank_history(con, "artist", "ms", "", 0)
+    con.close()
+
+    names = [r["name"] for r in rows]
+    assert "Giveon" in names          # most-played spelling wins
+    assert "GIVĒON" not in names       # variant merged away
+    giveon = next(r for r in rows if r["name"] == "Giveon")
+    assert giveon["streams"] == 3      # 2 + 1 plays merged
+    assert giveon["ms"] == 250000
+    # Beyoncé / Beyonce also fold together (accent-insensitive).
+    assert sum(1 for r in rows if r["name"].lower().startswith("beyonc")) == 1
+
+
+
 
 
 

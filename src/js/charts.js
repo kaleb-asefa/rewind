@@ -292,15 +292,24 @@
         }
         emptyEl.classList.add("hidden");
 
-        // movement vs previous period
+        // Movement vs the previous year. Real backend rows carry prev_rank
+        // (keyed by a merge-safe artist key); sample rows are matched by name.
+        const isYear = /^\d{4}$/.test(range);
+        const backendPrev = full.length > 0 && Object.prototype.hasOwnProperty.call(full[0], "prev_rank");
         let prevMap = null;
-        const pk = prevPeriodKey(range);
-        if (pk) {
-            const prevList = await getList(entity, sort, pk);
-            prevMap = {};
-            prevList.forEach((it, i) => { prevMap[it.name + "|" + (it.artist || "")] = i + 1; });
+        if (!backendPrev) {
+            const pk = prevPeriodKey(range);
+            if (pk) {
+                const prevList = await getList(entity, sort, pk);
+                prevMap = {};
+                prevList.forEach((it, i) => { prevMap[it.name + "|" + (it.artist || "")] = i + 1; });
+            }
         }
         const moveOf = (item, rank) => {
+            if (backendPrev) {
+                if (!isYear) return null;
+                return item.prev_rank == null ? "new" : item.prev_rank - rank;
+            }
             if (!prevMap) return null;
             const p = prevMap[item.name + "|" + (item.artist || "")];
             return p ? p - rank : "new";

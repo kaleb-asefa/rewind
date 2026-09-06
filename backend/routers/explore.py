@@ -1626,15 +1626,34 @@ def _chart_range_clause(rng: str, off: int) -> str:
 def _chart_rank_history(raw_con, entity, order_col, clause, limit):
     spec = _CHART_SPECS[entity]
     limit_sql = f" LIMIT {int(limit)}" if limit else ""
+    if entity == "artist":
+        # Merge stylized name variants (e.g. "Giveon" / "GIVĒON") under a
+        # diacritic-insensitive key; show the most-played spelling.
+        rows = raw_con.execute(
+            "SELECT arg_max(name, vms) AS name, akey, "
+            "SUM(vms) AS ms, SUM(vstreams) AS streams FROM ("
+            "SELECT artist_name AS name, strip_accents(upper(trim(artist_name))) AS akey, "
+            "SUM(ms_played) AS vms, COUNT(*) AS vstreams "
+            f"FROM history WHERE artist_name IS NOT NULL{clause} GROUP BY name, akey) "
+            f"GROUP BY akey ORDER BY {order_col} DESC, 1{limit_sql}"
+        ).fetchall()
+        return [
+            {"name": r[0], "key": r[1], "artist": None, "id": None,
+             "ms": int(r[2] or 0), "streams": int(r[3])}
+            for r in rows
+        ]
+
     rows = raw_con.execute(
         f"SELECT {spec['select']}, SUM(ms_played) AS ms, COUNT(*) AS streams "
         f"FROM history WHERE {spec['where']}{clause} "
         f"GROUP BY {spec['group']} ORDER BY {order_col} DESC, 1{limit_sql}"
     ).fetchall()
-    return [
-        {"name": r[0], "artist": r[1], "id": r[2], "ms": int(r[3] or 0), "streams": int(r[4])}
-        for r in rows
-    ]
+    out = []
+    for r in rows:
+        item = {"name": r[0], "artist": r[1], "id": r[2], "ms": int(r[3] or 0), "streams": int(r[4])}
+        item["key"] = item["id"] if entity == "track" else (item["name"], item["artist"])
+        out.append(item)
+    return out
 
 
 def _chart_rank_genre(raw_con, order_col, clause):
@@ -1658,15 +1677,10 @@ def _chart_rank_genre(raw_con, order_col, clause):
         b[1] += int(streams or 0)
     idx = 0 if order_col == "ms" else 1
     ranked = sorted(buckets.items(), key=lambda kv: kv[1][idx], reverse=True)
-    return [{"name": name, "artist": None, "id": None, "ms": v[0], "streams": v[1]} for name, v in ranked]
-
-
-def _chart_key(entity, item):
-    if entity == "track":
-        return item["id"]
-    if entity == "album":
-        return (item["name"], item["artist"])
-    return item["name"]  # artist, genre
+    return [
+        {"name": name, "key": name, "artist": None, "id": None, "ms": v[0], "streams": v[1]}
+        for name, v in ranked
+    ]
 
 
 def _chart_years(raw_con, off):
@@ -1691,12 +1705,13 @@ def _chart_attach_ids(raw_con, entity, items):
             id_map = {
                 r[0]: r[1]
                 for r in raw_con.execute(
-                    "SELECT artist_name, MAX(artist_id) FROM track_features "
-                    "WHERE artist_id IS NOT NULL GROUP BY artist_name"
+                    "SELECT strip_accents(upper(trim(artist_name))) AS akey, arg_max(artist_id, c) "
+                    "FROM (SELECT artist_name, artist_id, COUNT(*) AS c FROM track_features "
+                    "WHERE artist_id IS NOT NULL GROUP BY artist_name, artist_id) GROUP BY akey"
                 ).fetchall()
             }
             for it in items:
-                it["id"] = id_map.get(it["name"])
+                it["id"] = id_map.get(it["key"])
         else:  # album
             id_map = {
                 (r[0], r[1]): r[2]
@@ -1764,7 +1779,7 @@ async def get_chart(
                     else _chart_rank_history(raw_con, entity, order_col, prev_clause, 0)
                 )
                 for i, it in enumerate(prev, start=1):
-                    prev_map[_chart_key(entity, it)] = i
+                    prev_map[it["key"]] = i
             except Exception:
                 prev_map = {}
 
@@ -1780,7 +1795,7 @@ async def get_chart(
                     "minutes": round(it["ms"] / 60000, 2),
                     "streams": it["streams"],
                     "share": round(it[order_col] / max_val, 4),
-                    "prev_rank": prev_map.get(_chart_key(entity, it)),
+                    "prev_rank": prev_map.get(it["key"]),
                 }
             )
         return {"items": items, "years": _chart_years(raw_con, off)}
