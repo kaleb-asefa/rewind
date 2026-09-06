@@ -1456,26 +1456,26 @@ async def get_wrapped(conn: Connection = Depends(get_db)):
         off = _tz_offset_minutes(raw_con)  # int minutes; safe to inline
         music = "WHERE track_uri LIKE 'spotify:track:%' AND ts IS NOT NULL"
 
-        # Loyalty concentration (top 10 artists' share of plays).
+        # Discovery share (share of plays that are an artist's first month) — the
+        # SAME signal Chapter 6 uses, so the Explorer/Loyalist trait agrees with it.
         try:
             row = raw_con.execute(
                 """
-                WITH artist_plays AS (
-                    SELECT artist_name, COUNT(*) AS plays FROM history
-                    WHERE artist_name IS NOT NULL AND track_uri LIKE 'spotify:track:%'
-                    GROUP BY artist_name
-                ), ranked AS (
-                    SELECT plays, ROW_NUMBER() OVER (ORDER BY plays DESC) AS rn FROM artist_plays
+                WITH plays AS (
+                    SELECT artist_name, date_trunc('month', ts) AS month
+                    FROM history WHERE artist_name IS NOT NULL AND ts IS NOT NULL
+                ), first_month AS (
+                    SELECT artist_name, MIN(month) AS first_month FROM plays GROUP BY artist_name
                 )
-                SELECT COALESCE(SUM(plays) FILTER (WHERE rn <= 10), 0), COALESCE(SUM(plays), 0)
-                FROM ranked
+                SELECT COALESCE(AVG((month = first_month)::INTEGER), 0), COUNT(*)
+                FROM plays JOIN first_month USING (artist_name)
                 """
             ).fetchone()
         except Exception:
             return None
         if not row or not row[1]:
             return None
-        top10_share = row[0] / row[1]
+        new_artist_share = float(row[0] or 0)
 
         # Chronotype from the hourly distribution.
         hourly = [0] * 24
@@ -1520,11 +1520,16 @@ async def get_wrapped(conn: Connection = Depends(get_db)):
         def shuffle_label(s):
             return "Shuffler" if s >= 0.6 else "A bit of both" if s >= 0.35 else "Curator"
 
+        # Explorer/Loyalist uses Chapter 6's discoveryWord thresholds; position is
+        # scaled (share rarely exceeds ~0.5) so the marker sits under the label.
+        def discovery_label(s):
+            return "Explorer" if s >= 0.45 else "Open to new music" if s >= 0.25 else "Loyalist"
+
         personality = [
             {
-                "label": "Explorer" if (1 - top10_share) >= 0.5 else "Loyalist",
+                "label": discovery_label(new_artist_share),
                 "left": "Loyalist", "right": "Explorer",
-                "position": round(1 - top10_share, 3), "icon": "explore",
+                "position": round(min(1.0, new_artist_share / 0.5), 3), "icon": "explore",
             },
             {
                 "label": chrono["label"] or "Balanced",
