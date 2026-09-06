@@ -19,6 +19,16 @@
         { name: "Nobody Gets Me", artist: "SZA", id: "5Y35SjAfXjjG0sFQ3KOxmm", count: 7, date: "2023-01-08" },
     ];
 
+    const SAMPLE_ON_REPEAT = [
+        { name: "Snooze", artist: "SZA", id: "4iZ4pt7kvcaH6Yo8UoZ4s2", count: 6 },
+        { name: "Good Days", artist: "SZA", id: null, count: 5 },
+        { name: "Calm Down", artist: "Rema", id: null, count: 4 },
+        { name: "Water", artist: "Tyla", id: null, count: 4 },
+        { name: "Kill Bill", artist: "SZA", id: null, count: 3 },
+        { name: "Lost Me", artist: "Giveon", id: null, count: 3 },
+        { name: "Peru", artist: "Fireboy DML", id: null, count: 2 },
+    ];
+
     const state = { range: "all" };
     const cache = {};
     let apiYears = null;
@@ -66,31 +76,38 @@
             ).catch(() => null);
             if (res && res.ok && res.data) {
                 if (Array.isArray(res.data.years) && res.data.years.length) apiYears = res.data.years.map(String);
-                if (Array.isArray(res.data.obsession) && res.data.obsession.length) data = res.data.obsession;
+                const obs = Array.isArray(res.data.obsession) ? res.data.obsession : [];
+                const rep = Array.isArray(res.data.on_repeat) ? res.data.on_repeat : [];
+                if (obs.length || rep.length) data = { obsession: obs, on_repeat: rep };
             }
         }
-        if (!data) data = SAMPLE_OBSESSION.map((o, i) => Object.assign({ rank: i + 1 }, o));
+        if (!data) {
+            data = {
+                obsession: SAMPLE_OBSESSION.map((o, i) => Object.assign({ rank: i + 1 }, o)),
+                on_repeat: SAMPLE_ON_REPEAT.map((o, i) => Object.assign({ rank: i + 1 }, o)),
+            };
+        }
         cache[range] = data;
         return data;
     }
 
-    function renderObsession(rows) {
-        const el = document.getElementById("obsession-list");
+    // subFn(item) → the small second line under the track name.
+    function renderList(elId, rows, badge, subFn) {
+        const el = document.getElementById(elId);
         if (!el) return;
         el.innerHTML = rows
             .map((it, i) => {
                 const rank = it.rank || i + 1;
-                const sub = esc(it.artist || "") + (it.date ? ' · <span class="opacity-70">' + fmtDate(it.date) + "</span>" : "");
                 return '<div class="chart-row flex items-center gap-3 px-2 py-2 rounded-lg">' +
                     '<div class="w-6 text-right font-mono font-bold shrink-0 ' + rankClass(rank) + '">' + rank + "</div>" +
                     trackCover(it.id) +
                     '<div class="min-w-0 flex-1">' +
                         '<div class="font-semibold text-on-surface truncate">' + esc(it.name) + "</div>" +
-                        '<div class="text-[11px] text-on-surface-variant truncate">' + sub + "</div>" +
+                        '<div class="text-[11px] text-on-surface-variant truncate">' + subFn(it) + "</div>" +
                     "</div>" +
                     '<div class="text-right shrink-0">' +
                         '<div class="text-primary font-bold tabular-nums leading-none">×' + it.count + "</div>" +
-                        '<div class="text-[10px] text-on-surface-variant opacity-60 mt-0.5">in a day</div>' +
+                        '<div class="text-[10px] text-on-surface-variant opacity-60 mt-0.5">' + badge + "</div>" +
                     "</div>" +
                 "</div>";
             })
@@ -98,10 +115,14 @@
         loadCovers(el);
     }
 
+    const withDate = (it) => esc(it.artist || "") + (it.date ? ' · <span class="opacity-70">' + fmtDate(it.date) + "</span>" : "");
+    const artistOnly = (it) => esc(it.artist || "");
+
     async function render() {
-        const rows = await fetchData(state.range);
+        const data = await fetchData(state.range);
         syncYears();
-        renderObsession(rows);
+        renderList("obsession-list", data.obsession, "in a day", withDate);
+        renderList("on-repeat-list", data.on_repeat, "in a row", artistOnly);
     }
 
     function setActive(el, value) {

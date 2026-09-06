@@ -1831,6 +1831,35 @@ def _superlative_obsession(raw_con, off, clause, limit):
     ]
 
 
+def _superlative_on_repeat(raw_con, clause, limit):
+    """Tracks by their longest run of consecutive back-to-back plays. Only ≥30s
+    plays count, so a skipped auto-repeat can't rack up a streak.
+    """
+    try:
+        rows = raw_con.execute(
+            "WITH o AS ("
+            "  SELECT split_part(track_uri, ':', 3) AS id, track_name AS name, artist_name AS artist, "
+            "         ROW_NUMBER() OVER (ORDER BY ts) AS rn "
+            "  FROM history WHERE track_uri LIKE 'spotify:track:%' AND track_name IS NOT NULL "
+            f"       AND ts IS NOT NULL AND ms_played >= 30000{clause}"
+            "), g AS ("
+            "  SELECT id, name, artist, rn - ROW_NUMBER() OVER (PARTITION BY id ORDER BY rn) AS grp "
+            "  FROM o"
+            "), runs AS ("
+            "  SELECT id, any_value(name) AS name, any_value(artist) AS artist, COUNT(*) AS streak "
+            "  FROM g GROUP BY id, grp"
+            ") SELECT any_value(name) AS name, any_value(artist) AS artist, id, MAX(streak) AS best "
+            "FROM runs GROUP BY id HAVING MAX(streak) >= 2 ORDER BY best DESC, name "
+            f"LIMIT {int(limit)}"
+        ).fetchall()
+    except Exception:
+        return []
+    return [
+        {"rank": i, "name": r[0], "artist": r[1], "id": r[2], "count": int(r[3])}
+        for i, r in enumerate(rows, start=1)
+    ]
+
+
 @router.get("/api/metrics/superlatives")
 async def get_superlatives(
     range: str = "all",
@@ -1850,6 +1879,7 @@ async def get_superlatives(
         clause = _chart_range_clause(rng, off)
         return {
             "obsession": _superlative_obsession(raw_con, off, clause, limit),
+            "on_repeat": _superlative_on_repeat(raw_con, clause, limit),
             "years": _chart_years(raw_con, off),
         }
 
