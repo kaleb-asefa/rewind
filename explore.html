@@ -165,6 +165,9 @@
                 <a data-chapter href="#habits" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">05</span> How You Listen
                 </a>
+                <a data-chapter href="#discovery" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                    <span class="num font-mono">06</span> Discovery &amp; Loyalty
+                </a>
             </div>
         </nav>
 
@@ -591,6 +594,57 @@
                     <h3 class="font-headline-md text-headline-md text-on-surface">On repeat</h3>
                     <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-3">Songs you looped back-to-back.</p>
                     <div id="loop-list" class="space-y-1.5"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 06 — Discovery & Loyalty -->
+        <section id="discovery" class="scroll-mt-32 pt-10 space-y-6">
+            <div class="reveal">
+                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 06</span>
+                <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Discovery &amp; Loyalty</h2>
+                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">How new music enters your rotation.</p>
+            </div>
+
+            <!-- Hero: new discoveries versus familiar favorites -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+                <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter relative overflow-hidden min-h-[280px] flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Your listening mix</h3>
+                    <div class="flex-1 flex flex-col justify-center">
+                        <div id="discovery-word" class="font-display-lg text-display-lg-mobile text-primary leading-none">—</div>
+                        <div id="discovery-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-5"></div>
+                        <div class="flex justify-between mt-2 text-[11px] text-on-surface-variant">
+                            <span><span id="discovery-pct">—</span>% new artists</span>
+                            <span><span id="familiar-pct">—</span>% familiar artists</span>
+                        </div>
+                    </div>
+                    <div class="absolute -bottom-16 -right-16 w-72 h-72 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+                </div>
+
+                <div class="flex flex-col gap-gutter">
+                    <div class="reveal glass-card rounded-2xl p-5">
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">New artists</div>
+                        <div id="new-artists-value" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant opacity-80">per month</div>
+                    </div>
+                    <div class="reveal glass-card rounded-2xl p-5">
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">One-off plays</div>
+                        <div id="one-off-value" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant opacity-80">played once</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bento: rediscoveries + artists gaining momentum -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+                <div class="reveal glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Back in rotation</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-3">Old favorites you returned to.</p>
+                    <div id="rediscovery-list" class="space-y-1.5"></div>
+                </div>
+                <div class="reveal glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Gaining momentum</h3>
+                    <div id="rising-list" class="space-y-3.5 mt-5"></div>
                 </div>
             </div>
         </section>
