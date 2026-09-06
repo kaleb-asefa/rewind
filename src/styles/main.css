@@ -443,6 +443,19 @@ html { scroll-behavior: smooth; }
 .gem-row { transition: background 0.12s ease; }
 .gem-row:hover { background: rgba(255, 255, 255, 0.05); }
 
+/* chapter 07 listening-life milestones */
+.life-milestone-line {
+    height: 2px;
+    background: rgba(30, 215, 96, 0.28);
+}
+.life-milestone-dot {
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.life-milestone:hover .life-milestone-dot {
+    transform: scale(1.22);
+    box-shadow: 0 0 0 5px rgba(30, 215, 96, 0.14);
+}
+
 .rhythm-tooltip {
     position: fixed;
     z-index: 100;
