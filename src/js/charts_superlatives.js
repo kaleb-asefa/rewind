@@ -29,6 +29,15 @@
         { name: "Peru", artist: "Fireboy DML", id: null, count: 2 },
     ];
 
+    const SAMPLE_BINGES = [
+        { name: "SZA", id: "5Y35SjAfXjjG0sFQ3KOxmm", minutes: 341, date: "2023-06-18", plays: 47 },
+        { name: "J. Cole", id: null, minutes: 268, date: "2023-01-22", plays: 39 },
+        { name: "Drake", id: null, minutes: 214, date: "2024-02-14", plays: 33 },
+        { name: "Summer Walker", id: null, minutes: 182, date: "2024-08-09", plays: 28 },
+        { name: "Giveon", id: null, minutes: 151, date: "2023-03-30", plays: 24 },
+        { name: "Brent Faiyaz", id: null, minutes: 128, date: "2023-11-02", plays: 20 },
+    ];
+
     const state = { range: "all" };
     const cache = {};
     let apiYears = null;
@@ -45,6 +54,13 @@
         const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
         if (!m) return "";
         return MONTHS[Number(m[2]) - 1] + " " + Number(m[3]) + ", " + m[1];
+    }
+    function fmtMins(m) {
+        m = Math.round(m || 0);
+        if (m < 60) return m + "m";
+        const h = Math.floor(m / 60);
+        const rem = m % 60;
+        return rem ? h + "h " + rem + "m" : h + "h";
     }
     function rankClass(rank) {
         if (rank === 1) return "text-primary";
@@ -78,23 +94,26 @@
                 if (Array.isArray(res.data.years) && res.data.years.length) apiYears = res.data.years.map(String);
                 const obs = Array.isArray(res.data.obsession) ? res.data.obsession : [];
                 const rep = Array.isArray(res.data.on_repeat) ? res.data.on_repeat : [];
-                if (obs.length || rep.length) data = { obsession: obs, on_repeat: rep };
+                const bng = Array.isArray(res.data.binges) ? res.data.binges : [];
+                if (obs.length || rep.length || bng.length) data = { obsession: obs, on_repeat: rep, binges: bng };
             }
         }
         if (!data) {
             data = {
                 obsession: SAMPLE_OBSESSION.map((o, i) => Object.assign({ rank: i + 1 }, o)),
                 on_repeat: SAMPLE_ON_REPEAT.map((o, i) => Object.assign({ rank: i + 1 }, o)),
+                binges: SAMPLE_BINGES.map((o, i) => Object.assign({ rank: i + 1 }, o)),
             };
         }
         cache[range] = data;
         return data;
     }
 
-    // subFn(item) → the small second line under the track name.
-    function renderList(elId, rows, badge, subFn) {
+    // opts = { value(item), badge(item)|string, sub(item) }.
+    function renderList(elId, rows, opts) {
         const el = document.getElementById(elId);
         if (!el) return;
+        const badgeOf = typeof opts.badge === "function" ? opts.badge : () => opts.badge;
         el.innerHTML = rows
             .map((it, i) => {
                 const rank = it.rank || i + 1;
@@ -103,11 +122,11 @@
                     trackCover(it.id) +
                     '<div class="min-w-0 flex-1">' +
                         '<div class="font-semibold text-on-surface truncate">' + esc(it.name) + "</div>" +
-                        '<div class="text-[11px] text-on-surface-variant truncate">' + subFn(it) + "</div>" +
+                        '<div class="text-[11px] text-on-surface-variant truncate">' + opts.sub(it) + "</div>" +
                     "</div>" +
                     '<div class="text-right shrink-0">' +
-                        '<div class="text-primary font-bold tabular-nums leading-none">×' + it.count + "</div>" +
-                        '<div class="text-[10px] text-on-surface-variant opacity-60 mt-0.5">' + badge + "</div>" +
+                        '<div class="text-primary font-bold tabular-nums leading-none">' + opts.value(it) + "</div>" +
+                        '<div class="text-[10px] text-on-surface-variant opacity-60 mt-0.5">' + badgeOf(it) + "</div>" +
                     "</div>" +
                 "</div>";
             })
@@ -115,14 +134,17 @@
         loadCovers(el);
     }
 
+    const times = (it) => "\u00d7" + it.count;
     const withDate = (it) => esc(it.artist || "") + (it.date ? ' · <span class="opacity-70">' + fmtDate(it.date) + "</span>" : "");
     const artistOnly = (it) => esc(it.artist || "");
+    const bingeSub = (it) => (it.plays ? it.plays + " tracks · " : "") + '<span class="opacity-70">' + fmtDate(it.date) + "</span>";
 
     async function render() {
         const data = await fetchData(state.range);
         syncYears();
-        renderList("obsession-list", data.obsession, "in a day", withDate);
-        renderList("on-repeat-list", data.on_repeat, "in a row", artistOnly);
+        renderList("obsession-list", data.obsession, { value: times, badge: "in a day", sub: withDate });
+        renderList("on-repeat-list", data.on_repeat, { value: times, badge: "in a row", sub: artistOnly });
+        renderList("binge-list", data.binges, { value: (it) => fmtMins(it.minutes), badge: "in one sitting", sub: bingeSub });
     }
 
     function setActive(el, value) {

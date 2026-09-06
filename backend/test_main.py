@@ -1292,6 +1292,33 @@ def test_superlative_on_repeat_counts_longest_streak_ignoring_skips():
     assert all(r["name"] != "SkipLoop" for r in rows)  # <30s auto-repeat excluded
 
 
+def test_superlative_binges_clusters_sessions():
+    from routers.explore import _superlative_binges
+
+    con = duckdb.connect()
+    con.execute(
+        "CREATE TABLE history (track_uri VARCHAR, artist_name VARCHAR, ts TIMESTAMP)"
+    )
+    con.execute(
+        "INSERT INTO history VALUES "
+        "('spotify:track:a1','A', TIMESTAMP '2024-03-01 20:00'),"
+        "('spotify:track:a2','A', TIMESTAMP '2024-03-01 20:20'),"
+        "('spotify:track:a3','A', TIMESTAMP '2024-03-01 20:40'),"
+        "('spotify:track:b1','B', TIMESTAMP '2024-03-01 21:00'),"  # 60-min session, mostly A
+        "('spotify:track:c1','C', TIMESTAMP '2024-03-02 10:00'),"  # >30-min gap → new session
+        "('spotify:track:c2','C', TIMESTAMP '2024-03-02 10:10')"   # only 10 min, below the floor
+    )
+    rows = _superlative_binges(con, 0, "", 10)
+    con.close()
+
+    assert len(rows) == 1              # the short session is filtered out
+    assert rows[0]["minutes"] == 60
+    assert rows[0]["name"] == "A"      # dominant artist
+    assert rows[0]["plays"] == 4
+    assert rows[0]["date"] == "2024-03-01"
+
+
+
 def test_superlatives_endpoint():
     with TestClient(app) as client:
         empty = client.get("/api/metrics/superlatives").json()
@@ -1320,6 +1347,15 @@ def test_superlatives_endpoint():
             assert rep[0]["count"] >= 2
             rc = [o["count"] for o in rep]
             assert all(rc[i] >= rc[i + 1] for i in range(len(rc) - 1))
+
+        binges = data["binges"]
+        assert isinstance(binges, list)
+        if binges:
+            assert binges[0]["minutes"] >= 20
+            assert binges[0]["plays"] >= 1
+            assert len(binges[0]["date"]) == 10
+            bm = [b["minutes"] for b in binges]
+            assert all(bm[i] >= bm[i + 1] for i in range(len(bm) - 1))
 
         assert client.get("/api/metrics/superlatives?range=bogus").status_code == 400
 

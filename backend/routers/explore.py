@@ -1860,6 +1860,36 @@ def _superlative_on_repeat(raw_con, clause, limit):
     ]
 
 
+def _superlative_binges(raw_con, off, clause, limit):
+    """Longest single-sitting sessions (a >30-min gap starts a new session),
+    with the artist and track you leaned on most in each.
+    """
+    try:
+        rows = raw_con.execute(
+            "WITH o AS ("
+            "  SELECT ts, artist_name, split_part(track_uri, ':', 3) AS id, "
+            "         LAG(ts) OVER (ORDER BY ts) AS prev "
+            "  FROM history WHERE ts IS NOT NULL AND track_uri LIKE 'spotify:track:%'" + clause +
+            "), m AS ("
+            "  SELECT ts, artist_name, id, "
+            "         CASE WHEN prev IS NULL OR date_diff('minute', prev, ts) > 30 THEN 1 ELSE 0 END AS ns "
+            "  FROM o"
+            "), s AS ("
+            "  SELECT ts, artist_name, id, SUM(ns) OVER (ORDER BY ts) AS sid FROM m"
+            ") SELECT date_diff('minute', MIN(ts), MAX(ts)) AS dur, "
+            f"       CAST(MIN(ts) + to_minutes({off}) AS DATE) AS day, "
+            "       COUNT(*) AS plays, mode(artist_name) AS top_artist, mode(id) AS top_id "
+            "FROM s GROUP BY sid HAVING date_diff('minute', MIN(ts), MAX(ts)) >= 20 "
+            f"ORDER BY dur DESC, day LIMIT {int(limit)}"
+        ).fetchall()
+    except Exception:
+        return []
+    return [
+        {"rank": i, "name": r[3], "id": r[4], "minutes": int(r[0]), "date": str(r[1]), "plays": int(r[2])}
+        for i, r in enumerate(rows, start=1)
+    ]
+
+
 @router.get("/api/metrics/superlatives")
 async def get_superlatives(
     range: str = "all",
@@ -1880,6 +1910,7 @@ async def get_superlatives(
         return {
             "obsession": _superlative_obsession(raw_con, off, clause, limit),
             "on_repeat": _superlative_on_repeat(raw_con, clause, limit),
+            "binges": _superlative_binges(raw_con, off, clause, limit),
             "years": _chart_years(raw_con, off),
         }
 
