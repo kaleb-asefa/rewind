@@ -234,26 +234,17 @@ Two data sources drive everything:
 47. **Music time machine** — oldest and newest tracks played.
 48. **Nostalgia index** — drifting toward older or newer music over time.
 
-### H. Geography & devices [H]
+### H. Superlatives & fun (Wrapped-style) [H/C]
 
-49. **Travel map** — listening by `conn_country`; timeline of where you listened from.
-50. **Soundtrack of each place** — top track/artist per country.
-51. **Device story** — per-platform listening differences.
-52. **Platform over time** — when you switched devices.
-
-### I. Superlatives & fun (Wrapped-style) [H/C]
-
-53. **Listening personality** [D] — badges: Explorer↔Loyalist, Mainstream↔Underground,
+49. **Listening personality** [D] — badges: Explorer↔Loyalist, Mainstream↔Underground,
     Night-Owl↔Early-Bird, Focused↔Restless (skip), Shuffler↔Curator.
-54. **Longest / shortest song** played; most-repeated song in a single day.
-55. **The song you couldn't skip** (0% skip, many plays) vs the one you always skip.
-56. **Milestones** — your 1,000th / 10,000th play and what it was.
-57. **"On this day"** — what you were playing a year ago.
+50. **Longest / shortest song** played; most-repeated song in a single day.
+51. **The song you couldn't skip** (0% skip, many plays) vs the one you always skip.
+52. **Milestones** — your 1,000th / 10,000th play and what it was.
+53. **"On this day"** — what you were playing a year ago.
 
 ### Cross-cutting caveats
 
-- **Home country dominates** `conn_country`; other countries are real travel/VPN but sparse —
-  good for a map, but don't over-read small counts.
 - **Popularity is a 0–1 snapshot**, not historical — "mainstream score" is approximate.
 - **Define "skip" consistently** — flag vs `< 30s` vs `fwdbtn`; pick one and note it.
 - **Audio-feature coverage ~94%** — always surface the coverage figure alongside [C] metrics.
