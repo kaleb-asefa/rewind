@@ -1212,4 +1212,108 @@ async def get_evolution(conn: Connection = Depends(get_db)):
             "mainstream_trend": [],
         }
     return {"status": "ok", **res}
+
+
+@router.get("/api/metrics/sound-detail")
+async def get_sound_detail(conn: Connection = Depends(get_db)):
+    """Audio-detail spread and standouts for "The Detail In Your Sound": tempo
+    distribution, major/minor (bright vs moody) split, most danceable tracks, and
+    a high-vs-low energy (workout vs wind-down) split. From the enriched
+    track_features slice; empty when unenriched → the frontend keeps its sample.
+    """
+
+    _JOIN = (
+        "FROM history h JOIN track_features f "
+        "ON split_part(h.track_uri, ':', 3) = f.track_id "
+        "WHERE h.track_uri LIKE 'spotify:track:%'"
+    )
+    _ADJ_E = (
+        "CASE WHEN "
+        "lower(split_part(f.artist_genres, ',', 1)) LIKE '%r&b%' "
+        "OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%soul%' "
+        "OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%hip hop%' "
+        "OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%rap%' "
+        "OR lower(split_part(f.artist_genres, ',', 1)) LIKE '%trap%' "
+        f"THEN greatest(0, f.energy - {_ENERGY_LOUDNESS_ADJ}) "
+        "ELSE f.energy END"
+    )
+
+    def query():
+        raw_con = conn.connection.driver_connection
+
+        # Tempo buckets (BPM → plain speed labels).
+        try:
+            row = raw_con.execute(
+                "SELECT "
+                "COUNT(*) FILTER (WHERE f.tempo < 90), "
+                "COUNT(*) FILTER (WHERE f.tempo >= 90 AND f.tempo < 110), "
+                "COUNT(*) FILTER (WHERE f.tempo >= 110 AND f.tempo < 130), "
+                "COUNT(*) FILTER (WHERE f.tempo >= 130 AND f.tempo < 150), "
+                "COUNT(*) FILTER (WHERE f.tempo >= 150), "
+                "COUNT(*) FILTER (WHERE f.tempo IS NOT NULL) "
+                + _JOIN
+            ).fetchone()
+        except Exception:
+            return None
+        if not row or not row[5]:
+            return None
+        labels = ["Slow", "Relaxed", "Steady", "Upbeat", "Fast"]
+        buckets = [{"label": labels[i], "plays": int(row[i] or 0)} for i in range(5)]
+
+        # Major / minor (bright vs moody).
+        major_share = None
+        try:
+            m = raw_con.execute(
+                "SELECT AVG(CASE WHEN f.mode = 1 THEN 1.0 ELSE 0.0 END) "
+                + _JOIN + " AND f.mode IS NOT NULL"
+            ).fetchone()[0]
+            major_share = round(float(m), 3) if m is not None else None
+        except Exception:
+            major_share = None
+
+        # Most danceable tracks the user actually plays.
+        danceable = []
+        try:
+            drows = raw_con.execute(
+                "SELECT split_part(h.track_uri, ':', 3) AS id, any_value(h.track_name), "
+                "any_value(h.artist_name), any_value(f.danceability) AS dnc, COUNT(*) AS plays "
+                + _JOIN + " AND h.track_name IS NOT NULL AND f.danceability IS NOT NULL "
+                "GROUP BY id HAVING COUNT(*) >= 5 ORDER BY dnc DESC, plays DESC LIMIT 4"
+            ).fetchall()
+            danceable = [
+                {"name": r[1], "artist": r[2] or "", "id": r[0], "danceability": round(float(r[3]), 3)}
+                for r in drows
+            ]
+        except Exception:
+            danceable = []
+
+        # Workout (above-midpoint energy) vs wind-down, genre-corrected.
+        energy_split = {}
+        try:
+            w = raw_con.execute(
+                f"SELECT AVG((({_ADJ_E}) >= 0.5)::INTEGER) " + _JOIN + " AND f.energy IS NOT NULL"
+            ).fetchone()[0]
+            if w is not None:
+                workout = round(float(w), 3)
+                energy_split = {"workout": workout, "wind_down": round(1 - workout, 3)}
+        except Exception:
+            energy_split = {}
+
+        return {
+            "tempo": {"buckets": buckets},
+            "key": {"major_share": major_share} if major_share is not None else {},
+            "danceable": danceable,
+            "energy_split": energy_split,
+        }
+
+    res = await run_in_threadpool(query)
+    if not res:
+        return {
+            "status": "ok",
+            "tempo": {"buckets": []},
+            "key": {},
+            "danceable": [],
+            "energy_split": {},
+        }
+    return {"status": "ok", **res}
     return {"status": "ok", **res}

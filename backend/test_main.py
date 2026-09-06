@@ -900,6 +900,77 @@ def test_evolution_returns_trends_from_track_features(tmp_path, monkeypatch):
                 assert 0 <= data["day_night"][key]["energy"] <= 1
 
 
+def test_sound_detail_empty_when_no_history():
+    with TestClient(app) as client:
+        data = client.get("/api/metrics/sound-detail").json()
+        assert data == {
+            "status": "ok",
+            "tempo": {"buckets": []},
+            "key": {},
+            "danceable": [],
+            "energy_split": {},
+        }
+
+
+def test_sound_detail_returns_profile_from_track_features(tmp_path, monkeypatch):
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")},
+            )
+
+        # Enrich the most-played tracks so the danceable list (plays >= 5) fills.
+        engine = app.state.engine
+        with engine.connect() as conn:
+            raw = conn.connection.driver_connection
+            ids = [
+                r[0]
+                for r in raw.execute(
+                    "SELECT replace(track_uri, 'spotify:track:', '') AS id, COUNT(*) AS c "
+                    "FROM history WHERE track_uri LIKE 'spotify:track:%' "
+                    "GROUP BY id ORDER BY c DESC LIMIT 8"
+                ).fetchall()
+            ]
+        assert len(ids) >= 4
+
+        fixture = str(tmp_path / "sound_detail_fixture.parquet")
+        fx = duckdb.connect()
+        fx.execute(
+            "CREATE TABLE c (track_id VARCHAR, track_name VARCHAR, artist_name VARCHAR, "
+            "artist_genres VARCHAR, tempo DOUBLE, mode INTEGER, danceability DOUBLE, energy DOUBLE)"
+        )
+        rows = []
+        for idx, tid in enumerate(ids):
+            genre = "r&b, pop" if idx % 2 else "pop"
+            rows.append(
+                (tid, f"name_{idx}", f"artist_{idx}", genre, 80 + idx * 12, idx % 2, 0.9 - idx * 0.03, 0.3 + idx * 0.08)
+            )
+        fx.executemany("INSERT INTO c VALUES (?, ?, ?, ?, ?, ?, ?, ?)", rows)
+        fx.execute(f"COPY c TO '{fixture}' (FORMAT PARQUET)")
+        fx.close()
+        monkeypatch.setattr(catalog, "CATALOG_PATH", fixture)
+
+        with engine.connect() as conn:
+            main._enrich_session(conn)
+
+        data = client.get("/api/metrics/sound-detail").json()
+        assert data["status"] == "ok"
+        buckets = data["tempo"]["buckets"]
+        assert [b["label"] for b in buckets] == ["Slow", "Relaxed", "Steady", "Upbeat", "Fast"]
+        assert sum(b["plays"] for b in buckets) > 0
+        assert 0 <= data["key"]["major_share"] <= 1
+        assert data["danceable"]
+        for t in data["danceable"]:
+            assert t["name"] and t["id"]
+            assert 0 <= t["danceability"] <= 1
+        es = data["energy_split"]
+        assert abs(es["workout"] + es["wind_down"] - 1) < 0.01
+
+
 
 
 
