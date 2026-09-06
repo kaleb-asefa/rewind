@@ -118,6 +118,7 @@
     <script src="src/js/explore/evolution.js" defer></script>
     <script src="src/js/explore/sound_detail.js" defer></script>
     <script src="src/js/explore/deep_cuts.js" defer></script>
+    <script src="src/js/explore/wrapped.js" defer></script>
 </head>
 <body class="bg-background text-on-background antialiased min-h-screen flex flex-col">
 
@@ -192,6 +193,9 @@
                 </a>
                 <a data-chapter href="#deep-cuts" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">11</span> Your Deep Cuts
+                </a>
+                <a data-chapter href="#wrapped" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                    <span class="material-symbols-outlined text-sm">star</span> Wrapped
                 </a>
             </div>
         </nav>
@@ -867,6 +871,37 @@
                     <h3 class="font-headline-md text-headline-md text-on-surface">Couldn't skip</h3>
                     <div id="noskip" class="mt-5"></div>
                 </div>
+            </div>
+        </section>
+
+        <!-- Finale — Your Rewind, Wrapped -->
+        <section id="wrapped" class="scroll-mt-32 pt-10 space-y-6">
+            <div class="reveal">
+                <span class="text-primary/80 font-mono text-label-bold tracking-widest">FINALE</span>
+                <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Rewind, Wrapped</h2>
+                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">A year of listening, in a nutshell.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+                <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Your listening personality</h3>
+                    <div id="personality-badges" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5"></div>
+                </div>
+
+                <div class="reveal glass-card rounded-2xl p-gutter flex flex-col gap-6">
+                    <div id="longest-track"></div>
+                    <div id="shortest-track"></div>
+                </div>
+            </div>
+
+            <div class="reveal glass-card rounded-2xl p-gutter flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h3 class="font-headline-md text-headline-md text-on-surface">That's your Rewind.</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">A year of listening, wrapped.</p>
+                </div>
+                <a href="overview.html" class="inline-flex items-center gap-2 bg-primary text-on-primary font-label-bold text-label-bold uppercase tracking-wider px-6 py-3 rounded-full hover:brightness-110 transition">
+                    <span class="material-symbols-outlined text-lg">ios_share</span> Share your Rewind
+                </a>
             </div>
         </section>
 
