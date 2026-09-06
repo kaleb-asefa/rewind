@@ -1498,15 +1498,16 @@ async def get_discovery(conn: Connection = Depends(get_db)):
                     FROM ordered
                     WHERE date_diff('day', previous_ts, ts) >= 60
                 )
-                SELECT ANY_VALUE(h.track_name), ANY_VALUE(h.artist_name), COUNT(*) AS plays
+                SELECT split_part(h.track_uri, ':', 3) AS id, ANY_VALUE(h.track_name),
+                       ANY_VALUE(h.artist_name), COUNT(*) AS plays
                 FROM history h JOIN returning_tracks r USING (track_uri)
                 GROUP BY h.track_uri
-                ORDER BY plays DESC, 1
+                ORDER BY plays DESC, 2
                 LIMIT 4
                 """
             ).fetchall()
             rediscoveries = [
-                {"name": row[0], "artist": row[1], "plays": int(row[2])}
+                {"id": row[0], "name": row[1], "artist": row[2], "plays": int(row[3])}
                 for row in rows
             ]
         except Exception:
@@ -1536,7 +1537,22 @@ async def get_discovery(conn: Connection = Depends(get_db)):
                 LIMIT 4
                 """
             ).fetchall()
-            rising = [{"name": row[0], "share": int(row[1])} for row in rows]
+            artist_ids = {}
+            try:
+                artist_ids = {
+                    row[0]: row[1]
+                    for row in raw_con.execute(
+                        "SELECT artist_name, MAX(artist_id) FROM track_features "
+                        "WHERE artist_name IS NOT NULL AND artist_id IS NOT NULL "
+                        "GROUP BY artist_name"
+                    ).fetchall()
+                }
+            except Exception:
+                pass
+            rising = [
+                {"name": row[0], "share": int(row[1]), "id": artist_ids.get(row[0])}
+                for row in rows
+            ]
         except Exception:
             pass
 

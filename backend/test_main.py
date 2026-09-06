@@ -703,9 +703,11 @@ def test_discovery_returns_history_patterns():
         for item in data["rediscoveries"]:
             assert item["name"] and item["artist"]
             assert item["plays"] >= 2
+            assert item["id"] and len(item["id"]) == 22
         for item in data["rising"]:
             assert item["name"]
             assert item["share"] > 0
+            assert "id" in item
 
 
 
