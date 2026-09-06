@@ -469,6 +469,12 @@ html { scroll-behavior: smooth; }
 .nostalgia-hit { cursor: pointer; }
 #nostalgia-dot, #nostalgia-vline { transition: opacity 0.15s ease; pointer-events: none; }
 
+/* chapter 09 evolution */
+.genre-evo-seg { cursor: pointer; transition: filter 0.12s ease; }
+.genre-evo-seg:hover { filter: brightness(1.2); }
+.evo-hit { cursor: pointer; }
+.evo-dot { transition: opacity 0.15s ease; pointer-events: none; }
+
 .rhythm-tooltip {
     position: fixed;
     z-index: 100;

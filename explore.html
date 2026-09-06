@@ -115,6 +115,7 @@
     <script src="src/js/explore/discovery.js" defer></script>
     <script src="src/js/explore/life.js" defer></script>
     <script src="src/js/explore/over_time.js" defer></script>
+    <script src="src/js/explore/evolution.js" defer></script>
 </head>
 <body class="bg-background text-on-background antialiased min-h-screen flex flex-col">
 
@@ -180,6 +181,9 @@
                 </a>
                 <a data-chapter href="#over-time" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">08</span> Your Music, Over Time
+                </a>
+                <a data-chapter href="#evolution" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                    <span class="num font-mono">09</span> How Your Taste Changes
                 </a>
             </div>
         </nav>
@@ -731,6 +735,45 @@
                         <span id="nostalgia-word" class="font-label-bold text-label-bold uppercase tracking-wider text-primary">—</span>
                     </div>
                     <svg id="nostalgia-svg" viewBox="0 0 320 110" class="w-full h-auto mt-6"></svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 09 — How Your Taste Changes -->
+        <section id="evolution" class="scroll-mt-32 pt-10 space-y-6">
+            <div class="reveal">
+                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 09</span>
+                <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">How Your Taste Changes</h2>
+                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">How your sound shifted over the years.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+                <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter min-h-[280px] flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Genre mix</h3>
+                    <svg id="genre-evo-svg" viewBox="0 0 320 176" class="w-full h-auto mt-4"></svg>
+                    <div id="genre-evo-legend" class="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[11px] text-on-surface-variant"></div>
+                </div>
+
+                <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Mood drift</h3>
+                    <div id="mood-drift-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-5">—</div>
+                    <div class="font-body-sm text-body-sm text-on-surface-variant opacity-75">positivity over time</div>
+                    <svg id="mood-drift-svg" viewBox="0 0 200 72" class="w-full h-auto mt-auto pt-6"></svg>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+                <div class="reveal glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Day vs night</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">How your sound changes by hour.</p>
+                    <div id="day-night" class="flex gap-4 mt-5"></div>
+                </div>
+                <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="font-headline-md text-headline-md text-on-surface">Mainstream</h3>
+                        <span id="mainstream-word" class="font-label-bold text-label-bold uppercase tracking-wider text-primary">—</span>
+                    </div>
+                    <svg id="mainstream-svg" viewBox="0 0 200 72" class="w-full h-auto mt-auto pt-6"></svg>
                 </div>
             </div>
         </section>
