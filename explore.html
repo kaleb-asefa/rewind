@@ -116,6 +116,7 @@
     <script src="src/js/explore/life.js" defer></script>
     <script src="src/js/explore/over_time.js" defer></script>
     <script src="src/js/explore/evolution.js" defer></script>
+    <script src="src/js/explore/sound_detail.js" defer></script>
 </head>
 <body class="bg-background text-on-background antialiased min-h-screen flex flex-col">
 
@@ -184,6 +185,9 @@
                 </a>
                 <a data-chapter href="#evolution" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">09</span> How Your Taste Changes
+                </a>
+                <a data-chapter href="#sound-detail" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                    <span class="num font-mono">10</span> The Detail In Your Sound
                 </a>
             </div>
         </nav>
@@ -774,6 +778,50 @@
                         <span id="mainstream-word" class="font-label-bold text-label-bold uppercase tracking-wider text-primary">—</span>
                     </div>
                     <svg id="mainstream-svg" viewBox="0 0 200 72" class="w-full h-auto mt-auto pt-6"></svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 10 — The Detail In Your Sound -->
+        <section id="sound-detail" class="scroll-mt-32 pt-10 space-y-6">
+            <div class="reveal">
+                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 10</span>
+                <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">The Detail In Your Sound</h2>
+                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The range and standouts in your sound.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+                <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter min-h-[280px] flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">How fast you listen</h3>
+                    <div id="tempo-bars" class="flex items-end gap-2 h-44 mt-6"></div>
+                    <div id="tempo-caption" class="font-body-sm text-body-sm text-on-surface-variant opacity-75 mt-4">—</div>
+                </div>
+
+                <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Bright or moody</h3>
+                    <div id="key-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-5">—</div>
+                    <div id="key-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-5"></div>
+                    <div class="flex justify-between mt-2 text-[11px] text-on-surface-variant">
+                        <span><span id="key-major-pct">—</span>% bright</span>
+                        <span><span id="key-minor-pct">—</span>% moody</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+                <div class="reveal glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Most danceable</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-3">Your grooviest songs.</p>
+                    <div id="dance-list" class="space-y-1.5"></div>
+                </div>
+                <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Workout or wind-down</h3>
+                    <div id="energy-split-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-5">—</div>
+                    <div id="energy-split-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-5"></div>
+                    <div class="flex justify-between mt-2 text-[11px] text-on-surface-variant">
+                        <span><span id="workout-pct">—</span>% workout</span>
+                        <span><span id="winddown-pct">—</span>% wind-down</span>
+                    </div>
                 </div>
             </div>
         </section>

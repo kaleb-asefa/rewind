@@ -475,6 +475,10 @@ html { scroll-behavior: smooth; }
 .evo-hit { cursor: pointer; }
 .evo-dot { transition: opacity 0.15s ease; pointer-events: none; }
 
+/* chapter 10 sound detail */
+.tempo-bar { transition: background 0.15s ease; }
+.tempo-col:hover .tempo-bar { background: rgb(30, 215, 96); }
+
 .rhythm-tooltip {
     position: fixed;
     z-index: 100;
