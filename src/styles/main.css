@@ -443,6 +443,20 @@ html { scroll-behavior: smooth; }
 .gem-row { transition: background 0.12s ease; }
 .gem-row:hover { background: rgba(255, 255, 255, 0.05); }
 
+/* chapter 07 geography and device story */
+.world-place-fill { transition: width 0.45s ease, filter 0.12s ease; }
+.world-place-row:hover .world-place-fill { filter: brightness(1.25); }
+.world-place-row:hover .material-symbols-outlined { color: #1ed760; }
+.world-device-tile {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    min-height: 22px;
+    transition: transform 0.12s ease, filter 0.12s ease;
+}
+.world-device-tile:hover { transform: scale(1.12); filter: brightness(1.18); }
+.world-platform-row { transition: color 0.12s ease; }
+.world-platform-row:hover { color: #ffffff; }
+
 .rhythm-tooltip {
     position: fixed;
     z-index: 100;

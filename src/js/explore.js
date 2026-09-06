@@ -70,6 +70,7 @@
     const FULL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const state = { hourly: [], weekday: [], monthly: [], seasonPts: null, clockPeak: null };
     const soundState = { tracks: [], mix: [] };
+    const worldState = { places: [], soundtracks: [], timeline: [], platforms: [] };
 
     function plays(n) {
         return n.toLocaleString() + (n === 1 ? ' play' : ' plays');
@@ -829,6 +830,130 @@
         renderDiscovery(d);
     }
 
+    /* ---- Chapter 07 — Around Your World ---- */
+    const SAMPLE_WORLD = {
+        home: { name: 'Ethiopia', share: 0.78 },
+        country_count: 6,
+        countries: [
+            { name: 'United States', share: 0.11, plays: 254 },
+            { name: 'United Kingdom', share: 0.05, plays: 113 },
+            { name: 'Kenya', share: 0.03, plays: 72 },
+            { name: 'Germany', share: 0.02, plays: 46 },
+        ],
+        soundtracks: [
+            { country: 'United States', name: 'Good Days', artist: 'SZA', plays: 31 },
+            { country: 'United Kingdom', name: 'Lost Me', artist: 'Giveon', plays: 18 },
+            { country: 'Kenya', name: 'Calm Down', artist: 'Rema', plays: 14 },
+        ],
+        platforms: [
+            { name: 'Android', share: 0.72 },
+            { name: 'Windows', share: 0.2 },
+            { name: 'Linux', share: 0.08 },
+        ],
+        timeline: [
+            { label: 'Jan', platform: 'Android' }, { label: 'Feb', platform: 'Android' },
+            { label: 'Mar', platform: 'Windows' }, { label: 'Apr', platform: 'Android' },
+            { label: 'May', platform: 'Android' }, { label: 'Jun', platform: 'Linux' },
+            { label: 'Jul', platform: 'Android' }, { label: 'Aug', platform: 'Android' },
+            { label: 'Sep', platform: 'Windows' }, { label: 'Oct', platform: 'Android' },
+            { label: 'Nov', platform: 'Android' }, { label: 'Dec', platform: 'Android' },
+        ],
+    };
+
+    const WORLD_SHADES = ['#1ed760', 'rgba(30,215,96,0.68)', 'rgba(30,215,96,0.38)', 'rgba(30,215,96,0.2)'];
+
+    function worldDeviceIcon(name) {
+        const device = (name || '').toLowerCase();
+        if (device.includes('android') || device.includes('iphone') || device.includes('ios')) return 'phone_android';
+        if (device.includes('windows') || device.includes('mac') || device.includes('linux')) return 'laptop_mac';
+        if (device.includes('web') || device.includes('browser')) return 'language';
+        return 'devices';
+    }
+    function renderWorldPlaces(places) {
+        const el = document.getElementById('world-place-list');
+        if (!el) return;
+        worldState.places = places;
+        if (!places.length) {
+            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">No other places yet.</p>';
+            return;
+        }
+        const max = Math.max.apply(null, places.map((item) => item.share).concat(0.01));
+        el.innerHTML = places.slice(0, 4).map((item, index) => {
+            const width = Math.max(8, Math.round((item.share / max) * 100));
+            return '<div class="world-place-row space-y-1.5 cursor-pointer" data-place="' + index + '">' +
+                '<div class="flex justify-between gap-3"><span class="font-body-sm text-body-sm text-on-surface truncate">' + esc(item.name) + '</span>' +
+                '<span class="material-symbols-outlined text-on-surface-variant text-base shrink-0">location_on</span></div>' +
+                '<div class="h-2 rounded-full bg-surface-container-high overflow-hidden"><div class="world-place-fill h-full rounded-full bg-primary/50" style="width:' + width + '%"></div></div></div>';
+        }).join('');
+    }
+    function renderWorldDevices(platforms, timeline) {
+        const timelineEl = document.getElementById('world-platform-timeline');
+        const legendEl = document.getElementById('world-platform-legend');
+        if (!timelineEl || !legendEl) return;
+        worldState.platforms = platforms;
+        worldState.timeline = timeline;
+        const indexByName = new Map(platforms.map((item, index) => [item.name, index]));
+        if (!timeline.length) {
+            timelineEl.innerHTML = '<p class="col-span-6 font-body-sm text-body-sm text-on-surface-variant opacity-70">No device history yet.</p>';
+        } else {
+            timelineEl.innerHTML = timeline.slice(-12).map((item, index) => {
+                const platformIndex = indexByName.has(item.platform) ? indexByName.get(item.platform) : platforms.length;
+                const color = WORLD_SHADES[platformIndex % WORLD_SHADES.length];
+                return '<div class="world-device-tile cursor-pointer" data-device-tile="' + index + '" style="background:' + color + '" aria-label="' + esc(item.label) + ': ' + esc(item.platform) + '"></div>';
+            }).join('');
+        }
+        legendEl.innerHTML = platforms.map((item, index) =>
+            '<div class="world-platform-row flex items-center gap-2.5" data-platform="' + index + '">' +
+            '<span class="material-symbols-outlined text-base" style="color:' + WORLD_SHADES[index % WORLD_SHADES.length] + '">' + worldDeviceIcon(item.name) + '</span>' +
+            '<span class="font-body-sm text-body-sm text-on-surface flex-1 truncate">' + esc(item.name) + '</span>' +
+            '<span class="font-mono text-[11px] text-on-surface-variant">' + Math.round(item.share * 100) + '%</span></div>'
+        ).join('');
+    }
+    function renderWorldSoundtracks(items) {
+        const el = document.getElementById('world-soundtrack-list');
+        if (!el) return;
+        worldState.soundtracks = items;
+        if (!items.length) {
+            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">No tracks away from home yet.</p>';
+            return;
+        }
+        el.innerHTML = items.slice(0, 4).map((item, index) =>
+            '<div class="gem-row world-soundtrack-row flex items-center gap-3 p-2 rounded-lg cursor-pointer" data-soundtrack="' + index + '">' +
+            coverCell(item.id) +
+            '<div class="min-w-0 flex-1"><div class="font-body-sm text-body-sm text-on-surface truncate">' + esc(item.name) +
+            '</div><div class="font-body-sm text-[11px] text-on-surface-variant opacity-70 truncate">' + esc(item.artist) +
+            '</div></div><span class="font-mono text-[10px] text-primary/80 text-right max-w-[86px] truncate shrink-0">' + esc(item.country) + '</span></div>'
+        ).join('');
+        loadCovers(el);
+    }
+    function renderWorld(data) {
+        const home = data.home || {};
+        const homeShare = Math.max(0, Math.min(1, Number(home.share) || 0));
+        setText('world-home', home.name || '—');
+        setText('world-home-share', Math.round(homeShare * 100) + '% of your listening');
+        setText('world-country-count', Math.max(0, Math.round(data.country_count || 0)));
+        setText('world-away-share', Math.round((1 - homeShare) * 100) + '%');
+        setText('world-away-label', 'listened outside ' + (home.name || 'home'));
+        renderWorldPlaces(data.countries || []);
+        renderWorldDevices(data.platforms || [], data.timeline || []);
+        renderWorldSoundtracks(data.soundtracks || []);
+    }
+    async function fetchWorld() {
+        if (!document.getElementById('world-place-list')) return;
+        let data = SAMPLE_WORLD;
+        if (window.fetchWithTimeout) {
+            try {
+                const res = await window.fetchWithTimeout('/api/metrics/world');
+                if (res && res.ok && res.data && res.data.home && typeof res.data.home.name === 'string') {
+                    data = res.data;
+                }
+            } catch (_e) {
+                /* keep sample fallback until the endpoint is available */
+            }
+        }
+        renderWorld(data);
+    }
+
     /* ---- Wire hover on all three charts (delegated, survives re-render) ---- */
     function attr(el, name) {
         return el && el.getAttribute ? el.getAttribute(name) : null;
@@ -984,6 +1109,58 @@
                 hideTip();
             });
         }
+
+        const places = document.getElementById('world-place-list');
+        if (places) {
+            const rowOf = (target) => (target && target.closest ? target.closest('[data-place]') : null);
+            places.addEventListener('mouseover', (e) => {
+                const row = rowOf(e.target);
+                if (!row) return;
+                const place = worldState.places[+row.getAttribute('data-place')];
+                if (place) showTip(place.name, Math.round(place.share * 100) + '% · ' + plays(place.plays || 0), e.clientX, e.clientY);
+            });
+            places.addEventListener('mousemove', (e) => { if (rowOf(e.target)) moveTip(e.clientX, e.clientY); });
+            places.addEventListener('mouseout', (e) => {
+                const row = rowOf(e.target);
+                if (row && row.contains(e.relatedTarget)) return;
+                hideTip();
+            });
+        }
+
+        const soundtrack = document.getElementById('world-soundtrack-list');
+        if (soundtrack) {
+            const rowOf = (target) => (target && target.closest ? target.closest('[data-soundtrack]') : null);
+            soundtrack.addEventListener('mouseover', (e) => {
+                const row = rowOf(e.target);
+                if (!row) return;
+                const item = worldState.soundtracks[+row.getAttribute('data-soundtrack')];
+                if (item) showTip(item.country, plays(item.plays || 0), e.clientX, e.clientY);
+            });
+            soundtrack.addEventListener('mousemove', (e) => { if (rowOf(e.target)) moveTip(e.clientX, e.clientY); });
+            soundtrack.addEventListener('mouseout', (e) => {
+                const row = rowOf(e.target);
+                if (row && row.contains(e.relatedTarget)) return;
+                hideTip();
+            });
+        }
+
+        const devices = document.getElementById('world-platform-timeline');
+        if (devices) {
+            devices.addEventListener('mouseover', (e) => {
+                const tile = e.target.closest ? e.target.closest('[data-device-tile]') : null;
+                if (!tile) return;
+                const item = worldState.timeline[+tile.getAttribute('data-device-tile')];
+                if (item) showTip(item.label, item.platform, e.clientX, e.clientY);
+            });
+            devices.addEventListener('mousemove', (e) => {
+                if (e.target.closest && e.target.closest('[data-device-tile]')) moveTip(e.clientX, e.clientY);
+            });
+            devices.addEventListener('mouseout', (e) => {
+                const tile = e.target.closest ? e.target.closest('[data-device-tile]') : null;
+                if (tile && tile.contains(e.relatedTarget)) return;
+                hideTip();
+            });
+        }
     }
 
     /* ---- Side stats ---- */
@@ -1052,11 +1229,13 @@
         fetchTaste();
         fetchBehavior();
         fetchDiscovery();
+        fetchWorld();
         window.addEventListener('rewind:data-updated', fetchRhythm);
         window.addEventListener('rewind:data-updated', fetchSound);
         window.addEventListener('rewind:data-updated', fetchTaste);
         window.addEventListener('rewind:data-updated', fetchBehavior);
         window.addEventListener('rewind:data-updated', fetchDiscovery);
+        window.addEventListener('rewind:data-updated', fetchWorld);
     }
 
     if (document.readyState === 'loading') {
