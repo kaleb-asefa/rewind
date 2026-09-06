@@ -114,6 +114,7 @@
     <script src="src/js/explore/behavior.js" defer></script>
     <script src="src/js/explore/discovery.js" defer></script>
     <script src="src/js/explore/life.js" defer></script>
+    <script src="src/js/explore/over_time.js" defer></script>
 </head>
 <body class="bg-background text-on-background antialiased min-h-screen flex flex-col">
 
@@ -176,6 +177,9 @@
                 </a>
                 <a data-chapter href="#listening-life" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">07</span> Your Listening Life
+                </a>
+                <a data-chapter href="#over-time" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                    <span class="num font-mono">08</span> Your Music, Over Time
                 </a>
             </div>
         </nav>
@@ -683,6 +687,51 @@
             <div class="reveal glass-card rounded-2xl p-gutter min-h-[250px] flex flex-col">
                 <h3 class="font-headline-md text-headline-md text-on-surface">Milestones</h3>
                 <div id="life-milestones" class="flex-1 flex items-center mt-4"></div>
+            </div>
+        </section>
+
+        <!-- Chapter 08 — Your Music, Over Time -->
+        <section id="over-time" class="scroll-mt-32 pt-10 space-y-6">
+            <div class="reveal">
+                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 08</span>
+                <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Music, Over Time</h2>
+                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">What you played, year by year.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+                <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter min-h-[280px] flex flex-col">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <h3 class="font-headline-md text-headline-md text-on-surface">Your years</h3>
+                        <div id="year-tabs" class="flex items-center gap-1 p-1 bg-surface-container-high rounded-full"></div>
+                    </div>
+                    <div id="year-highlights" class="space-y-1.5 mt-auto pt-7"></div>
+                </div>
+
+                <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Music age</h3>
+                    <div id="age-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-5">—</div>
+                    <div id="age-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-5"></div>
+                    <div class="flex justify-between mt-2 text-[11px] text-on-surface-variant">
+                        <span><span id="age-fresh-pct">—</span>% new releases</span>
+                        <span><span id="age-catalog-pct">—</span>% catalog</span>
+                    </div>
+                    <div class="mt-auto pt-7 font-body-sm text-body-sm text-on-surface-variant opacity-80">Average release year <span id="age-avg-year" class="text-on-surface font-semibold">—</span></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+                <div class="reveal glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Time machine</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-3">The oldest and newest songs you played.</p>
+                    <div id="time-machine-list" class="space-y-1.5"></div>
+                </div>
+                <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="font-headline-md text-headline-md text-on-surface">Nostalgia</h3>
+                        <span id="nostalgia-word" class="font-label-bold text-label-bold uppercase tracking-wider text-primary">—</span>
+                    </div>
+                    <svg id="nostalgia-svg" viewBox="0 0 320 110" class="w-full h-auto mt-6"></svg>
+                </div>
             </div>
         </section>
 

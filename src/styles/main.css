@@ -456,6 +456,19 @@ html { scroll-behavior: smooth; }
     box-shadow: 0 0 0 5px rgba(30, 215, 96, 0.14);
 }
 
+/* chapter 08 over-time */
+.year-tab {
+    color: rgb(var(--color-on-surface-variant));
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+.year-tab:hover { color: rgb(var(--color-on-surface)); }
+.year-tab--active {
+    background: rgb(var(--color-primary));
+    color: rgb(var(--color-on-primary));
+}
+.nostalgia-hit { cursor: pointer; }
+#nostalgia-dot, #nostalgia-vline { transition: opacity 0.15s ease; pointer-events: none; }
+
 .rhythm-tooltip {
     position: fixed;
     z-index: 100;
