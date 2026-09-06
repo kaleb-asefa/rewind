@@ -710,6 +710,42 @@ def test_discovery_returns_history_patterns():
             assert "id" in item
 
 
+def test_listening_life_empty_when_no_history():
+    with TestClient(app) as client:
+        data = client.get("/api/metrics/listening-life").json()
+        assert data == {
+            "status": "ok",
+            "peaks": [],
+            "typical_session_minutes": 0,
+            "session_mix": [],
+            "milestones": [],
+        }
+
+
+def test_listening_life_returns_history_moments():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")},
+            )
+
+        data = client.get("/api/metrics/listening-life").json()
+        assert data["status"] == "ok"
+        assert [peak["label"] for peak in data["peaks"]] == ["Day", "Week", "Month"]
+        assert all(peak["minutes"] > 0 and peak["period"] for peak in data["peaks"])
+        assert data["typical_session_minutes"] >= 0
+        assert [item["label"] for item in data["session_mix"]] == [
+            "Under 15m", "15-30m", "30-60m", "Over 1h"
+        ]
+        assert abs(sum(item["share"] for item in data["session_mix"]) - 1) < 0.01
+        assert [item["target"] for item in data["milestones"]] == [1000, 5000, 10000]
+        assert all(item["date"] and item["track"] for item in data["milestones"])
+
+
 
 
 
