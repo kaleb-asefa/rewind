@@ -117,6 +117,7 @@
     <script src="src/js/explore/over_time.js" defer></script>
     <script src="src/js/explore/evolution.js" defer></script>
     <script src="src/js/explore/sound_detail.js" defer></script>
+    <script src="src/js/explore/deep_cuts.js" defer></script>
 </head>
 <body class="bg-background text-on-background antialiased min-h-screen flex flex-col">
 
@@ -188,6 +189,9 @@
                 </a>
                 <a data-chapter href="#sound-detail" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">10</span> The Detail In Your Sound
+                </a>
+                <a data-chapter href="#deep-cuts" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                    <span class="num font-mono">11</span> Your Deep Cuts
                 </a>
             </div>
         </nav>
@@ -822,6 +826,46 @@
                         <span><span id="workout-pct">—</span>% workout</span>
                         <span><span id="winddown-pct">—</span>% wind-down</span>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 11 — Your Deep Cuts -->
+        <section id="deep-cuts" class="scroll-mt-32 pt-10 space-y-6">
+            <div class="reveal">
+                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 11</span>
+                <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Deep Cuts</h2>
+                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">How deep your favorites run.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+                <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter min-h-[240px] flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Your inner circle</h3>
+                    <div id="concentration-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-5">—</div>
+                    <div class="font-body-sm text-body-sm text-on-surface-variant opacity-80 mt-1">Top 10 artists = <span id="concentration-pct" class="text-on-surface font-semibold">—</span>% of all plays</div>
+                    <div id="concentration-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-auto"></div>
+                    <div class="flex justify-between mt-2 text-[11px] text-on-surface-variant"><span>Top 10 artists</span><span>Everyone else</span></div>
+                </div>
+
+                <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Album commitment</h3>
+                    <div id="album-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-5">—</div>
+                    <div id="album-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-5"></div>
+                    <div class="flex justify-between mt-2 text-[11px] text-on-surface-variant">
+                        <span><span id="album-deep-pct">—</span>% full albums</span>
+                        <span><span id="album-single-pct">—</span>% singles</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+                <div class="reveal glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Most in one day</h3>
+                    <div id="day-track" class="mt-5"></div>
+                </div>
+                <div class="reveal glass-card rounded-2xl p-gutter">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Couldn't skip</h3>
+                    <div id="noskip" class="mt-5"></div>
                 </div>
             </div>
         </section>
