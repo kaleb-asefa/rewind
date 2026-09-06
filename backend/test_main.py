@@ -971,6 +971,45 @@ def test_sound_detail_returns_profile_from_track_features(tmp_path, monkeypatch)
         assert abs(es["workout"] + es["wind_down"] - 1) < 0.01
 
 
+def test_deep_cuts_empty_when_no_history():
+    with TestClient(app) as client:
+        data = client.get("/api/metrics/deep-cuts").json()
+        assert data == {
+            "status": "ok",
+            "concentration": {},
+            "album_commitment": {},
+            "top_day_track": {},
+            "no_skip": {},
+        }
+
+
+def test_deep_cuts_returns_history_patterns():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")},
+            )
+
+        data = client.get("/api/metrics/deep-cuts").json()
+        assert data["status"] == "ok"
+        assert 0 <= data["concentration"]["top10_share"] <= 1
+        assert 0 <= data["album_commitment"]["deep_share"] <= 1
+
+        day = data["top_day_track"]
+        assert day["name"] and day["artist"]
+        assert day["id"] and len(day["id"]) == 22
+        assert day["count"] >= 1 and day["date"]
+
+        no_skip = data["no_skip"]
+        assert no_skip["name"] and no_skip["id"] and len(no_skip["id"]) == 22
+        assert no_skip["plays"] >= 5
+        assert 0 <= no_skip["skip_rate"] <= 1
+
+
 
 
 

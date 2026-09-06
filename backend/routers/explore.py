@@ -1316,4 +1316,130 @@ async def get_sound_detail(conn: Connection = Depends(get_db)):
             "energy_split": {},
         }
     return {"status": "ok", **res}
+
+
+@router.get("/api/metrics/deep-cuts")
+async def get_deep_cuts(conn: Connection = Depends(get_db)):
+    """Loyalty and commitment deep cuts (history only): the top 10 artists' share
+    of plays, full-album vs single listening, the track binged most in one day,
+    and the heavily-played favourite you almost never skip.
+    """
+
+    def query():
+        raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con)  # int minutes; safe to inline
+        music = "WHERE track_uri LIKE 'spotify:track:%' AND artist_name IS NOT NULL"
+
+        # Concentration: top 10 artists' share of music plays.
+        try:
+            row = raw_con.execute(
+                f"""
+                WITH artist_plays AS (
+                    SELECT artist_name, COUNT(*) AS plays
+                    FROM history {music} GROUP BY artist_name
+                ), ranked AS (
+                    SELECT plays, ROW_NUMBER() OVER (ORDER BY plays DESC) AS rn
+                    FROM artist_plays
+                )
+                SELECT COALESCE(SUM(plays) FILTER (WHERE rn <= 10), 0), COALESCE(SUM(plays), 0)
+                FROM ranked
+                """
+            ).fetchone()
+        except Exception:
+            return None
+        if not row or not row[1]:
+            return None
+        top10_share = round(row[0] / row[1], 3)
+
+        # Album commitment: share of played albums with >= 3 distinct tracks.
+        deep_share = None
+        try:
+            r = raw_con.execute(
+                """
+                WITH album_tracks AS (
+                    SELECT album_name, artist_name, COUNT(DISTINCT track_uri) AS distinct_tracks
+                    FROM history
+                    WHERE album_name IS NOT NULL AND track_uri LIKE 'spotify:track:%'
+                    GROUP BY album_name, artist_name
+                )
+                SELECT AVG((distinct_tracks >= 3)::INTEGER) FROM album_tracks
+                """
+            ).fetchone()[0]
+            deep_share = round(float(r), 3) if r is not None else None
+        except Exception:
+            deep_share = None
+
+        # Most-played track in a single day (>= 30s plays only, so auto-repeat
+        # skip-spam doesn't masquerade as a genuine binge).
+        top_day_track = {}
+        try:
+            d = raw_con.execute(
+                f"""
+                SELECT CAST(ts + to_minutes({off}) AS DATE) AS day, track_uri,
+                       any_value(track_name), any_value(artist_name), COUNT(*) AS plays
+                FROM history
+                WHERE track_uri LIKE 'spotify:track:%' AND ts IS NOT NULL
+                  AND track_name IS NOT NULL AND ms_played >= 30000
+                GROUP BY day, track_uri
+                ORDER BY plays DESC, day
+                LIMIT 1
+                """
+            ).fetchone()
+            if d:
+                day = d[0]
+                top_day_track = {
+                    "name": d[2],
+                    "artist": d[3] or "",
+                    "id": d[1].split(":")[-1],
+                    "count": int(d[4]),
+                    "date": f"{day.strftime('%B')} {day.day}, {day.year}",
+                }
+        except Exception:
+            top_day_track = {}
+
+        # The favourite you almost never skip (many plays, low fwdbtn rate).
+        no_skip = {}
+        try:
+            def pick(min_plays):
+                return raw_con.execute(
+                    f"""
+                    SELECT split_part(track_uri, ':', 3) AS id, any_value(track_name),
+                           any_value(artist_name), COUNT(*) AS plays,
+                           AVG(CASE WHEN reason_end = 'fwdbtn' THEN 1.0 ELSE 0.0 END) AS skip_rate
+                    FROM history
+                    WHERE track_uri LIKE 'spotify:track:%' AND track_name IS NOT NULL
+                    GROUP BY track_uri HAVING COUNT(*) >= {min_plays}
+                    ORDER BY skip_rate ASC, plays DESC LIMIT 1
+                    """
+                ).fetchone()
+
+            n = pick(20) or pick(5)
+            if n:
+                no_skip = {
+                    "name": n[1],
+                    "artist": n[2] or "",
+                    "id": n[0],
+                    "plays": int(n[3]),
+                    "skip_rate": round(float(n[4]), 3),
+                }
+        except Exception:
+            no_skip = {}
+
+        return {
+            "concentration": {"top10_share": top10_share},
+            "album_commitment": {"deep_share": deep_share} if deep_share is not None else {},
+            "top_day_track": top_day_track,
+            "no_skip": no_skip,
+        }
+
+    res = await run_in_threadpool(query)
+    if not res:
+        return {
+            "status": "ok",
+            "concentration": {},
+            "album_commitment": {},
+            "top_day_track": {},
+            "no_skip": {},
+        }
+    return {"status": "ok", **res}
     return {"status": "ok", **res}
