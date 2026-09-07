@@ -121,7 +121,12 @@
             '</div>';
     }
     function loadCovers(container) {
-        if (!container || !window.loadCover) return;
+        if (!container) return;
+        if (window.loadCoversBatch) {
+            window.loadCoversBatch(container, 'track');
+            return;
+        }
+        if (!window.loadCover) return;
         container.querySelectorAll('img.cover-img[data-cover-id]').forEach((img) => {
             window.loadCover(img, img.getAttribute('data-cover-kind') || 'track', img.getAttribute('data-cover-id'));
         });

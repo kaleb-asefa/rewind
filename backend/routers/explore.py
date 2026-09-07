@@ -1,6 +1,7 @@
 """Explore-page (deep dive) metrics: rank velocity, bar race, rhythm, audio,
 taste, behavior, discovery and listening life."""
 
+import unicodedata
 from datetime import timedelta
 
 from database import get_db
@@ -1884,10 +1885,45 @@ def _superlative_binges(raw_con, off, clause, limit):
         ).fetchall()
     except Exception:
         return []
-    return [
-        {"rank": i, "name": r[3], "id": r[4], "minutes": int(r[0]), "date": str(r[1]), "plays": int(r[2])}
+    items = [
+        {"rank": i, "name": r[3], "track_id": r[4], "minutes": int(r[0]),
+         "date": str(r[1]), "plays": int(r[2])}
         for i, r in enumerate(rows, start=1)
     ]
+    _attach_binge_artist_ids(raw_con, items)
+    return items
+
+
+def _attach_binge_artist_ids(raw_con, items):
+    """Set each binge's `id` to its artist photo id, matched by the artist NAME
+    shown (accent-insensitive), so the cover always matches the label. A binge
+    is an artist's session, so we show the artist — not a track cover. Stays
+    None when unenriched or the artist isn't in the catalog.
+    """
+    for it in items:
+        it["id"] = None
+    if not items:
+        return
+    try:
+        id_map = {
+            r[0]: r[1]
+            for r in raw_con.execute(
+                "SELECT strip_accents(upper(trim(artist_name))) AS akey, arg_max(artist_id, c) "
+                "FROM (SELECT artist_name, artist_id, COUNT(*) AS c FROM track_features "
+                "WHERE artist_id IS NOT NULL GROUP BY artist_name, artist_id) GROUP BY akey"
+            ).fetchall()
+        }
+    except Exception:
+        return
+    for it in items:
+        it["id"] = id_map.get(_norm_artist_key(it.get("name")))
+
+
+def _norm_artist_key(name):
+    """Mirror DuckDB strip_accents(upper(trim(name))) for id-map lookups."""
+    s = (name or "").strip().upper()
+    s = unicodedata.normalize("NFKD", s)
+    return "".join(c for c in s if not unicodedata.combining(c))
 
 
 @router.get("/api/metrics/superlatives")

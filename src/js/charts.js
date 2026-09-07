@@ -260,6 +260,10 @@
     }
 
     function loadRowCovers(container) {
+        if (window.loadCoversBatch) {
+            window.loadCoversBatch(container, ENTITIES[state.entity].cover);
+            return;
+        }
         if (!window.loadCover) return;
         container.querySelectorAll("img.cover-img[data-cover-id]").forEach((img) => {
             window.loadCover(img, ENTITIES[state.entity].cover, img.getAttribute("data-cover-id"));

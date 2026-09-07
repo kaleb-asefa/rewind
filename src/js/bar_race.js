@@ -150,7 +150,7 @@
                 <div class="race-name" style="position:absolute;left:${LEFT_PAD}px;top:0;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-shadow:0 1px 3px rgba(0,0,0,.7);">${item.name}${sub}</div>
                 <div class="race-avatar" style="position:absolute;top:${(LANE - AVATAR) / 2}px;width:${AVATAR}px;height:${AVATAR}px;border-radius:9999px;overflow:hidden;border:2px solid rgba(255,255,255,.18);background:linear-gradient(135deg,#2f6b43,#1db954);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.4);">
                     <span style="font-size:15px;font-weight:800;color:#eafff0;">${initial}</span>
-                    <img class="race-cover hidden" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt=""/>
+                    <img class="race-cover cover-img hidden" data-cover-kind="${entity}" data-cover-id="${item.id || ''}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt=""/>
                 </div>
                 <div class="race-value" style="position:absolute;top:0;height:${LANE}px;display:flex;align-items:center;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#e5e2e1;white-space:nowrap;"></div>`;
             container.appendChild(row);
@@ -159,8 +159,10 @@
             curOp.push(0);
         });
 
-        // Lazy-load cover art (best-effort, cached server-side).
-        if (window.loadCover) {
+        // Lazy-load cover art in ONE batched request (best-effort, cached server-side).
+        if (window.loadCoversBatch) {
+            window.loadCoversBatch(container, entity);
+        } else if (window.loadCover) {
             items.forEach((item, i) => {
                 if (!item.id) return;
                 const img = rowEls[i].querySelector(".race-cover");

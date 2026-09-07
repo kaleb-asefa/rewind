@@ -30,7 +30,7 @@
     ];
 
     const SAMPLE_BINGES = [
-        { name: "SZA", id: "5Y35SjAfXjjG0sFQ3KOxmm", minutes: 341, date: "2023-06-18", plays: 47 },
+        { name: "SZA", id: "7tYKF4w9nC0nq9CsPZTHyP", minutes: 341, date: "2023-06-18", plays: 47 },
         { name: "J. Cole", id: null, minutes: 268, date: "2023-01-22", plays: 39 },
         { name: "Drake", id: null, minutes: 214, date: "2024-02-14", plays: 33 },
         { name: "Summer Walker", id: null, minutes: 182, date: "2024-08-09", plays: 28 },
@@ -70,16 +70,30 @@
     }
     function trackCover(id) {
         const img = id
-            ? '<img class="cover-img hidden absolute inset-0 w-full h-full object-cover rounded-md" data-cover-id="' + esc(id) + '" alt="">'
+            ? '<img class="cover-img hidden absolute inset-0 w-full h-full object-cover rounded-md" data-cover-kind="track" data-cover-id="' + esc(id) + '" alt="">'
             : "";
         return '<div class="w-10 h-10 rounded-md bg-surface-container-high relative overflow-hidden shrink-0">' +
             '<span class="absolute inset-0 flex items-center justify-center text-on-surface-variant opacity-40">' +
             '<span class="material-symbols-outlined text-lg">music_note</span></span>' + img + "</div>";
     }
+    // Binges are an ARTIST's session, so show the artist's photo (round), not a
+    // random track cover from that session.
+    function artistCover(id) {
+        const img = id
+            ? '<img class="cover-img hidden absolute inset-0 w-full h-full object-cover rounded-full" data-cover-kind="artist" data-cover-id="' + esc(id) + '" alt="">'
+            : "";
+        return '<div class="w-10 h-10 rounded-full bg-surface-container-high relative overflow-hidden shrink-0">' +
+            '<span class="absolute inset-0 flex items-center justify-center text-on-surface-variant opacity-40">' +
+            '<span class="material-symbols-outlined text-lg">artist</span></span>' + img + "</div>";
+    }
     function loadCovers(container) {
+        if (window.loadCoversBatch) {
+            window.loadCoversBatch(container, "track");
+            return;
+        }
         if (!window.loadCover) return;
         container.querySelectorAll("img.cover-img[data-cover-id]").forEach((img) => {
-            window.loadCover(img, "track", img.getAttribute("data-cover-id"));
+            window.loadCover(img, img.getAttribute("data-cover-kind") || "track", img.getAttribute("data-cover-id"));
         });
     }
 
@@ -109,17 +123,18 @@
         return data;
     }
 
-    // opts = { value(item), badge(item)|string, sub(item) }.
+    // opts = { value(item), badge(item)|string, sub(item), cover(item)? }.
     function renderList(elId, rows, opts) {
         const el = document.getElementById(elId);
         if (!el) return;
         const badgeOf = typeof opts.badge === "function" ? opts.badge : () => opts.badge;
+        const coverOf = opts.cover || ((it) => trackCover(it.id));
         el.innerHTML = rows
             .map((it, i) => {
                 const rank = it.rank || i + 1;
                 return '<div class="chart-row flex items-center gap-3 px-2 py-2 rounded-lg">' +
                     '<div class="w-6 text-right font-mono font-bold shrink-0 ' + rankClass(rank) + '">' + rank + "</div>" +
-                    trackCover(it.id) +
+                    coverOf(it) +
                     '<div class="min-w-0 flex-1">' +
                         '<div class="font-semibold text-on-surface truncate">' + esc(it.name) + "</div>" +
                         '<div class="text-[11px] text-on-surface-variant truncate">' + opts.sub(it) + "</div>" +
@@ -144,7 +159,7 @@
         syncYears();
         renderList("obsession-list", data.obsession, { value: times, badge: "in a day", sub: withDate });
         renderList("on-repeat-list", data.on_repeat, { value: times, badge: "in a row", sub: artistOnly });
-        renderList("binge-list", data.binges, { value: (it) => fmtMins(it.minutes), badge: "in one sitting", sub: bingeSub });
+        renderList("binge-list", data.binges, { value: (it) => fmtMins(it.minutes), badge: "in one sitting", sub: bingeSub, cover: (it) => artistCover(it.id) });
     }
 
     function setActive(el, value) {

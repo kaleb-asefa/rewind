@@ -348,27 +348,24 @@
     // Single theme green for every trend line (tips are identified by their labels).
     const LINE_COLOR = '#53e076';
 
-    // Lazy-load cover art for the tip avatars, in a small worker pool so requests
-    // don't pile into one huge queue and time out (best-effort, cached server-side).
+    // Lazy-load cover art for the tip avatars in ONE batched request per category
+    // (instead of one request per featured entity), so covers land together and
+    // don't flood the server (best-effort, cached server-side).
     let coversFetched = { tracks: false, artists: false };
 
     async function prefetchCovers(list, kind) {
         if (!window.fetchWithTimeout) return;
         const targets = list.filter((it) => it.spotifyId);
-        let idx = 0;
-        async function worker() {
-            while (idx < targets.length) {
-                const item = targets[idx++];
-                try {
-                    const res = await window.fetchWithTimeout(
-                        `/api/image?kind=${kind}&id=${encodeURIComponent(item.spotifyId)}`, {}, 8000);
-                    if (res.ok && res.data && res.data.image_url) {
-                        item.image = res.data.image_url;
-                    }
-                } catch (_) { /* covers are non-critical */ }
+        if (!targets.length) return;
+        const ids = Array.from(new Set(targets.map((t) => t.spotifyId)));
+        try {
+            const res = await window.fetchWithTimeout(
+                `/api/images?kind=${kind}&ids=${encodeURIComponent(ids.join(","))}`, {}, 15000);
+            const map = (res.ok && res.data && res.data.images) || {};
+            for (const item of targets) {
+                if (map[item.spotifyId]) item.image = map[item.spotifyId];
             }
-        }
-        await Promise.all(Array.from({ length: 8 }, worker));
+        } catch (_) { /* covers are non-critical */ }
         renderChart();
     }
 

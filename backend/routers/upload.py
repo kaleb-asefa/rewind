@@ -161,3 +161,27 @@ async def get_image(
 
     url = await run_in_threadpool(work)
     return {"status": "ok", "image_url": url}
+
+
+@router.get("/api/images")
+async def get_images(
+    kind: str,
+    ids: str,
+    conn: Connection = Depends(get_db),
+):
+    """Batch-resolve cover URLs for many ids in one call (comma-separated).
+
+    Collapses N per-image round-trips into one and fetches the cache misses
+    concurrently, so a whole chart's covers land together instead of trickling.
+    """
+    if kind not in {"artist", "album", "track"}:
+        raise HTTPException(status_code=400, detail="Invalid image kind.")
+    id_list = [i for i in ids.split(",") if i][:200]
+
+    def work():
+        result = images.get_or_fetch_many(conn.connection.driver_connection, kind, id_list)
+        conn.commit()
+        return result
+
+    result = await run_in_threadpool(work)
+    return {"status": "ok", "images": result}
