@@ -22,6 +22,54 @@ from starlette.concurrency import run_in_threadpool
 router = APIRouter()
 
 
+def _canonical_artist_rows(raw_con, period_trunc):
+    """Per-period ``(period, display_name, ms, streams)`` rows with accent/case
+    artist-name variants merged (Spotify exports the same artist under multiple
+    spellings, e.g. 'GIVĒON' vs 'Giveon'). Grouped by a diacritic-insensitive
+    key; the display name is the most-played spelling, kept identical across
+    periods so the merge holds for every frame. ``period_trunc`` is an internal
+    literal ('week' / 'month'), never user input.
+    """
+    return raw_con.execute(
+        f"""
+        WITH disp AS (
+            SELECT strip_accents(upper(trim(artist_name))) AS akey,
+                   arg_max(artist_name, n) AS name
+            FROM (
+                SELECT artist_name, COUNT(*) AS n
+                FROM history
+                WHERE artist_name IS NOT NULL AND ts IS NOT NULL
+                GROUP BY artist_name
+            ) GROUP BY akey
+        )
+        SELECT date_trunc('{period_trunc}', h.ts) AS period,
+               disp.name AS artist_name,
+               SUM(h.ms_played) AS ms,
+               COUNT(*) AS streams
+        FROM history h
+        JOIN disp ON strip_accents(upper(trim(h.artist_name))) = disp.akey
+        WHERE h.artist_name IS NOT NULL AND h.ts IS NOT NULL
+        GROUP BY date_trunc('{period_trunc}', h.ts), disp.name
+        ORDER BY period ASC, ms DESC, streams DESC
+        """
+    ).fetchall()
+
+
+def _canonical_artist_id_map(raw_con):
+    """``{canonical akey: artist_id}`` for cover lookups on merged artist names."""
+    try:
+        return {
+            r[0]: r[1]
+            for r in raw_con.execute(
+                "SELECT strip_accents(upper(trim(artist_name))) AS akey, arg_max(artist_id, c) "
+                "FROM (SELECT artist_name, artist_id, COUNT(*) AS c FROM track_features "
+                "WHERE artist_id IS NOT NULL GROUP BY artist_name, artist_id) GROUP BY akey"
+            ).fetchall()
+        }
+    except Exception:
+        return {}
+
+
 @router.get("/api/metrics/artist-rank")
 async def get_artist_rank(
     request: Request,
@@ -31,37 +79,19 @@ async def get_artist_rank(
     def query():
         raw_con = conn.connection.driver_connection
         try:
-            monthly_data = raw_con.execute("""
-                SELECT 
-                    date_trunc('week', ts) as period,
-                    artist_name,
-                    SUM(ms_played) as ms,
-                    COUNT(*) as streams
-                FROM history
-                WHERE artist_name IS NOT NULL AND ts IS NOT NULL
-                GROUP BY date_trunc('week', ts), artist_name
-                ORDER BY period ASC, ms DESC, streams DESC
-            """).fetchall()
+            monthly_data = _canonical_artist_rows(raw_con, "week")
         except Exception:
             monthly_data = []
 
         full_months, featured = _smoothed_rank_frames(
             monthly_data, key_len=1, limit=limit
         )
-        id_map: dict = {}
-        try:
-            for r in raw_con.execute(
-                "SELECT artist_name, MAX(artist_id) FROM track_features "
-                "WHERE artist_id IS NOT NULL GROUP BY artist_name"
-            ).fetchall():
-                id_map[(r[0],)] = r[1]
-        except Exception:
-            id_map = {}
+        id_map = _canonical_artist_id_map(raw_con)
         data = [
             {
                 "rank": idx,
                 "artist_name": f["key"][0],
-                "id": id_map.get(f["key"]),
+                "id": id_map.get(_norm_artist_key(f["key"][0])),
                 "total_streams": f["total_streams"],
                 "total_minutes": round(f["total_ms"] / 60000, 2),
                 "monthly_ranks": f["monthly_ranks"],
@@ -177,14 +207,18 @@ async def get_bar_race(
     def query():
         raw_con = conn.connection.driver_connection
         try:
-            rows = raw_con.execute(
-                f"""
-                SELECT date_trunc('month', ts) AS month, {cols}, SUM(ms_played) AS ms
-                FROM history
-                WHERE {name_col} IS NOT NULL AND ts IS NOT NULL
-                GROUP BY date_trunc('month', ts), {cols}
-                """
-            ).fetchall()
+            if entity == "artist":
+                rows = _canonical_artist_rows(raw_con, "month")
+                # _compute_bar_race ignores the trailing streams column.
+            else:
+                rows = raw_con.execute(
+                    f"""
+                    SELECT date_trunc('month', ts) AS month, {cols}, SUM(ms_played) AS ms
+                    FROM history
+                    WHERE {name_col} IS NOT NULL AND ts IS NOT NULL
+                    GROUP BY date_trunc('month', ts), {cols}
+                    """
+                ).fetchall()
         except Exception:
             rows = []
 
@@ -194,11 +228,7 @@ async def get_bar_race(
         id_map: dict = {}
         try:
             if entity == "artist":
-                for r in raw_con.execute(
-                    "SELECT artist_name, MAX(artist_id) FROM track_features "
-                    "WHERE artist_id IS NOT NULL GROUP BY artist_name"
-                ).fetchall():
-                    id_map[(r[0],)] = r[1]
+                id_map = _canonical_artist_id_map(raw_con)
             elif entity == "album":
                 for r in raw_con.execute(
                     "SELECT album_name, artist_name, MAX(album_id) FROM track_features "
@@ -217,10 +247,15 @@ async def get_bar_race(
 
         data = []
         for idx, f in enumerate(featured, start=1):
+            cover_id = (
+                id_map.get(_norm_artist_key(f["key"][0]))
+                if entity == "artist"
+                else id_map.get(f["key"])
+            )
             item = {
                 "rank": idx,
                 "name": f["key"][0],
-                "id": id_map.get(f["key"]),
+                "id": cover_id,
                 "total_minutes": round(f["total_ms"] / 60000, 2),
                 "cumulative_minutes": [
                     round(v / 60000, 2) for v in f["cumulative_ms"]

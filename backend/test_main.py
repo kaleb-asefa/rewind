@@ -1235,6 +1235,30 @@ def test_chart_merges_artist_name_variants():
     assert sum(1 for r in rows if r["name"].lower().startswith("beyonc")) == 1
 
 
+def test_canonical_artist_rows_merge_name_variants():
+    # The velocity + bar-race feeds must also collapse stylized artist spellings
+    # ("Giveon" vs "GIVĒON") into one entity, with a stable display per period.
+    from routers.explore import _canonical_artist_rows
+
+    con = duckdb.connect()
+    con.execute(
+        "CREATE TABLE history (artist_name VARCHAR, ts TIMESTAMP, ms_played BIGINT)"
+    )
+    con.execute(
+        "INSERT INTO history VALUES "
+        "('Giveon', TIMESTAMP '2024-02-05 10:00', 100000),"   # week of Feb 5
+        "('GIV\u0112ON', TIMESTAMP '2024-02-06 10:00', 100000),"
+        "('Giveon', TIMESTAMP '2024-02-12 10:00', 100000)"    # next week
+    )
+    rows = _canonical_artist_rows(con, "week")
+    con.close()
+
+    assert {r[1] for r in rows} == {"Giveon"}   # merged, stable across weeks
+    assert len(rows) == 2                        # one row per week
+    assert sum(r[3] for r in rows) == 3          # streams counted across spellings
+    assert sum(r[2] for r in rows) == 300000     # ms merged
+
+
 def test_superlative_obsession_counts_peak_day_and_ignores_skips():
     from routers.explore import _superlative_obsession
 
