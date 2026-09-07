@@ -118,6 +118,30 @@ async function loadCover(imgEl, kind, id) {
 }
 
 /**
+ * Resolve a kind's cover ids into the shared cache in one request.
+ * Only unknown ids are fetched; cache hits are stored, misses/failures are left
+ * uncached so a later call retries. Never touches the DOM.
+ */
+async function _resolveCovers(kind, ids) {
+    const need = [];
+    for (const id of ids) {
+        if (id && !_coverCache.has(kind + ":" + id)) need.push(id);
+    }
+    if (!need.length) return;
+    try {
+        const res = await fetchWithTimeout(
+            `/api/images?kind=${encodeURIComponent(kind)}&ids=${encodeURIComponent(need.join(","))}`,
+            {},
+            15000,  // one request for many covers; cold fetches need headroom
+        );
+        const map = (res.ok && res.data && res.data.images) || {};
+        for (const id of need) if (map[id]) _coverCache.set(kind + ":" + id, map[id]);
+    } catch (_) {
+        /* transient — leave uncached so a later call retries */
+    }
+}
+
+/**
  * Batch-load every cover in a container in a single request per kind.
  * Reads each <img class="cover-img" data-cover-id> (optional data-cover-kind
  * overrides `defaultKind`). Uses the shared cache, so already-known covers show
@@ -132,29 +156,12 @@ async function loadCoversBatch(container, defaultKind) {
     for (const img of imgs) {
         const kind = img.getAttribute("data-cover-kind") || defaultKind || "track";
         const id = img.getAttribute("data-cover-id");
-        if (!id || _coverCache.has(kind + ":" + id)) continue;
+        if (!id) continue;
         if (!byKind.has(kind)) byKind.set(kind, new Set());
         byKind.get(kind).add(id);
     }
 
-    await Promise.all(
-        Array.from(byKind, async ([kind, idSet]) => {
-            const need = Array.from(idSet);
-            try {
-                const res = await fetchWithTimeout(
-                    `/api/images?kind=${encodeURIComponent(kind)}&ids=${encodeURIComponent(need.join(","))}`,
-                    {},
-                    15000,  // one request for many covers; cold fetches need headroom
-                );
-                const map = (res.ok && res.data && res.data.images) || {};
-                // Cache hits only — never poison the cache with a miss/failure,
-                // so a later render simply retries anything that didn't resolve.
-                for (const id of need) if (map[id]) _coverCache.set(kind + ":" + id, map[id]);
-            } catch (_) {
-                /* transient — leave uncached so a later render retries */
-            }
-        }),
-    );
+    await Promise.all(Array.from(byKind, ([kind, idSet]) => _resolveCovers(kind, Array.from(idSet))));
 
     for (const img of imgs) {
         const kind = img.getAttribute("data-cover-kind") || defaultKind || "track";
@@ -162,5 +169,15 @@ async function loadCoversBatch(container, defaultKind) {
     }
 }
 
+/**
+ * Warm the cover cache ahead of time (e.g. to prefetch a tab the user hasn't
+ * opened yet), so covers appear instantly when it's shown. Best-effort.
+ */
+async function preloadCovers(kind, ids) {
+    if (!kind || !Array.isArray(ids) || !ids.length) return;
+    await _resolveCovers(kind, ids);
+}
+
 window.loadCover = loadCover;
 window.loadCoversBatch = loadCoversBatch;
+window.preloadCovers = preloadCovers;

@@ -185,6 +185,30 @@
         return items;
     }
 
+    // Warm the sibling entity tabs (and their covers) during idle time, so
+    // switching to Tracks / Albums / Genres is instant instead of "click, wait".
+    // Idempotent: getList + preloadCovers dedupe against their caches.
+    let prefetchScheduled = false;
+    function schedulePrefetch() {
+        if (prefetchScheduled) return;
+        prefetchScheduled = true;
+        const idle = window.requestIdleCallback || ((f) => setTimeout(f, 500));
+        idle(() => { prefetchScheduled = false; prefetchSiblings(state.range, state.sort); });
+    }
+    async function prefetchSiblings(range, sort) {
+        for (const entity of Object.keys(ENTITIES)) {
+            if (entity === state.entity) continue;
+            try {
+                const items = await getList(entity, sort, range);
+                const cfg = ENTITIES[entity];
+                if (cfg.cover && window.preloadCovers && items.length) {
+                    const ids = items.slice(0, 24).map((it) => it.id).filter(Boolean);
+                    await window.preloadCovers(cfg.cover, ids);
+                }
+            } catch (_) { /* prefetch is best-effort */ }
+        }
+    }
+
     // ── rendering ─────────────────────────────────────────────────────────────
     function coverCell(item, big) {
         const cfg = ENTITIES[state.entity];
@@ -357,6 +381,8 @@
             const target = listEl.querySelector('.chart-row[data-rank="' + firstMatchRank + '"]');
             if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
         }
+
+        schedulePrefetch();
     }
 
     function updateHeading() {
