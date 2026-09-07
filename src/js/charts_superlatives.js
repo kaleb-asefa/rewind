@@ -38,6 +38,24 @@
         { name: "Brent Faiyaz", id: null, minutes: 128, date: "2023-11-02", plays: 20 },
     ];
 
+    const SAMPLE_MOST_SKIPPED = [
+        { name: "Grey", artist: "Yung Filly", id: null, plays: 115, skip_pct: 93 },
+        { name: "Until I Found You", artist: "Stephen Sanchez", id: null, plays: 22, skip_pct: 86 },
+        { name: "You Are The Reason", artist: "Calum Scott", id: null, plays: 18, skip_pct: 83 },
+        { name: "Rockabye", artist: "Clean Bandit", id: null, plays: 14, skip_pct: 79 },
+        { name: "7 Years", artist: "Lukas Graham", id: null, plays: 12, skip_pct: 75 },
+        { name: "As It Was", artist: "Harry Styles", id: null, plays: 10, skip_pct: 70 },
+    ];
+
+    const SAMPLE_NEVER_SKIPPED = [
+        { name: "Snooze", artist: "SZA", id: "4iZ4pt7kvcaH6Yo8UoZ4s2", plays: 176 },
+        { name: "Nobody Gets Me", artist: "SZA", id: "5Y35SjAfXjjG0sFQ3KOxmm", plays: 158 },
+        { name: "Lost Me", artist: "Giveon", id: null, plays: 121 },
+        { name: "Session 32", artist: "Summer Walker", id: null, plays: 98 },
+        { name: "Best Part", artist: "Daniel Caesar", id: null, plays: 76 },
+        { name: "Open Arms", artist: "SZA", id: null, plays: 64 },
+    ];
+
     const state = { range: "all" };
     const cache = {};
     let apiYears = null;
@@ -61,6 +79,9 @@
         const h = Math.floor(m / 60);
         const rem = m % 60;
         return rem ? h + "h " + rem + "m" : h + "h";
+    }
+    function fmtNum(n) {
+        return Number(n || 0).toLocaleString();
     }
     function rankClass(rank) {
         if (rank === 1) return "text-primary";
@@ -109,7 +130,11 @@
                 const obs = Array.isArray(res.data.obsession) ? res.data.obsession : [];
                 const rep = Array.isArray(res.data.on_repeat) ? res.data.on_repeat : [];
                 const bng = Array.isArray(res.data.binges) ? res.data.binges : [];
-                if (obs.length || rep.length || bng.length) data = { obsession: obs, on_repeat: rep, binges: bng };
+                const msk = Array.isArray(res.data.most_skipped) ? res.data.most_skipped : [];
+                const nsk = Array.isArray(res.data.never_skipped) ? res.data.never_skipped : [];
+                if (obs.length || rep.length || bng.length || msk.length || nsk.length) {
+                    data = { obsession: obs, on_repeat: rep, binges: bng, most_skipped: msk, never_skipped: nsk };
+                }
             }
         }
         if (!data) {
@@ -117,6 +142,8 @@
                 obsession: SAMPLE_OBSESSION.map((o, i) => Object.assign({ rank: i + 1 }, o)),
                 on_repeat: SAMPLE_ON_REPEAT.map((o, i) => Object.assign({ rank: i + 1 }, o)),
                 binges: SAMPLE_BINGES.map((o, i) => Object.assign({ rank: i + 1 }, o)),
+                most_skipped: SAMPLE_MOST_SKIPPED.map((o, i) => Object.assign({ rank: i + 1 }, o)),
+                never_skipped: SAMPLE_NEVER_SKIPPED.map((o, i) => Object.assign({ rank: i + 1 }, o)),
             };
         }
         cache[range] = data;
@@ -153,6 +180,9 @@
     const withDate = (it) => esc(it.artist || "") + (it.date ? ' · <span class="opacity-70">' + fmtDate(it.date) + "</span>" : "");
     const artistOnly = (it) => esc(it.artist || "");
     const bingeSub = (it) => (it.plays ? it.plays + " tracks · " : "") + '<span class="opacity-70">' + fmtDate(it.date) + "</span>";
+    const skipVal = (it) => it.skip_pct + "%";
+    const skipSub = (it) => esc(it.artist || "") + (it.plays ? ' · <span class="opacity-70">' + it.plays + " plays</span>" : "");
+    const playsVal = (it) => fmtNum(it.plays);
 
     async function render() {
         const data = await fetchData(state.range);
@@ -160,6 +190,8 @@
         renderList("obsession-list", data.obsession, { value: times, badge: "in a day", sub: withDate });
         renderList("on-repeat-list", data.on_repeat, { value: times, badge: "in a row", sub: artistOnly });
         renderList("binge-list", data.binges, { value: (it) => fmtMins(it.minutes), badge: "in one sitting", sub: bingeSub, cover: (it) => artistCover(it.id) });
+        renderList("most-skipped-list", data.most_skipped, { value: skipVal, badge: "skipped", sub: skipSub });
+        renderList("never-skipped-list", data.never_skipped, { value: playsVal, badge: "never skipped", sub: artistOnly });
     }
 
     function setActive(el, value) {

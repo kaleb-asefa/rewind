@@ -78,9 +78,8 @@ These take the one-off superlatives already scattered in Explore and make them *
 | **Obsession of the Day** ✅ | track + the single day you played it most (×N) | [H] | the "Deep Cuts most-in-a-day" as a real Top 10 per year + all-time. **Built** (`/api/metrics/superlatives`, ≥30s plays only so skip-loops don't count). |
 | **On Repeat** ✅ | tracks by longest run of consecutive back-to-back plays (×N "in a row") | [H] | genuine replays, not stuck-and-skipped. **Built** (same endpoint, ≥30s gate). |
 | **Biggest Binges** ✅ | longest single-sitting sessions (gap > 30 min) + the artist that dominated | [H] | "the night you couldn't stop". **Built** (session clustering, ≥20-min floor, dominant artist + track cover). |
-| **On Repeat** | tracks with the most consecutive loops (gate: play ≥ 30 s) | [H] | genuine replays, not stuck-and-skipped |
-| **Most Skipped** | tracks/artists you bail on most (`reason_end='fwdbtn'`) | [H] | the honest "most hated" as a chart |
-| **Never Skipped** | tracks with the highest completion rate (min plays) | [C] | "songs you always finish" |
+| **Most Skipped** ✅ | tracks you press next on most (`reason_end='fwdbtn'`), by skip rate (min 5 plays) | [H] | the honest "most hated" as a chart. **Built**. |
+| **Never Skipped** ✅ | most-played tracks you never once skipped (min 10 plays, 0 skips) | [H] | "songs you always let ride". **Built** (history-only, not completion-based). |
 | **Longest / Shortest** | longest and shortest tracks you actually played | [C] | fun extremes |
 
 ### 3.3 Time-anchored charts — all [H]
@@ -176,7 +175,7 @@ Frontend: one `charts.js` (or `charts/` namespace mirroring `explore/`) with a s
 1. ~~**Core rankings** — Top Artists / Tracks / Albums numbered lists + depth + sort toggles (§3.1).~~ **Done.**
 2. ~~**Find-your-rank search** (§2).~~ **Done.**
 3. ~~**Per-year time selector** (`range` param).~~ **Done** (all-time + real years; 4w/6m supported by the endpoint, not yet surfaced in the UI).
-4. **Superlative charts** (§3.2): ~~**Obsession of the Day**~~ + ~~**On Repeat**~~ (**built** — the "Superlatives" section, independent year selector), then Biggest Binges / Most Skipped / Never Skipped / Longest–Shortest.
+4. **Superlative charts** (§3.2): ~~**Obsession of the Day**~~ + ~~**On Repeat**~~ + ~~**Biggest Binges**~~ + ~~**Most Skipped**~~ + ~~**Never Skipped**~~ (**built** — the "Superlatives" section, independent year selector), then Longest–Shortest song ([C]).
 5. Podium ~~+ ▲▼ movement~~ (**done**), expandable rows, then the remaining catalog (§3.3–3.7).
 
 Steps 1–3 are live, plus the first superlative. Next: the rest of §3.2, then §3.3.

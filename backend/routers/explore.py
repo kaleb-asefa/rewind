@@ -1961,6 +1961,41 @@ def _norm_artist_key(name):
     return "".join(c for c in s if not unicodedata.combining(c))
 
 
+def _skip_stats(raw_con, clause):
+    """Per-track play + explicit-skip (reason_end='fwdbtn') counts."""
+    try:
+        return raw_con.execute(
+            "SELECT split_part(track_uri, ':', 3) AS id, any_value(track_name) AS name, "
+            "any_value(artist_name) AS artist, COUNT(*) AS plays, "
+            "SUM(CASE WHEN reason_end = 'fwdbtn' THEN 1 ELSE 0 END) AS skips "
+            "FROM history WHERE track_uri LIKE 'spotify:track:%' AND track_name IS NOT NULL"
+            + clause + " GROUP BY id"
+        ).fetchall()
+    except Exception:
+        return []
+
+
+def _superlative_most_skipped(skip_rows, limit):
+    """Tracks you press next on most, ranked by skip rate (min 5 plays)."""
+    cand = [r for r in skip_rows if r[3] >= 5 and r[4] >= 1]
+    cand.sort(key=lambda r: (r[4] / r[3], r[3]), reverse=True)
+    return [
+        {"rank": i, "name": r[1], "artist": r[2], "id": r[0],
+         "plays": int(r[3]), "skip_pct": round(r[4] / r[3] * 100)}
+        for i, r in enumerate(cand[:limit], start=1)
+    ]
+
+
+def _superlative_never_skipped(skip_rows, limit):
+    """Most-played tracks you never once skipped (min 10 plays, 0 skips)."""
+    cand = [r for r in skip_rows if r[3] >= 10 and r[4] == 0]
+    cand.sort(key=lambda r: r[3], reverse=True)
+    return [
+        {"rank": i, "name": r[1], "artist": r[2], "id": r[0], "plays": int(r[3])}
+        for i, r in enumerate(cand[:limit], start=1)
+    ]
+
+
 @router.get("/api/metrics/superlatives")
 async def get_superlatives(
     range: str = "all",
@@ -1968,7 +2003,7 @@ async def get_superlatives(
     conn: Connection = Depends(get_db),
 ):
     """History-only "records" for the Charts superlatives section, viewable
-    per year or all-time. Currently: Obsession of the Day (more to come)."""
+    per year or all-time: obsession, on-repeat, binges, most/never skipped."""
     rng = range.lower()
     if rng not in ("all", "4w", "6m") and not (rng.isdigit() and len(rng) == 4):
         raise HTTPException(status_code=400, detail="Invalid range for superlatives.")
@@ -1978,10 +2013,13 @@ async def get_superlatives(
         raw_con = conn.connection.driver_connection
         off = _tz_offset_minutes(raw_con)
         clause = _chart_range_clause(rng, off)
+        skip_rows = _skip_stats(raw_con, clause)
         return {
             "obsession": _superlative_obsession(raw_con, off, clause, limit),
             "on_repeat": _superlative_on_repeat(raw_con, clause, limit),
             "binges": _superlative_binges(raw_con, off, clause, limit),
+            "most_skipped": _superlative_most_skipped(skip_rows, limit),
+            "never_skipped": _superlative_never_skipped(skip_rows, limit),
             "years": _chart_years(raw_con, off),
         }
 

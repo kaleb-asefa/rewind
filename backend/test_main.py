@@ -1342,6 +1342,42 @@ def test_superlative_binges_clusters_sessions():
     assert rows[0]["date"] == "2024-03-01"
 
 
+def test_superlative_skip_charts():
+    from routers.explore import (
+        _skip_stats,
+        _superlative_most_skipped,
+        _superlative_never_skipped,
+    )
+
+    con = duckdb.connect()
+    con.execute(
+        "CREATE TABLE history (track_uri VARCHAR, track_name VARCHAR, "
+        "artist_name VARCHAR, reason_end VARCHAR)"
+    )
+    rows = (
+        [("spotify:track:h", "Hate", "A", "fwdbtn")] * 5
+        + [("spotify:track:h", "Hate", "A", "trackdone")]        # 6 plays, 5 skips = 83%
+        + [("spotify:track:m", "Meh", "B", "fwdbtn")] * 2
+        + [("spotify:track:m", "Meh", "B", "trackdone")] * 3     # 5 plays, 2 skips = 40%
+        + [("spotify:track:l", "Loved", "C", "trackdone")] * 12  # 12 plays, 0 skips
+        + [("spotify:track:x", "LowPlays", "D", "fwdbtn")] * 3   # 3 plays: under the floor
+    )
+    con.executemany("INSERT INTO history VALUES (?, ?, ?, ?)", rows)
+    stats = _skip_stats(con, "")
+    con.close()
+
+    most = _superlative_most_skipped(stats, 10)
+    assert most[0]["name"] == "Hate"
+    assert most[0]["skip_pct"] == 83
+    assert most[0]["plays"] == 6
+    assert [m["name"] for m in most] == ["Hate", "Meh"]   # LowPlays/Loved excluded
+    assert all(m["name"] != "LowPlays" for m in most)     # below the 5-play floor
+
+    never = _superlative_never_skipped(stats, 10)
+    assert [n["name"] for n in never] == ["Loved"]        # only 10+ plays, 0 skips
+    assert never[0]["plays"] == 12
+
+
 
 def test_superlatives_endpoint():
     with TestClient(app) as client:
@@ -1380,6 +1416,21 @@ def test_superlatives_endpoint():
             assert len(binges[0]["date"]) == 10
             bm = [b["minutes"] for b in binges]
             assert all(bm[i] >= bm[i + 1] for i in range(len(bm) - 1))
+
+        skipped = data["most_skipped"]
+        assert isinstance(skipped, list)
+        if skipped:
+            assert skipped[0]["plays"] >= 5
+            assert 0 <= skipped[0]["skip_pct"] <= 100
+            sp = [s["skip_pct"] for s in skipped]
+            assert all(sp[i] >= sp[i + 1] for i in range(len(sp) - 1))
+
+        never = data["never_skipped"]
+        assert isinstance(never, list)
+        if never:
+            assert never[0]["plays"] >= 10
+            npl = [n["plays"] for n in never]
+            assert all(npl[i] >= npl[i + 1] for i in range(len(npl) - 1))
 
         assert client.get("/api/metrics/superlatives?range=bogus").status_code == 400
 
