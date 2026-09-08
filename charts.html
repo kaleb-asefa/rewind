@@ -107,6 +107,7 @@
     <script src="src/js/api.js" defer></script>
     <script src="src/js/charts.js" defer></script>
     <script src="src/js/charts_superlatives.js" defer></script>
+    <script src="src/js/charts_share.js" defer></script>
 </head>
 <body class="bg-background text-on-background antialiased min-h-screen flex flex-col">
 
@@ -194,9 +195,14 @@
         <div id="chart-search-result" class="hidden glass-card rounded-full px-5 py-3 flex items-center gap-3 text-body-sm font-body-sm"></div>
 
         <!-- Chart heading -->
-        <div class="flex items-baseline justify-between gap-3">
-            <h2 id="chart-title" class="font-headline-md text-headline-md font-bold tracking-tight text-on-surface">Top Artists</h2>
-            <span id="chart-subtitle" class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-60">All-time · by minutes</span>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-baseline gap-3">
+                <h2 id="chart-title" class="font-headline-md text-headline-md font-bold tracking-tight text-on-surface">Top Artists</h2>
+                <span id="chart-subtitle" class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-60">All-time · by minutes</span>
+            </div>
+            <button type="button" id="share-open-btn" class="flex items-center gap-1.5 bg-primary text-on-primary px-4 py-1.5 rounded-full text-body-sm font-bold hover:scale-105 active:scale-95 transition-all" title="Share your Top 10">
+                <span class="material-symbols-outlined text-base">ios_share</span> Share top 10
+            </button>
         </div>
 
         <!-- Coverage note (shown only for low-coverage entities) -->
@@ -285,6 +291,29 @@
         </section>
 
     </main>
+
+    <!-- Share modal — Spotify-Wrapped-style Top 10 card exported as an image -->
+    <div id="share-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="flex flex-col items-center gap-5 max-h-full">
+            <!-- The card is drawn to this canvas (this exact pixels get shared) -->
+            <div class="rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
+                <canvas id="share-canvas" width="1080" height="1920" style="width:340px;height:604px;display:block;"></canvas>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-3">
+                <button type="button" id="share-download-btn" class="flex items-center gap-2 bg-primary text-on-primary px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-lg">download</span> Download
+                </button>
+                <button type="button" id="share-native-btn" class="hidden items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-lg">ios_share</span> Share
+                </button>
+                <button type="button" id="share-close-btn" class="flex items-center gap-2 bg-surface-container text-on-surface-variant px-5 py-3 rounded-full font-bold hover:text-on-surface transition-all">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="w-full py-section-gap bg-surface-container-lowest dark:bg-surface-container-lowest border-t border-white/5 mt-auto">

@@ -110,7 +110,8 @@
     };
 
     // ── state ───────────────────────────────────────────────────────────────
-    const state = { entity: "artist", sort: "minutes", depth: 20, range: "all", search: "" };
+    const state = { entity: "artist", sort: "minutes", depth: 10, range: "all", search: "" };
+    let lastFull = [];   // most recent full ranking, for the share card
     const cache = {};
     let apiYears = null;   // real years from the backend, once known
     let yearsSynced = false;
@@ -308,6 +309,7 @@
 
         const { entity, sort, range, search } = state;
         const full = await getList(entity, sort, range);
+        lastFull = full;
         syncYears();
 
         updateHeading();
@@ -499,6 +501,20 @@
             });
         }
     }
+
+    // Current top-10 snapshot for the shareable card.
+    function snapshot() {
+        const cfg = ENTITIES[state.entity];
+        return {
+            entity: state.entity,
+            label: cfg.label,
+            hasArtist: cfg.hasArtist,
+            rangeLabel: state.range === "all" ? "All-time" : state.range,
+            sort: state.sort,
+            items: lastFull.slice(0, 10),
+        };
+    }
+    window.RewindCharts = { snapshot: snapshot };
 
     function init() {
         wireTabs();
