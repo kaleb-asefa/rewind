@@ -1869,31 +1869,36 @@ def _superlative_obsession(raw_con, off, clause, limit):
 
 def _superlative_binges(raw_con, off, clause, limit):
     """Longest single-sitting sessions (a >30-min gap starts a new session),
-    with the artist and track you leaned on most in each.
+    with the artist you leaned on most and their share of the session.
     """
     try:
         rows = raw_con.execute(
             "WITH o AS ("
-            "  SELECT ts, artist_name, split_part(track_uri, ':', 3) AS id, "
-            "         LAG(ts) OVER (ORDER BY ts) AS prev "
+            "  SELECT ts, artist_name, LAG(ts) OVER (ORDER BY ts) AS prev "
             "  FROM history WHERE ts IS NOT NULL AND track_uri LIKE 'spotify:track:%'" + clause +
             "), m AS ("
-            "  SELECT ts, artist_name, id, "
+            "  SELECT ts, artist_name, "
             "         CASE WHEN prev IS NULL OR date_diff('minute', prev, ts) > 30 THEN 1 ELSE 0 END AS ns "
             "  FROM o"
             "), s AS ("
-            "  SELECT ts, artist_name, id, SUM(ns) OVER (ORDER BY ts) AS sid FROM m"
-            ") SELECT date_diff('minute', MIN(ts), MAX(ts)) AS dur, "
-            f"       CAST(MIN(ts) + to_minutes({off}) AS DATE) AS day, "
-            "       COUNT(*) AS plays, mode(artist_name) AS top_artist, mode(id) AS top_id "
-            "FROM s GROUP BY sid HAVING date_diff('minute', MIN(ts), MAX(ts)) >= 20 "
-            f"ORDER BY dur DESC, day LIMIT {int(limit)}"
+            "  SELECT ts, artist_name, SUM(ns) OVER (ORDER BY ts) AS sid FROM m"
+            "), ac AS ("
+            "  SELECT sid, artist_name, COUNT(*) AS c FROM s GROUP BY sid, artist_name"
+            "), top AS ("
+            "  SELECT sid, arg_max(artist_name, c) AS top_artist, MAX(c) AS top_count FROM ac GROUP BY sid"
+            "), sess AS ("
+            "  SELECT sid, date_diff('minute', MIN(ts), MAX(ts)) AS dur, "
+            f"         CAST(MIN(ts) + to_minutes({off}) AS DATE) AS day, COUNT(*) AS plays "
+            "  FROM s GROUP BY sid"
+            ") SELECT sess.dur, sess.day, sess.plays, top.top_artist, top.top_count "
+            "FROM sess JOIN top USING (sid) WHERE sess.dur >= 20 "
+            f"ORDER BY sess.dur DESC, sess.day LIMIT {int(limit)}"
         ).fetchall()
     except Exception:
         return []
     items = [
-        {"rank": i, "name": r[3], "track_id": r[4], "minutes": int(r[0]),
-         "date": str(r[1]), "plays": int(r[2])}
+        {"rank": i, "name": r[3], "minutes": int(r[0]), "date": str(r[1]),
+         "plays": int(r[2]), "artist_pct": round(r[4] / r[2] * 100) if r[2] else 0}
         for i, r in enumerate(rows, start=1)
     ]
     _attach_binge_artist_ids(raw_con, items)

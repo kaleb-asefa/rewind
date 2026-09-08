@@ -1310,6 +1310,7 @@ def test_superlative_binges_clusters_sessions():
     assert rows[0]["minutes"] == 60
     assert rows[0]["name"] == "A"      # dominant artist
     assert rows[0]["plays"] == 4
+    assert rows[0]["artist_pct"] == 75  # A is 3 of the 4 plays
     assert rows[0]["date"] == "2024-03-01"
 
 

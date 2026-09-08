@@ -76,7 +76,7 @@ These take the one-off superlatives already scattered in Explore and make them *
 | Chart | What each row is | Coverage | Why it's interesting |
 |---|---|---|---|
 | **Obsession of the Day** ✅ | track + the single day you played it most (×N) | [H] | the "Deep Cuts most-in-a-day" as a real Top 10 per year + all-time. **Built** (`/api/metrics/superlatives`, ≥30s plays only so skip-loops don't count). |
-| **Biggest Binges** ✅ | longest single-sitting sessions (gap > 30 min) + the artist that dominated | [H] | "the night you couldn't stop". **Built** (session clustering, ≥20-min floor, dominant artist + track cover). |
+| **Biggest Binges** ✅ | longest single-sitting sessions (gap > 30 min) + the artist that dominated | [H] | "the night you couldn't stop". **Built** (session clustering, ≥20-min floor, dominant artist + their session share %). |
 | **Most Skipped** ✅ | tracks you press next on most (`reason_end='fwdbtn'`), by skip rate (min 5 plays) | [H] | the honest "most hated" as a chart. **Built**. |
 | **Never Skipped** ✅ | most-played tracks you never once skipped (min 10 plays, 0 skips) | [H] | "songs you always let ride". **Built** (history-only, not completion-based). |
 | **Longest / Shortest** ✅ | longest and shortest tracks you actually played (min 2 plays; shortest ≥30s) | [C] | fun extremes. **Built** (two cards, mm:ss, catalog duration). |

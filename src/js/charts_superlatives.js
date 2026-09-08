@@ -20,12 +20,12 @@
     ];
 
     const SAMPLE_BINGES = [
-        { name: "SZA", id: "7tYKF4w9nC0nq9CsPZTHyP", minutes: 341, date: "2023-06-18", plays: 47 },
-        { name: "J. Cole", id: null, minutes: 268, date: "2023-01-22", plays: 39 },
-        { name: "Drake", id: null, minutes: 214, date: "2024-02-14", plays: 33 },
-        { name: "Summer Walker", id: null, minutes: 182, date: "2024-08-09", plays: 28 },
-        { name: "Giveon", id: null, minutes: 151, date: "2023-03-30", plays: 24 },
-        { name: "Brent Faiyaz", id: null, minutes: 128, date: "2023-11-02", plays: 20 },
+        { name: "SZA", id: "7tYKF4w9nC0nq9CsPZTHyP", minutes: 341, date: "2023-06-18", plays: 47, artist_pct: 62 },
+        { name: "J. Cole", id: null, minutes: 268, date: "2023-01-22", plays: 39, artist_pct: 55 },
+        { name: "Drake", id: null, minutes: 214, date: "2024-02-14", plays: 33, artist_pct: 48 },
+        { name: "Summer Walker", id: null, minutes: 182, date: "2024-08-09", plays: 28, artist_pct: 44 },
+        { name: "Giveon", id: null, minutes: 151, date: "2023-03-30", plays: 24, artist_pct: 51 },
+        { name: "Brent Faiyaz", id: null, minutes: 128, date: "2023-11-02", plays: 20, artist_pct: 40 },
     ];
 
     const SAMPLE_MOST_SKIPPED = [
@@ -195,7 +195,7 @@
     const times = (it) => "\u00d7" + it.count;
     const withDate = (it) => esc(it.artist || "") + (it.date ? ' · <span class="opacity-70">' + fmtDate(it.date) + "</span>" : "");
     const artistOnly = (it) => esc(it.artist || "");
-    const bingeSub = (it) => (it.plays ? it.plays + " tracks · " : "") + '<span class="opacity-70">' + fmtDate(it.date) + "</span>";
+    const bingeSub = (it) => (it.artist_pct != null ? it.artist_pct + "% of the session · " : "") + '<span class="opacity-70">' + fmtDate(it.date) + "</span>";
     const skipVal = (it) => it.skip_pct + "%";
     const skipSub = (it) => esc(it.artist || "") + (it.plays ? ' · <span class="opacity-70">' + it.plays + " plays</span>" : "");
     const playsVal = (it) => fmtNum(it.plays);
