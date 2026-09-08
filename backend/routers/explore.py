@@ -1867,35 +1867,6 @@ def _superlative_obsession(raw_con, off, clause, limit):
     ]
 
 
-def _superlative_on_repeat(raw_con, clause, limit):
-    """Tracks by their longest run of consecutive back-to-back plays. Only ≥30s
-    plays count, so a skipped auto-repeat can't rack up a streak.
-    """
-    try:
-        rows = raw_con.execute(
-            "WITH o AS ("
-            "  SELECT split_part(track_uri, ':', 3) AS id, track_name AS name, artist_name AS artist, "
-            "         ROW_NUMBER() OVER (ORDER BY ts) AS rn "
-            "  FROM history WHERE track_uri LIKE 'spotify:track:%' AND track_name IS NOT NULL "
-            f"       AND ts IS NOT NULL AND ms_played >= 30000{clause}"
-            "), g AS ("
-            "  SELECT id, name, artist, rn - ROW_NUMBER() OVER (PARTITION BY id ORDER BY rn) AS grp "
-            "  FROM o"
-            "), runs AS ("
-            "  SELECT id, any_value(name) AS name, any_value(artist) AS artist, COUNT(*) AS streak "
-            "  FROM g GROUP BY id, grp"
-            ") SELECT any_value(name) AS name, any_value(artist) AS artist, id, MAX(streak) AS best "
-            "FROM runs GROUP BY id HAVING MAX(streak) >= 2 ORDER BY best DESC, name "
-            f"LIMIT {int(limit)}"
-        ).fetchall()
-    except Exception:
-        return []
-    return [
-        {"rank": i, "name": r[0], "artist": r[1], "id": r[2], "count": int(r[3])}
-        for i, r in enumerate(rows, start=1)
-    ]
-
-
 def _superlative_binges(raw_con, off, clause, limit):
     """Longest single-sitting sessions (a >30-min gap starts a new session),
     with the artist and track you leaned on most in each.
@@ -2041,7 +2012,7 @@ async def get_superlatives(
     conn: Connection = Depends(get_db),
 ):
     """History-only "records" for the Charts superlatives section, viewable
-    per year or all-time: obsession, on-repeat, binges, most/never skipped."""
+    per year or all-time: obsession, binges, most/never skipped, longest/shortest."""
     rng = range.lower()
     if rng not in ("all", "4w", "6m") and not (rng.isdigit() and len(rng) == 4):
         raise HTTPException(status_code=400, detail="Invalid range for superlatives.")
@@ -2055,7 +2026,6 @@ async def get_superlatives(
         dur_rows = _duration_stats(raw_con, clause)
         return {
             "obsession": _superlative_obsession(raw_con, off, clause, limit),
-            "on_repeat": _superlative_on_repeat(raw_con, clause, limit),
             "binges": _superlative_binges(raw_con, off, clause, limit),
             "most_skipped": _superlative_most_skipped(skip_rows, limit),
             "never_skipped": _superlative_never_skipped(skip_rows, limit),

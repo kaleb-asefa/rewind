@@ -1287,35 +1287,6 @@ def test_superlative_obsession_counts_peak_day_and_ignores_skips():
     assert all(r["name"] != "Skipped" for r in rows)  # <30s plays never count
 
 
-def test_superlative_on_repeat_counts_longest_streak_ignoring_skips():
-    from routers.explore import _superlative_on_repeat
-
-    con = duckdb.connect()
-    con.execute(
-        "CREATE TABLE history (track_uri VARCHAR, track_name VARCHAR, "
-        "artist_name VARCHAR, ts TIMESTAMP, ms_played BIGINT)"
-    )
-    con.execute(
-        "INSERT INTO history VALUES "
-        "('spotify:track:aaa','Loop','A', TIMESTAMP '2024-01-01 10:00', 120000),"
-        "('spotify:track:aaa','Loop','A', TIMESTAMP '2024-01-01 10:04', 120000),"
-        "('spotify:track:aaa','Loop','A', TIMESTAMP '2024-01-01 10:08', 120000),"
-        "('spotify:track:bbb','Other','B', TIMESTAMP '2024-01-01 10:12', 120000),"
-        "('spotify:track:aaa','Loop','A', TIMESTAMP '2024-01-01 10:16', 120000),"
-        "('spotify:track:aaa','Loop','A', TIMESTAMP '2024-01-01 10:20', 120000),"
-        "('spotify:track:ccc','SkipLoop','C', TIMESTAMP '2024-01-02 09:00', 5000),"
-        "('spotify:track:ccc','SkipLoop','C', TIMESTAMP '2024-01-02 09:01', 5000),"
-        "('spotify:track:ccc','SkipLoop','C', TIMESTAMP '2024-01-02 09:02', 5000)"
-    )
-    rows = _superlative_on_repeat(con, "", 10)
-    con.close()
-
-    top = next(r for r in rows if r["id"] == "aaa")
-    assert top["count"] == 3          # longest run of 3 in a row, not 5 total
-    assert all(r["name"] != "Other" for r in rows)     # single play never streaks
-    assert all(r["name"] != "SkipLoop" for r in rows)  # <30s auto-repeat excluded
-
-
 def test_superlative_binges_clusters_sessions():
     from routers.explore import _superlative_binges
 
@@ -1404,7 +1375,6 @@ def test_superlatives_endpoint():
     with TestClient(app) as client:
         empty = client.get("/api/metrics/superlatives").json()
         assert empty["obsession"] == []
-        assert empty["on_repeat"] == []
 
         sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json")
         with open(sample_json_path, "rb") as f:
@@ -1421,13 +1391,6 @@ def test_superlatives_endpoint():
         assert len(obs[0]["date"]) == 10  # YYYY-MM-DD
         counts = [o["count"] for o in obs]
         assert all(counts[i] >= counts[i + 1] for i in range(len(counts) - 1))
-
-        rep = data["on_repeat"]
-        assert isinstance(rep, list)
-        if rep:
-            assert rep[0]["count"] >= 2
-            rc = [o["count"] for o in rep]
-            assert all(rc[i] >= rc[i + 1] for i in range(len(rc) - 1))
 
         binges = data["binges"]
         assert isinstance(binges, list)

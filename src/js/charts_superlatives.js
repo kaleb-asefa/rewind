@@ -19,16 +19,6 @@
         { name: "Nobody Gets Me", artist: "SZA", id: "5Y35SjAfXjjG0sFQ3KOxmm", count: 7, date: "2023-01-08" },
     ];
 
-    const SAMPLE_ON_REPEAT = [
-        { name: "Snooze", artist: "SZA", id: "4iZ4pt7kvcaH6Yo8UoZ4s2", count: 6 },
-        { name: "Good Days", artist: "SZA", id: null, count: 5 },
-        { name: "Calm Down", artist: "Rema", id: null, count: 4 },
-        { name: "Water", artist: "Tyla", id: null, count: 4 },
-        { name: "Kill Bill", artist: "SZA", id: null, count: 3 },
-        { name: "Lost Me", artist: "Giveon", id: null, count: 3 },
-        { name: "Peru", artist: "Fireboy DML", id: null, count: 2 },
-    ];
-
     const SAMPLE_BINGES = [
         { name: "SZA", id: "7tYKF4w9nC0nq9CsPZTHyP", minutes: 341, date: "2023-06-18", plays: 47 },
         { name: "J. Cole", id: null, minutes: 268, date: "2023-01-22", plays: 39 },
@@ -152,21 +142,19 @@
             if (res && res.ok && res.data) {
                 if (Array.isArray(res.data.years) && res.data.years.length) apiYears = res.data.years.map(String);
                 const obs = Array.isArray(res.data.obsession) ? res.data.obsession : [];
-                const rep = Array.isArray(res.data.on_repeat) ? res.data.on_repeat : [];
                 const bng = Array.isArray(res.data.binges) ? res.data.binges : [];
                 const msk = Array.isArray(res.data.most_skipped) ? res.data.most_skipped : [];
                 const nsk = Array.isArray(res.data.never_skipped) ? res.data.never_skipped : [];
                 const lng = Array.isArray(res.data.longest) ? res.data.longest : [];
                 const sht = Array.isArray(res.data.shortest) ? res.data.shortest : [];
-                if (obs.length || rep.length || bng.length || msk.length || nsk.length || lng.length || sht.length) {
-                    data = { obsession: obs, on_repeat: rep, binges: bng, most_skipped: msk, never_skipped: nsk, longest: lng, shortest: sht };
+                if (obs.length || bng.length || msk.length || nsk.length || lng.length || sht.length) {
+                    data = { obsession: obs, binges: bng, most_skipped: msk, never_skipped: nsk, longest: lng, shortest: sht };
                 }
             }
         }
         if (!data) {
             data = {
                 obsession: SAMPLE_OBSESSION.map((o, i) => Object.assign({ rank: i + 1 }, o)),
-                on_repeat: SAMPLE_ON_REPEAT.map((o, i) => Object.assign({ rank: i + 1 }, o)),
                 binges: SAMPLE_BINGES.map((o, i) => Object.assign({ rank: i + 1 }, o)),
                 most_skipped: SAMPLE_MOST_SKIPPED.map((o, i) => Object.assign({ rank: i + 1 }, o)),
                 never_skipped: SAMPLE_NEVER_SKIPPED.map((o, i) => Object.assign({ rank: i + 1 }, o)),
@@ -218,7 +206,6 @@
         const data = await fetchData(state.range);
         syncYears();
         renderList("obsession-list", data.obsession, { value: times, badge: "in a day", sub: withDate });
-        renderList("on-repeat-list", data.on_repeat, { value: times, badge: "in a row", sub: artistOnly });
         renderList("binge-list", data.binges, { value: (it) => fmtMins(it.minutes), badge: "in one sitting", sub: bingeSub, cover: (it) => artistCover(it.id) });
         renderList("most-skipped-list", data.most_skipped, { value: skipVal, badge: "skipped", sub: skipSub });
         renderList("never-skipped-list", data.never_skipped, { value: playsVal, badge: "never skipped", sub: artistOnly });
