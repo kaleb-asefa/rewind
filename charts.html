@@ -200,8 +200,8 @@
                 <h2 id="chart-title" class="font-headline-md text-headline-md font-bold tracking-tight text-on-surface">Top Artists</h2>
                 <span id="chart-subtitle" class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-60">All-time · by minutes</span>
             </div>
-            <button type="button" id="share-open-btn" class="flex items-center gap-1.5 bg-primary text-on-primary px-4 py-1.5 rounded-full text-body-sm font-bold hover:scale-105 active:scale-95 transition-all" title="Share your Top 10">
-                <span class="material-symbols-outlined text-base">ios_share</span> Share top 10
+            <button type="button" id="share-open-btn" class="flex items-center gap-1.5 bg-primary text-on-primary px-4 py-1.5 rounded-full text-body-sm font-bold hover:scale-105 active:scale-95 transition-all" title="Share your Rewind">
+                <span class="material-symbols-outlined text-base">ios_share</span> Share
             </button>
         </div>
 
@@ -292,18 +292,31 @@
 
     </main>
 
-    <!-- Share modal — Spotify-Wrapped-style Top 10 card exported as an image -->
+    <!-- Share modal — Wrapped-style story deck (10 cards), each exported as an image -->
     <div id="share-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-        <div class="flex flex-col items-center gap-5 max-h-full">
-            <!-- The card is drawn to this canvas (this exact pixels get shared) -->
-            <div class="rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
-                <canvas id="share-canvas" width="1080" height="1920" style="width:340px;height:604px;display:block;"></canvas>
+        <div class="flex flex-col items-center gap-4 max-h-full">
+            <!-- The current card is drawn to this canvas (these exact pixels get shared) -->
+            <div class="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
+                <canvas id="share-canvas" width="1080" height="1920" style="width:330px;height:586px;display:block;"></canvas>
+                <button type="button" id="share-prev" aria-label="Previous card" class="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <button type="button" id="share-next" aria-label="Next card" class="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
             </div>
 
+            <!-- Which card + dot indicators -->
+            <div id="share-caption" class="text-white/70 text-body-sm font-label-bold">Intro · 1 / 10</div>
+            <div id="share-dots" class="flex items-center gap-1.5"></div>
+
             <!-- Actions -->
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center justify-center gap-3">
                 <button type="button" id="share-download-btn" class="flex items-center gap-2 bg-primary text-on-primary px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
-                    <span class="material-symbols-outlined text-lg">download</span> Download
+                    <span class="material-symbols-outlined text-lg">download</span> Save this
+                </button>
+                <button type="button" id="share-download-all-btn" class="flex items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-lg">photo_library</span> Save all 10
                 </button>
                 <button type="button" id="share-native-btn" class="hidden items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
                     <span class="material-symbols-outlined text-lg">ios_share</span> Share
