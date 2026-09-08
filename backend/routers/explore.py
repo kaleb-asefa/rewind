@@ -1996,6 +1996,44 @@ def _superlative_never_skipped(skip_rows, limit):
     ]
 
 
+def _duration_stats(raw_con, clause):
+    """Per-track play count + duration (seconds) for tracks in the catalog.
+    Needs the enriched track_features slice; empty when unenriched.
+    """
+    try:
+        return raw_con.execute(
+            "SELECT f.track_id AS id, any_value(h.track_name) AS name, "
+            "any_value(h.artist_name) AS artist, COUNT(*) AS plays, "
+            "any_value(f.duration) AS dur "
+            "FROM history h JOIN track_features f "
+            "ON split_part(h.track_uri, ':', 3) = f.track_id "
+            "WHERE h.track_uri LIKE 'spotify:track:%' AND h.track_name IS NOT NULL "
+            "AND f.duration IS NOT NULL" + clause + " GROUP BY f.track_id"
+        ).fetchall()
+    except Exception:
+        return []
+
+
+def _superlative_longest(dur_rows, limit):
+    """Longest tracks you actually played (min 2 plays), by duration."""
+    cand = [r for r in dur_rows if r[3] >= 2 and r[4]]
+    cand.sort(key=lambda r: r[4], reverse=True)
+    return [
+        {"rank": i, "name": r[1], "artist": r[2], "id": r[0], "plays": int(r[3]), "seconds": int(r[4])}
+        for i, r in enumerate(cand[:limit], start=1)
+    ]
+
+
+def _superlative_shortest(dur_rows, limit):
+    """Shortest real songs you played (min 2 plays, >=30s to skip junk)."""
+    cand = [r for r in dur_rows if r[3] >= 2 and r[4] and r[4] >= 30]
+    cand.sort(key=lambda r: r[4])
+    return [
+        {"rank": i, "name": r[1], "artist": r[2], "id": r[0], "plays": int(r[3]), "seconds": int(r[4])}
+        for i, r in enumerate(cand[:limit], start=1)
+    ]
+
+
 @router.get("/api/metrics/superlatives")
 async def get_superlatives(
     range: str = "all",
@@ -2014,12 +2052,15 @@ async def get_superlatives(
         off = _tz_offset_minutes(raw_con)
         clause = _chart_range_clause(rng, off)
         skip_rows = _skip_stats(raw_con, clause)
+        dur_rows = _duration_stats(raw_con, clause)
         return {
             "obsession": _superlative_obsession(raw_con, off, clause, limit),
             "on_repeat": _superlative_on_repeat(raw_con, clause, limit),
             "binges": _superlative_binges(raw_con, off, clause, limit),
             "most_skipped": _superlative_most_skipped(skip_rows, limit),
             "never_skipped": _superlative_never_skipped(skip_rows, limit),
+            "longest": _superlative_longest(dur_rows, limit),
+            "shortest": _superlative_shortest(dur_rows, limit),
             "years": _chart_years(raw_con, off),
         }
 

@@ -1378,6 +1378,27 @@ def test_superlative_skip_charts():
     assert never[0]["plays"] == 12
 
 
+def test_superlative_duration_charts():
+    from routers.explore import _superlative_longest, _superlative_shortest
+
+    # (id, name, artist, plays, duration_seconds)
+    dur_rows = [
+        ("a", "Epic", "A", 5, 875),      # long, plenty of plays
+        ("b", "Short One", "B", 4, 45),  # short real song
+        ("c", "Skit", "C", 3, 12),       # under the 30s floor
+        ("d", "OneOff", "D", 1, 900),    # longest but only 1 play → excluded
+        ("e", "Mid", "E", 2, 200),
+    ]
+    longest = _superlative_longest(dur_rows, 10)
+    assert [x["name"] for x in longest] == ["Epic", "Mid", "Short One", "Skit"]
+    assert longest[0]["seconds"] == 875
+    assert all(x["name"] != "OneOff" for x in longest)   # min-2-plays floor
+
+    shortest = _superlative_shortest(dur_rows, 10)
+    assert shortest[0]["name"] == "Short One"            # 45s, shortest >=30s
+    assert all(x["name"] != "Skit" for x in shortest)    # 12s under the 30s floor
+    assert all(x["name"] != "OneOff" for x in shortest)
+
 
 def test_superlatives_endpoint():
     with TestClient(app) as client:
@@ -1431,6 +1452,9 @@ def test_superlatives_endpoint():
             assert never[0]["plays"] >= 10
             npl = [n["plays"] for n in never]
             assert all(npl[i] >= npl[i + 1] for i in range(len(npl) - 1))
+
+        assert isinstance(data["longest"], list)   # empty unless enriched
+        assert isinstance(data["shortest"], list)
 
         assert client.get("/api/metrics/superlatives?range=bogus").status_code == 400
 
