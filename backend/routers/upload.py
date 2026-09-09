@@ -8,8 +8,8 @@ import tempfile
 import catalog
 import images
 from database import get_db, table_registry
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from sqlalchemy.engine import Connection
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
+from sqlalchemy.engine import Connection, Engine
 from starlette.concurrency import run_in_threadpool
 
 router = APIRouter()
@@ -102,8 +102,73 @@ def _enrich_session(conn: Connection) -> dict:
     return result
 
 
+# Cover pre-warm: the id sets every chart lands on (bar race, velocity, charts
+# leaderboard, taste gems, deep cuts, …) are the top artists/tracks/albums by
+# listening. The long tail (e.g. a single year's top 50) is warmed on demand by
+# the /api/images retry path instead.
+_PREWARM_LIMIT = 50
+
+
+def _collect_prewarm_sets(conn: Connection) -> dict[str, list[str]]:
+    """Top artist / track / album spotify ids to warm the cover cache for.
+
+    Tracks come straight from ``track_uri``; artist/album ids come from the
+    enriched ``track_features`` slice (absent when the catalog is missing, in
+    which case those kinds are simply skipped).
+    """
+    raw_con = conn.connection.driver_connection
+    sets: dict[str, list[str]] = {}
+
+    try:
+        sets["track"] = [
+            r[0]
+            for r in raw_con.execute(
+                "SELECT split_part(track_uri, ':', 3) AS id, SUM(ms_played) AS ms "
+                "FROM history WHERE track_uri LIKE 'spotify:track:%' "
+                f"GROUP BY id ORDER BY ms DESC LIMIT {_PREWARM_LIMIT}"
+            ).fetchall()
+        ]
+    except Exception:
+        sets["track"] = []
+
+    for kind, col in (("artist", "artist_id"), ("album", "album_id")):
+        try:
+            sets[kind] = [
+                r[0]
+                for r in raw_con.execute(
+                    f"SELECT f.{col} AS id, SUM(h.ms_played) AS ms "
+                    "FROM history h JOIN track_features f "
+                    "ON split_part(h.track_uri, ':', 3) = f.track_id "
+                    f"WHERE f.{col} IS NOT NULL "
+                    f"GROUP BY id ORDER BY ms DESC LIMIT {_PREWARM_LIMIT}"
+                ).fetchall()
+            ]
+        except Exception:
+            sets[kind] = []  # track_features missing (no catalog) — skip this kind
+
+    return sets
+
+
+def _warm_covers(engine: Engine, sets_by_kind: dict[str, list[str]]) -> None:
+    """Background job: warm the cover cache on a fresh session connection.
+
+    Runs after the upload response is sent, so it never blocks the request and
+    can't collide with the handler's own writes (that connection has committed
+    and closed by now). Best-effort — any failure is swallowed.
+    """
+    try:
+        with engine.connect() as warm_conn:
+            images.prewarm_session_covers(
+                warm_conn.connection.driver_connection, sets_by_kind
+            )
+            warm_conn.commit()
+    except Exception:
+        pass
+
+
 @router.post("/api/upload")
 async def upload(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(None),
     files: list[UploadFile] = File(None),
     conn: Connection = Depends(get_db),
@@ -140,6 +205,15 @@ async def upload(
     except Exception as e:
         # Enrichment is best-effort; ingestion already succeeded.
         result["enrichment"] = {"status": "error", "error": str(e)}
+
+    # Pre-warm cover art for the top artists/tracks/albums the charts land on.
+    # Best-effort and non-blocking: the response returns now, the warm job runs
+    # after on a fresh connection.
+    try:
+        prewarm_sets = await run_in_threadpool(_collect_prewarm_sets, conn)
+        background_tasks.add_task(_warm_covers, conn.engine, prewarm_sets)
+    except Exception:
+        pass
 
     return result
 

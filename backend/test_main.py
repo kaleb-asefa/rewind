@@ -280,6 +280,116 @@ def test_image_endpoint_fetches_and_caches(monkeypatch):
         assert bad.status_code == 400
 
 
+def test_batch_retries_transient_then_caches(monkeypatch):
+    """A cold batch where the first oEmbed pass rate-limits still returns every
+    cover in one call, and persists them (never caches the transient miss)."""
+    import threading
+
+    monkeypatch.setattr(images, "_BATCH_BACKOFF", 0)  # no real sleeps in tests
+
+    attempts: dict[str, int] = {}
+    lock = threading.Lock()
+
+    def flaky_fetch(kind, sid):
+        if sid == "D":
+            return None  # genuine art-less id — should cache as '' with no retry
+        with lock:
+            attempts[sid] = attempts.get(sid, 0) + 1
+            n = attempts[sid]
+        if n == 1:
+            raise TimeoutError("simulated rate-limit")  # transient on first pass
+        return f"https://img/{kind}/{sid}.jpg"
+
+    monkeypatch.setattr(images, "_fetch_thumbnail", flaky_fetch)
+
+    con = duckdb.connect()
+    result = images.get_or_fetch_many(con, "artist", ["A", "B", "C", "D"])
+
+    assert result == {
+        "A": "https://img/artist/A.jpg",
+        "B": "https://img/artist/B.jpg",
+        "C": "https://img/artist/C.jpg",
+        "D": None,  # genuine miss surfaces as None
+    }
+
+    rows = {
+        r[0]: r[1]
+        for r in con.execute(
+            "SELECT spotify_id, image_url FROM images WHERE kind = 'artist'"
+        ).fetchall()
+    }
+    # A/B/C persisted after the retry; D cached as '' (genuine miss, not a retry).
+    assert rows == {
+        "A": "https://img/artist/A.jpg",
+        "B": "https://img/artist/B.jpg",
+        "C": "https://img/artist/C.jpg",
+        "D": "",
+    }
+
+
+def test_prewarm_retries_transient_across_passes(monkeypatch):
+    """prewarm keeps retrying a transient miss across passes until it caches,
+    and never caches an id while it is still failing."""
+    import threading
+
+    monkeypatch.setattr(images, "_BATCH_RETRIES", 0)  # let prewarm's own loop do the retrying
+    monkeypatch.setattr(images, "_PREWARM_BACKOFF", 0)
+
+    attempts: dict[str, int] = {}
+    lock = threading.Lock()
+
+    def flaky_fetch(kind, sid):
+        with lock:
+            attempts[sid] = attempts.get(sid, 0) + 1
+            n = attempts[sid]
+        if n < 3:  # fail the first two passes, succeed on the third
+            raise ConnectionError("simulated transient")
+        return f"https://img/{kind}/{sid}.jpg"
+
+    monkeypatch.setattr(images, "_fetch_thumbnail", flaky_fetch)
+
+    con = duckdb.connect()
+    images.prewarm_session_covers(con, {"track": ["X"]})
+
+    row = con.execute(
+        "SELECT image_url FROM images WHERE kind = 'track' AND spotify_id = 'X'"
+    ).fetchone()
+    assert row is not None and row[0] == "https://img/track/X.jpg"
+    assert attempts["X"] == 3  # two transient failures, cached on the third pass
+
+
+def test_upload_prewarms_top_covers(monkeypatch):
+    """After an upload the top track covers are cached without the client asking."""
+    fetched: dict[str, int] = {}
+
+    def fake_fetch(kind, sid):
+        fetched[sid] = fetched.get(sid, 0) + 1
+        return f"https://img/{kind}/{sid}.jpg"
+
+    monkeypatch.setattr(images, "_fetch_thumbnail", fake_fetch)
+
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            resp = client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")},
+            )
+        assert resp.status_code == 200
+
+        # TestClient runs background tasks after the response; the top tracks
+        # should now be cached in the session images table.
+        engine = app.state.engine
+        with engine.connect() as conn:
+            raw = conn.connection.driver_connection
+            cached = raw.execute(
+                "SELECT count(*) FROM images WHERE kind = 'track'"
+            ).fetchone()[0]
+        assert cached > 0
+
+
 def test_artist_rank_trends_allow_enter_leave():
     with TestClient(app) as client:
         sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
