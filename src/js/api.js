@@ -82,10 +82,19 @@ const _coverCache = new Map();     // "kind:id" -> url string | null (resolved m
 const _coverInflight = new Map();  // "kind:id" -> Promise<url|null>
 
 function _applyCover(imgEl, url) {
-    if (imgEl && url) {
-        imgEl.decoding = "async";
-        imgEl.onload = () => imgEl.classList.remove("hidden");
-        imgEl.src = url;
+    if (!imgEl || !url) return;
+    imgEl.decoding = "async";
+    const reveal = () => imgEl.classList.remove("hidden");
+    imgEl.onload = reveal;
+    if (imgEl.getAttribute("src") !== url) imgEl.src = url;
+    // A cached image may finish before `load` is dispatched (or the event can be
+    // starved during the bar-race animation loop), leaving it stuck `hidden`.
+    // decode() resolves once it's paintable — from cache or network — so it's a
+    // reliable safety net; complete/naturalWidth covers browsers without decode().
+    if (typeof imgEl.decode === "function") {
+        imgEl.decode().then(reveal).catch(() => {});
+    } else if (imgEl.complete && imgEl.naturalWidth > 0) {
+        reveal();
     }
 }
 
