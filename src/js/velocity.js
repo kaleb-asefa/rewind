@@ -520,11 +520,14 @@
 
     // Fullscreen and Resize Listeners
     document.addEventListener('fullscreenchange', () => {
-        const isFS = !!document.fullscreenElement;
+        const card = document.getElementById('chart-card');
+        const isFS = document.fullscreenElement === card;
         const fsIcon = document.getElementById('fullscreen-icon');
         const viewport = document.getElementById('chart-viewport');
-        
+
         if (fsIcon) fsIcon.textContent = isFS ? 'fullscreen_exit' : 'fullscreen';
+        // Ignore fullscreen changes triggered by another card (e.g. the bar race).
+        if (document.fullscreenElement && !isFS) return;
         if (viewport) {
             if (isFS) {
                 viewport.classList.remove('h-[440px]');

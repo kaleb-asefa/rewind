@@ -38,11 +38,36 @@
             .filter(Boolean);
         if (!sections.length) return;
 
-        const setActive = (id) => {
-            pills.forEach((p) =>
-                p.classList.toggle('chapter-pill--active', p.getAttribute('href') === '#' + id)
-            );
+        const track = document.getElementById('chapter-rail-track');
+        const scrollBehavior = reduceMotion ? 'auto' : 'smooth';
+
+        // Fade the rail edges only while it actually overflows its container.
+        const updateOverflow = () => {
+            if (!track) return;
+            track.classList.toggle('is-scrollable', track.scrollWidth > track.clientWidth + 2);
         };
+
+        // Keep the active pill centred in the rail so the list follows your
+        // reading position automatically instead of needing a manual drag.
+        const scrollToPill = (pill) => {
+            if (!track || !pill) return;
+            const target = pill.offsetLeft - (track.clientWidth - pill.offsetWidth) / 2;
+            const max = track.scrollWidth - track.clientWidth;
+            track.scrollTo({ left: Math.max(0, Math.min(target, max)), behavior: scrollBehavior });
+        };
+
+        const setActive = (id) => {
+            let active = null;
+            pills.forEach((p) => {
+                const on = p.getAttribute('href') === '#' + id;
+                p.classList.toggle('chapter-pill--active', on);
+                if (on) active = p;
+            });
+            scrollToPill(active);
+        };
+
+        updateOverflow();
+        window.addEventListener('resize', updateOverflow);
         setActive(sections[0].id);
 
         if (!('IntersectionObserver' in window)) return;

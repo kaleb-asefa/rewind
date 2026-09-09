@@ -159,43 +159,43 @@
             <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70">A closer look at your listening.</p>
         </div>
 
-        <!-- Sticky Chapter Rail (scroll-spy) -->
-        <nav id="chapter-rail" class="sticky top-[72px] z-30 flex justify-center py-2">
-            <div class="flex items-center gap-1 p-1 bg-surface-container-high/80 backdrop-blur-md rounded-full border border-white/5 overflow-x-auto max-w-full">
-                <a data-chapter href="#climb" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+        <!-- Sticky Chapter Rail (scroll-spy, auto-scrolls to the active section) -->
+        <nav id="chapter-rail" class="sticky top-[64px] z-30 flex justify-center py-1">
+            <div id="chapter-rail-track" class="chapter-rail-track relative flex items-center gap-1 p-1 bg-surface-container-high/80 backdrop-blur-md rounded-full border border-white/5 overflow-x-auto max-w-full">
+                <a data-chapter href="#climb" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">01</span> The Climb
                 </a>
-                <a data-chapter href="#rhythm" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                <a data-chapter href="#rhythm" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">02</span> When You Listen
                 </a>
-                <a data-chapter href="#sound" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                <a data-chapter href="#sound" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">03</span> Your Sound
                 </a>
-                <a data-chapter href="#taste" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                <a data-chapter href="#taste" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">04</span> Your Taste
                 </a>
-                <a data-chapter href="#habits" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                <a data-chapter href="#habits" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">05</span> How You Listen
                 </a>
-                <a data-chapter href="#discovery" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                <a data-chapter href="#discovery" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">06</span> Discovery &amp; Loyalty
                 </a>
-                <a data-chapter href="#listening-life" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                <a data-chapter href="#listening-life" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">07</span> Your Listening Life
                 </a>
-                <a data-chapter href="#over-time" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                <a data-chapter href="#over-time" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">08</span> Your Music, Over Time
                 </a>
-                <a data-chapter href="#evolution" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                <a data-chapter href="#evolution" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">09</span> How Your Taste Changes
                 </a>
-                <a data-chapter href="#sound-detail" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                <a data-chapter href="#sound-detail" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">10</span> The Detail In Your Sound
                 </a>
-                <a data-chapter href="#deep-cuts" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                <a data-chapter href="#deep-cuts" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">11</span> Your Deep Cuts
                 </a>
-                <a data-chapter href="#wrapped" class="chapter-pill flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold whitespace-nowrap">
+                <a data-chapter href="#wrapped" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="material-symbols-outlined text-sm">star</span> Wrapped
                 </a>
             </div>
@@ -204,9 +204,7 @@
         <!-- Chapter 01 — The Climb -->
         <section id="climb" class="scroll-mt-32 space-y-6">
             <div class="reveal">
-                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 01</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">The Climb</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">How your top artists and tracks moved over time.</p>
             </div>
 
         <!-- Header Row -->
@@ -360,6 +358,10 @@
                         <button onclick="setRaceSpeed(0.5)" id="race-speed-05" class="px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold">0.5x</button>
                         <button onclick="setRaceSpeed(1)" id="race-speed-10" class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface transition-colors">1.0x</button>
                     </div>
+
+                    <button id="race-fullscreen-btn" onclick="toggleRaceFullscreen()" class="w-8 h-8 rounded-full text-on-surface-variant hover:text-primary flex items-center justify-center transition-all" title="Toggle Fullscreen View">
+                        <span id="race-fullscreen-icon" class="material-symbols-outlined text-base">fullscreen</span>
+                    </button>
                 </div>
             </div>
 
@@ -380,9 +382,7 @@
         <!-- Chapter 02 — When You Listen -->
         <section id="rhythm" class="scroll-mt-32 pt-10 space-y-6">
             <div class="reveal">
-                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 02</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">When You Listen</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The hours, days and seasons you listen.</p>
             </div>
 
             <!-- Hero: listening clock + side stats -->
@@ -472,9 +472,7 @@
         <!-- Chapter 03 — Your Sound -->
         <section id="sound" class="scroll-mt-32 pt-10 space-y-6">
             <div class="reveal">
-                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 03</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Sound</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The feel of your music.</p>
                 <p id="sound-coverage" class="hidden font-body-sm text-body-sm text-on-surface-variant opacity-60 mt-1"></p>
             </div>
 
@@ -528,9 +526,7 @@
         <!-- Chapter 04 — Your Taste -->
         <section id="taste" class="scroll-mt-32 pt-10 space-y-6">
             <div class="reveal">
-                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 04</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Taste</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The genres and eras you lean into.</p>
             </div>
 
             <!-- Hero: top genres + summary -->
@@ -579,9 +575,7 @@
         <!-- Chapter 05 — How You Listen -->
         <section id="habits" class="scroll-mt-32 pt-10 space-y-6">
             <div class="reveal">
-                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 05</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">How You Listen</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">Your habits behind the play button.</p>
             </div>
 
             <!-- Hero: shuffle vs hand-picked -->
@@ -631,9 +625,7 @@
         <!-- Chapter 06 — Discovery & Loyalty -->
         <section id="discovery" class="scroll-mt-32 pt-10 space-y-6">
             <div class="reveal">
-                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 06</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Discovery &amp; Loyalty</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">How new music enters your rotation.</p>
             </div>
 
             <!-- Hero: new discoveries versus familiar favorites -->
@@ -682,9 +674,7 @@
         <!-- Chapter 07 — Your Listening Life -->
         <section id="listening-life" class="scroll-mt-32 pt-10 space-y-6">
             <div class="reveal">
-                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 07</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Listening Life</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The moments behind your listening.</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
@@ -710,9 +700,7 @@
         <!-- Chapter 08 — Your Music, Over Time -->
         <section id="over-time" class="scroll-mt-32 pt-10 space-y-6">
             <div class="reveal">
-                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 08</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Music, Over Time</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">What you played, year by year.</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
@@ -755,9 +743,7 @@
         <!-- Chapter 09 — How Your Taste Changes -->
         <section id="evolution" class="scroll-mt-32 pt-10 space-y-6">
             <div class="reveal">
-                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 09</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">How Your Taste Changes</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">How your sound shifted over the years.</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
@@ -794,9 +780,7 @@
         <!-- Chapter 10 — The Detail In Your Sound -->
         <section id="sound-detail" class="scroll-mt-32 pt-10 space-y-6">
             <div class="reveal">
-                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 10</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">The Detail In Your Sound</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">The range and standouts in your sound.</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
@@ -838,9 +822,7 @@
         <!-- Chapter 11 — Your Deep Cuts -->
         <section id="deep-cuts" class="scroll-mt-32 pt-10 space-y-6">
             <div class="reveal">
-                <span class="text-primary/80 font-mono text-label-bold tracking-widest">CHAPTER 11</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Deep Cuts</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">How deep your favorites run.</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
@@ -878,9 +860,7 @@
         <!-- Finale — Your Rewind, Wrapped -->
         <section id="wrapped" class="scroll-mt-32 pt-10 space-y-6">
             <div class="reveal">
-                <span class="text-primary/80 font-mono text-label-bold tracking-widest">FINALE</span>
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Rewind, Wrapped</h2>
-                <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70 max-w-2xl">A year of listening, in a nutshell.</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">

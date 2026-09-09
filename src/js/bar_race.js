@@ -12,9 +12,12 @@
         "July", "August", "September", "October", "November", "December"];
 
     const VISIBLE_N = 10;
-    const LANE = 44;             // px per row lane
-    const BAR_H = 26;            // bar thickness
-    const AVATAR = 34;          // cover circle riding the bar tip
+    const BASE_LANE = 44;        // px per row lane
+    const BASE_BAR_H = 26;       // bar thickness
+    const BASE_AVATAR = 34;      // cover circle riding the bar tip
+    let LANE = BASE_LANE;        // current sizes — scaled up while fullscreen
+    let BAR_H = BASE_BAR_H;
+    let AVATAR = BASE_AVATAR;
     const GAP = 8;
     const LEFT_PAD = 30;         // left gutter for the rank number
     const RIGHT_PAD = 130;       // reserved right space so bars never reach the edge
@@ -352,6 +355,35 @@
         const active = document.getElementById(id);
         if (active) active.className = "px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold";
     };
+
+    window.toggleRaceFullscreen = function () {
+        const card = document.getElementById("race-card");
+        if (!card) return;
+        if (!document.fullscreenElement) {
+            (card.requestFullscreen || card.webkitRequestFullscreen || function () {}).call(card);
+        } else if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    };
+
+    // Grow the rows to fill the screen while the race is fullscreen; ignore
+    // fullscreen changes triggered by other cards (e.g. the velocity chart).
+    document.addEventListener("fullscreenchange", () => {
+        const card = document.getElementById("race-card");
+        const isFS = document.fullscreenElement === card;
+        const icon = document.getElementById("race-fullscreen-icon");
+        if (icon) icon.textContent = isFS ? "fullscreen_exit" : "fullscreen";
+        if (document.fullscreenElement && !isFS) return;
+
+        const scale = isFS ? 1.6 : 1;
+        LANE = Math.round(BASE_LANE * scale);
+        BAR_H = Math.round(BASE_BAR_H * scale);
+        AVATAR = Math.round(BASE_AVATAR * scale);
+        if (items.length) {
+            buildRows();
+            render(null);
+        }
+    });
 
     document.addEventListener("DOMContentLoaded", () => {
         render(null);

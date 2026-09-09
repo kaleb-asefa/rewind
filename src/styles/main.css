@@ -419,6 +419,22 @@ html { scroll-behavior: smooth; }
 .chapter-pill--soon { opacity: 0.4; }
 .chapter-pill--soon:hover { color: rgb(var(--color-on-surface-variant)); }
 
+/* Chapter rail track: hidden scrollbar; edges fade out only when it overflows.
+   Auto-scrolls the active pill into view from core.js (scroll-spy). */
+.chapter-rail-track {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+}
+.chapter-rail-track::-webkit-scrollbar { display: none; }
+.chapter-rail-track.is-scrollable {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
+}
+@media (prefers-reduced-motion: reduce) {
+    .chapter-rail-track { scroll-behavior: auto; }
+}
+
 /* radial listening clock */
 .clock-bar { stroke-linecap: round; }
 
