@@ -46,6 +46,21 @@ keep `main.py` thin with domain routers + framework-free `metrics.py`; one compo
 The doc also tracks known tech debt (CORS, hardcoded API host) — check it before building and
 update it when debt is added or paid down.
 
+## Parallel Development — Frontend / Backend split
+
+Development can run in two scoped agents working in separate git worktrees:
+
+- **Contract (source of truth):** `docs/API_CONTRACT.md` — the frontend ↔ backend seam
+  (endpoint shapes + conventions). Change this file *first* when a response shape changes.
+- **Scoped agents:** `.github/agents/backend.agent.md` (owns `backend/**`) and
+  `.github/agents/frontend.agent.md` (owns `src/**` + `*.html`).
+- **Ownership:** backend edits `backend/**`; frontend edits `src/**`, `src/styles/**`, `*.html`.
+  Shared files (`docs/API_CONTRACT.md`, this file) are edited in `main` first, before branches diverge.
+- **One server, one DB:** DuckDB is single-writer and `data/` is gitignored — run exactly one
+  backend server (`:8000`); the frontend opens its own pages via `file://`.
+
+See `docs/API_CONTRACT.md` §5 for the worktree runbook.
+
 ## Fixed Scope — Overview Page
 
 The Overview page shows exactly these metrics. No more, no less, unless explicitly requested:
