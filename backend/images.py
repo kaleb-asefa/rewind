@@ -164,6 +164,31 @@ def get_or_fetch_many(raw_con, kind: str, ids: list[str]) -> dict[str, str | Non
     return {i: (cached.get(i) if i in cached else fetched.get(i)) or None for i in ids}
 
 
+def cached_urls(raw_con, kind: str, ids: list[str]) -> dict[str, str | None]:
+    """Read-only batch cache lookup for inline cover URLs on the metric endpoints.
+
+    Returns ``{spotify_id: url}`` for every requested id that has a cache row,
+    with a genuine art-less id (stored as '') mapped to None. Never fetches from
+    oEmbed and never writes — ids that aren't warmed yet are simply absent (the
+    caller treats those as None). One query, no per-row lookups.
+    """
+    if kind not in _VALID_KINDS:
+        return {}
+    ids = [i for i in dict.fromkeys(ids) if i]
+    if not ids:
+        return {}
+    placeholders = ",".join("?" * len(ids))
+    try:
+        rows = raw_con.execute(
+            f"SELECT spotify_id, image_url FROM images "
+            f"WHERE kind = ? AND spotify_id IN ({placeholders})",
+            [kind, *ids],
+        ).fetchall()
+    except Exception:
+        return {}  # images table not created yet (nothing warmed) → all null
+    return {row[0]: (row[1] or None) for row in rows}
+
+
 def _uncached_ids(raw_con, kind: str, ids: list[str]) -> list[str]:
     """Subset of ``ids`` with no row in the cache — i.e. still transient misses
     (a genuine art-less id is stored as '' and so counts as cached)."""

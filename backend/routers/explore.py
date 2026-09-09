@@ -4,6 +4,7 @@ taste, behavior, discovery and listening life."""
 import unicodedata
 from datetime import timedelta
 
+import images
 from database import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request
 from metrics import (
@@ -70,6 +71,18 @@ def _canonical_artist_id_map(raw_con):
         return {}
 
 
+def _attach_image_urls(raw_con, kind, items):
+    """Add a read-only, cached ``image_url`` to each item carrying a Spotify
+    ``id``. None when the id is missing, un-warmed, or a genuine art-less miss.
+    One batch cache read; never fetches oEmbed.
+    """
+    url_map = images.cached_urls(
+        raw_con, kind, [it["id"] for it in items if it.get("id")]
+    )
+    for it in items:
+        it["image_url"] = url_map.get(it["id"]) if it.get("id") else None
+
+
 @router.get("/api/metrics/artist-rank")
 async def get_artist_rank(
     request: Request,
@@ -98,6 +111,7 @@ async def get_artist_rank(
             }
             for idx, f in enumerate(featured, start=1)
         ]
+        _attach_image_urls(raw_con, "artist", data)
         return {
             "start_month": full_months[0] if full_months else None,
             "end_month": full_months[-1] if full_months else None,
@@ -166,6 +180,7 @@ async def get_track_rank(
             }
             for idx, f in enumerate(featured, start=1)
         ]
+        _attach_image_urls(raw_con, "track", data)
         return {
             "start_month": full_months[0] if full_months else None,
             "end_month": full_months[-1] if full_months else None,
@@ -265,6 +280,7 @@ async def get_bar_race(
                 item["artist_name"] = f["key"][1]
             data.append(item)
 
+        _attach_image_urls(raw_con, entity, data)
         return {
             "start_month": full_months[0] if full_months else None,
             "end_month": full_months[-1] if full_months else None,
@@ -1834,6 +1850,7 @@ async def get_chart(
                     "prev_rank": prev_map.get(it["key"]),
                 }
             )
+        _attach_image_urls(raw_con, entity, items)
         return {"items": items, "years": _chart_years(raw_con, off)}
 
     res = await run_in_threadpool(query)
