@@ -435,6 +435,72 @@ html { scroll-behavior: smooth; }
     .chapter-rail-track { scroll-behavior: auto; }
 }
 
+/* Inline "?" help buttons + click-to-open popover (explains derived categories) */
+.help { display: inline-flex; align-items: center; line-height: 0; }
+.help-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; padding: 0; margin: 0; border: 0; cursor: pointer;
+    border-radius: 9999px; background: transparent;
+    color: rgb(var(--color-on-surface-variant)); opacity: 0.55;
+    transition: opacity 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+.help-btn:hover, .help-btn.is-open {
+    opacity: 1;
+    color: rgb(var(--color-primary));
+    background: rgb(var(--color-primary) / 0.12);
+}
+.help-btn .material-symbols-outlined { font-size: 17px; line-height: 1; }
+.help-content { display: none; }
+.help-pop {
+    position: fixed;
+    z-index: 70;
+    width: 288px;
+    max-width: calc(100vw - 24px);
+    background: rgb(var(--color-surface-container-high));
+    border: 1px solid rgb(255 255 255 / 0.1);
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
+    color: rgb(var(--color-on-surface-variant));
+    font-size: 13px;
+    line-height: 1.55;
+    animation: helpPopIn 0.14s ease;
+}
+@keyframes helpPopIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: none; }
+}
+.help-pop .help-title {
+    font-weight: 700;
+    color: rgb(var(--color-on-surface));
+    margin-bottom: 6px;
+}
+.help-pop p { margin: 0 0 8px; }
+.help-pop p:last-child { margin-bottom: 0; }
+.help-pop .help-list {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.help-pop .help-list li { position: relative; padding-left: 15px; }
+.help-pop .help-list li::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 7px;
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    background: rgb(var(--color-primary));
+}
+.help-pop b { color: rgb(var(--color-on-surface)); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) {
+    .help-pop { animation: none; }
+}
+
 /* radial listening clock */
 .clock-bar { stroke-linecap: round; }
 

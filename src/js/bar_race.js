@@ -366,23 +366,43 @@
         }
     };
 
-    // Grow the rows to fill the screen while the race is fullscreen; ignore
-    // fullscreen changes triggered by other cards (e.g. the velocity chart).
+    // Size the rows so all VISIBLE_N fit the fullscreen viewport without scrolling;
+    // fall back to the base sizes when windowed.
+    function fitRaceRows() {
+        const card = document.getElementById("race-card");
+        const vp = document.getElementById("race-viewport");
+        const isFS = document.fullscreenElement === card;
+        if (isFS && card && vp) {
+            const padBottom = 24; // matches .glass-card:fullscreen bottom padding
+            const avail = card.getBoundingClientRect().bottom - vp.getBoundingClientRect().top - padBottom;
+            const laneFit = Math.floor((avail - AXIS_TOP) / VISIBLE_N);
+            LANE = Math.max(BASE_LANE, Math.min(laneFit, 96));
+            BAR_H = Math.round((LANE * BASE_BAR_H) / BASE_LANE);
+            AVATAR = Math.round((LANE * BASE_AVATAR) / BASE_LANE);
+        } else {
+            LANE = BASE_LANE;
+            BAR_H = BASE_BAR_H;
+            AVATAR = BASE_AVATAR;
+        }
+        if (items.length) {
+            buildRows();
+            render(null);
+        }
+    }
+
+    // Recompute sizes on fullscreen enter/exit; ignore changes from other cards
+    // (e.g. the velocity chart). rAF lets the fullscreen layout settle first.
     document.addEventListener("fullscreenchange", () => {
         const card = document.getElementById("race-card");
         const isFS = document.fullscreenElement === card;
         const icon = document.getElementById("race-fullscreen-icon");
         if (icon) icon.textContent = isFS ? "fullscreen_exit" : "fullscreen";
         if (document.fullscreenElement && !isFS) return;
+        requestAnimationFrame(fitRaceRows);
+    });
 
-        const scale = isFS ? 1.6 : 1;
-        LANE = Math.round(BASE_LANE * scale);
-        BAR_H = Math.round(BASE_BAR_H * scale);
-        AVATAR = Math.round(BASE_AVATAR * scale);
-        if (items.length) {
-            buildRows();
-            render(null);
-        }
+    window.addEventListener("resize", () => {
+        if (document.fullscreenElement === document.getElementById("race-card")) fitRaceRows();
     });
 
     document.addEventListener("DOMContentLoaded", () => {

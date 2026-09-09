@@ -190,6 +190,63 @@
         }
     }
 
+    /* ---- Inline "?" help popovers ---- */
+    // Each help button has a sibling `.help-content`; on click we mirror that
+    // markup into a body-level popover so card `overflow-hidden` never clips it.
+    function initHelp() {
+        const buttons = Array.from(document.querySelectorAll('.help-btn'));
+        if (!buttons.length) return;
+        let pop = null;
+        let openBtn = null;
+
+        const close = () => {
+            if (pop) { pop.remove(); pop = null; }
+            if (openBtn) { openBtn.classList.remove('is-open'); openBtn.setAttribute('aria-expanded', 'false'); }
+            openBtn = null;
+        };
+        const place = (btn) => {
+            if (!pop) return;
+            const r = btn.getBoundingClientRect();
+            const w = pop.offsetWidth;
+            const h = pop.offsetHeight;
+            const m = 8;
+            let left = r.left + r.width / 2 - w / 2;
+            let top = r.bottom + 8;
+            left = Math.max(m, Math.min(left, window.innerWidth - w - m));
+            if (top + h > window.innerHeight - m) top = r.top - h - 8;
+            pop.style.left = left + 'px';
+            pop.style.top = Math.max(m, top) + 'px';
+        };
+        const open = (btn) => {
+            const content = btn.parentElement && btn.parentElement.querySelector('.help-content');
+            if (!content) return;
+            close();
+            pop = document.createElement('div');
+            pop.className = 'help-pop';
+            pop.setAttribute('role', 'tooltip');
+            pop.innerHTML = content.innerHTML;
+            document.body.appendChild(pop);
+            openBtn = btn;
+            btn.classList.add('is-open');
+            btn.setAttribute('aria-expanded', 'true');
+            place(btn);
+        };
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest && e.target.closest('.help-btn');
+            if (btn) {
+                e.preventDefault();
+                if (openBtn === btn) close();
+                else open(btn);
+                return;
+            }
+            if (pop && !(e.target.closest && e.target.closest('.help-pop'))) close();
+        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+        window.addEventListener('scroll', () => { if (openBtn) place(openBtn); }, true);
+        window.addEventListener('resize', close);
+    }
+
     const E = {
         reduceMotion,
         plays,
@@ -211,6 +268,7 @@
     function init() {
         initReveal();
         initScrollSpy();
+        initHelp();
         E.chapters.forEach((c) => { if (c.hover) c.hover(); });
         E.chapters.forEach((c) => { if (c.fetch) c.fetch(); });
         E.chapters.forEach((c) => {

@@ -153,10 +153,8 @@
         <div class="absolute -z-10 blur-[120px] top-1/4 left-10 w-72 h-72 bg-primary/10 rounded-full pointer-events-none"></div>
 
         <!-- Page Hero -->
-        <div class="max-w-3xl">
-            <span class="text-primary font-label-bold text-label-bold tracking-widest uppercase">Deep Dive</span>
-            <h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface tracking-tight">Explore</h1>
-            <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70">A closer look at your listening.</p>
+        <div class="max-w-4xl">
+            <h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface tracking-tight">A closer look at your listening.</h1>
         </div>
 
         <!-- Sticky Chapter Rail (scroll-spy, auto-scrolls to the active section) -->
@@ -407,7 +405,21 @@
                 <!-- Side quick-stats -->
                 <div class="flex flex-col gap-gutter">
                     <div class="reveal glass-card rounded-2xl p-5">
-                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Chronotype</div>
+                        <div class="flex items-center gap-1.5">
+                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Chronotype</div>
+                            <span class="help">
+                                <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
+                                <div class="help-content">
+                                    <p class="help-title">How your chronotype is worked out</p>
+                                    <p>We shift the clock so your day starts at 5 AM, then take the average hour you press play — weighted by how much you listen.</p>
+                                    <ul class="help-list">
+                                        <li><b>Early bird</b> — your average lands in the morning half of the day</li>
+                                        <li><b>Balanced</b> — spread fairly evenly across day and night</li>
+                                        <li><b>Night owl</b> — your average leans into the evening and late night</li>
+                                    </ul>
+                                </div>
+                            </span>
+                        </div>
                         <div id="chrono-label" class="font-headline-md text-headline-md text-on-surface mb-3">—</div>
                         <div class="relative h-2 rounded-full bg-gradient-to-r from-amber-400/60 via-surface-container-high to-primary">
                             <div id="chrono-marker" class="absolute -top-1.5 w-5 h-5 rounded-full bg-white border-[3px] border-primary shadow -translate-x-1/2 transition-all duration-500" style="left: 50%"></div>
@@ -479,7 +491,23 @@
             <!-- Hero: mood map + summary -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
                 <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter relative overflow-hidden min-h-[440px]">
-                    <h3 class="font-headline-md text-headline-md text-on-surface">Your music moods</h3>
+                    <div class="flex items-center gap-1.5">
+                        <h3 class="font-headline-md text-headline-md text-on-surface">Your music moods</h3>
+                        <span class="help">
+                            <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
+                            <div class="help-content">
+                                <p class="help-title">How the mood map works</p>
+                                <p>Every track is placed by two Spotify audio features — positivity (left → right) and energy (bottom → top). The midpoint of each splits four moods:</p>
+                                <ul class="help-list">
+                                    <li><b>Pumped</b> — positive and high-energy</li>
+                                    <li><b>Intense</b> — darker but high-energy</li>
+                                    <li><b>Chill</b> — calm and positive</li>
+                                    <li><b>Moody</b> — calm and downbeat</li>
+                                </ul>
+                                <p>Your headline word is wherever most of your listening lands.</p>
+                            </div>
+                        </span>
+                    </div>
                     <div class="relative mt-3 flex justify-center">
                         <svg id="mood-svg" viewBox="0 0 320 320" class="w-full max-w-[440px] h-auto"></svg>
                     </div>
@@ -493,7 +521,16 @@
                         <div id="vibe-phrase" class="font-body-sm text-body-sm text-on-surface-variant opacity-80">—</div>
                     </div>
                     <div class="reveal glass-card rounded-2xl p-5">
-                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70 mb-3">Bright or moody?</div>
+                        <div class="flex items-center gap-1.5 mb-3">
+                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Bright or moody?</div>
+                            <span class="help">
+                                <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
+                                <div class="help-content">
+                                    <p class="help-title">Bright vs. moody</p>
+                                    <p>Based on the musical key of the tracks you play — <b>major</b> keys sound bright and upbeat, <b>minor</b> keys sound moody and emotional. The bar shows the share played in major keys.</p>
+                                </div>
+                            </span>
+                        </div>
                         <div class="flex h-3 rounded-full overflow-hidden bg-surface-container-high">
                             <div id="mode-major-bar" class="bg-primary transition-all duration-500" style="width:0%"></div>
                             <div id="mode-minor-bar" class="bg-primary/25 transition-all duration-500" style="width:0%"></div>
@@ -539,7 +576,21 @@
 
                 <div class="flex flex-col gap-gutter">
                     <div class="reveal glass-card rounded-2xl p-5">
-                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">How mainstream</div>
+                        <div class="flex items-center gap-1.5">
+                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">How mainstream</div>
+                            <span class="help">
+                                <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
+                                <div class="help-content">
+                                    <p class="help-title">How the mainstream score works</p>
+                                    <p>Every track carries a Spotify popularity score from 0–100. We average it across everything you played.</p>
+                                    <ul class="help-list">
+                                        <li><b>Underground</b> — average below 40</li>
+                                        <li><b>In the mix</b> — between 40 and 65</li>
+                                        <li><b>Mainstream</b> — 65 or higher</li>
+                                    </ul>
+                                </div>
+                            </span>
+                        </div>
                         <div id="taste-mainstream-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
                         <div class="relative h-1.5 rounded-full bg-surface-container-high mt-3">
                             <div id="taste-mainstream-bar" class="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-500" style="width:0%"></div>
@@ -549,7 +600,21 @@
                         </div>
                     </div>
                     <div class="reveal glass-card rounded-2xl p-5">
-                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Taste range</div>
+                        <div class="flex items-center gap-1.5">
+                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Taste range</div>
+                            <span class="help">
+                                <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
+                                <div class="help-content">
+                                    <p class="help-title">How your taste range is measured</p>
+                                    <p>Counts the distinct genres that make up the bulk of your listening.</p>
+                                    <ul class="help-list">
+                                        <li><b>Loyalist</b> — fewer than 4 genres</li>
+                                        <li><b>Adventurous</b> — 4 to 6 genres</li>
+                                        <li><b>Explorer</b> — 7 or more genres</li>
+                                    </ul>
+                                </div>
+                            </span>
+                        </div>
                         <div id="taste-range-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
                         <div id="taste-range-sub" class="font-body-sm text-body-sm text-on-surface-variant opacity-80">—</div>
                     </div>
@@ -581,7 +646,21 @@
             <!-- Hero: shuffle vs hand-picked -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
                 <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter relative overflow-hidden min-h-[280px] flex flex-col">
-                    <h3 class="font-headline-md text-headline-md text-on-surface">How you press play</h3>
+                    <div class="flex items-center gap-1.5">
+                        <h3 class="font-headline-md text-headline-md text-on-surface">How you press play</h3>
+                        <span class="help">
+                            <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
+                            <div class="help-content">
+                                <p class="help-title">Shuffle vs. hand-picked</p>
+                                <p>The share of your plays that started from shuffle rather than a track you chose yourself.</p>
+                                <ul class="help-list">
+                                    <li><b>Shuffler</b> — 60% or more of plays shuffled</li>
+                                    <li><b>A bit of both</b> — between 35% and 60%</li>
+                                    <li><b>Curator</b> — under 35% shuffled</li>
+                                </ul>
+                            </div>
+                        </span>
+                    </div>
                     <div class="flex-1 flex flex-col justify-center">
                         <div id="shuffle-word" class="font-display-lg text-display-lg-mobile text-primary leading-none">—</div>
                         <div id="shuffle-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-5"></div>
@@ -595,7 +674,21 @@
 
                 <div class="flex flex-col gap-gutter">
                     <div class="reveal glass-card rounded-2xl p-5">
-                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Restless or locked in?</div>
+                        <div class="flex items-center gap-1.5">
+                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Restless or locked in?</div>
+                            <span class="help">
+                                <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
+                                <div class="help-content">
+                                    <p class="help-title">Restless vs. locked in</p>
+                                    <p>Your skip rate — how often you skip a track before it finishes.</p>
+                                    <ul class="help-list">
+                                        <li><b>Restless</b> — you skip 40% of tracks or more</li>
+                                        <li><b>Selective</b> — you skip between 20% and 40%</li>
+                                        <li><b>Locked in</b> — you skip under 20% and let songs play</li>
+                                    </ul>
+                                </div>
+                            </span>
+                        </div>
                         <div id="skip-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
                         <div id="skip-sub" class="font-body-sm text-body-sm text-on-surface-variant opacity-80">—</div>
                     </div>
@@ -631,7 +724,21 @@
             <!-- Hero: new discoveries versus familiar favorites -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
                 <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter relative overflow-hidden min-h-[280px] flex flex-col">
-                    <h3 class="font-headline-md text-headline-md text-on-surface">Your listening mix</h3>
+                    <div class="flex items-center gap-1.5">
+                        <h3 class="font-headline-md text-headline-md text-on-surface">Your listening mix</h3>
+                        <span class="help">
+                            <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
+                            <div class="help-content">
+                                <p class="help-title">Explorer vs. Loyalist</p>
+                                <p>The share of your plays that went to artists who were new to you at the time.</p>
+                                <ul class="help-list">
+                                    <li><b>Explorer</b> — 45% or more new artists</li>
+                                    <li><b>Open to new music</b> — between 25% and 45%</li>
+                                    <li><b>Loyalist</b> — under 25% new artists</li>
+                                </ul>
+                            </div>
+                        </span>
+                    </div>
                     <div class="flex-1 flex flex-col justify-center">
                         <div id="discovery-word" class="font-display-lg text-display-lg-mobile text-primary leading-none">—</div>
                         <div id="discovery-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-5"></div>
@@ -791,7 +898,21 @@
                 </div>
 
                 <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
-                    <h3 class="font-headline-md text-headline-md text-on-surface">Bright or moody</h3>
+                    <div class="flex items-center gap-1.5">
+                        <h3 class="font-headline-md text-headline-md text-on-surface">Bright or moody</h3>
+                        <span class="help">
+                            <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
+                            <div class="help-content">
+                                <p class="help-title">Bright vs. moody</p>
+                                <p>From the musical key of your tracks — major keys sound bright, minor keys sound moody. We take the share played in major keys.</p>
+                                <ul class="help-list">
+                                    <li><b>Bright</b> — 55% or more in major keys</li>
+                                    <li><b>Balanced</b> — between 45% and 55%</li>
+                                    <li><b>Moody</b> — under 45% major</li>
+                                </ul>
+                            </div>
+                        </span>
+                    </div>
                     <div id="key-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-5">—</div>
                     <div id="key-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-5"></div>
                     <div class="flex justify-between mt-2 text-[11px] text-on-surface-variant">
@@ -865,7 +986,23 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
                 <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter">
-                    <h3 class="font-headline-md text-headline-md text-on-surface">Your listening personality</h3>
+                    <div class="flex items-center gap-1.5">
+                        <h3 class="font-headline-md text-headline-md text-on-surface">Your listening personality</h3>
+                        <span class="help">
+                            <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
+                            <div class="help-content">
+                                <p class="help-title">How your personality is built</p>
+                                <p>Five spectrums pulled from the chapters above. The dot shows where you land on each:</p>
+                                <ul class="help-list">
+                                    <li><b>Loyalist ↔ Explorer</b> — your new-artist share</li>
+                                    <li><b>Underground ↔ Mainstream</b> — average track popularity</li>
+                                    <li><b>Early bird ↔ Night owl</b> — your listening clock</li>
+                                    <li><b>Restless ↔ Focused</b> — your skip rate</li>
+                                    <li><b>Curator ↔ Shuffler</b> — your shuffle share</li>
+                                </ul>
+                            </div>
+                        </span>
+                    </div>
                     <div id="personality-badges" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5"></div>
                 </div>
 
