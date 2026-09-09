@@ -17,6 +17,10 @@ def setup_and_teardown(tmp_path, monkeypatch):
     monkeypatch.setattr(database, "DB_PATH", session_db_path)
     # Default: no catalog, so uploads skip enrichment (fast). Enrichment test overrides this.
     monkeypatch.setattr(catalog, "CATALOG_PATH", str(tmp_path / "no_catalog.parquet"))
+    # Never touch the network in tests. The upload prewarm + image endpoints fetch
+    # Spotify oEmbed covers over HTTP, which otherwise blocks every upload test on
+    # dozens of real requests. Image tests override this stub with their own fetch.
+    monkeypatch.setattr(images, "_fetch_thumbnail", lambda kind, sid: None)
     table_registry.reset()
     yield
     table_registry.reset()
