@@ -27,6 +27,18 @@ neither needs to read the other's code.
 
 - **Base URL:** `http://127.0.0.1:8000`. Frontend always calls via
   `window.fetchWithTimeout(path)` (from `src/js/api.js`), never a raw hardcoded URL.
+- **Session ticket (required):** every `/api/**` request must carry the header
+  `X-Rewind-Session: <uuid>`. The frontend generates it once and persists it in
+  `localStorage["rewind_session"]`, attaching it inside `window.fetchWithTimeout`:
+  ```js
+  let t = localStorage.getItem("rewind_session");
+  if (!t) { t = crypto.randomUUID(); localStorage.setItem("rewind_session", t); }
+  // fetchWithTimeout adds: headers: { "X-Rewind-Session": t }
+  ```
+  The ticket names the caller's private DuckDB file server-side, so each browser
+  sees only its own upload. Missing/invalid ticket → `400`
+  (`{"detail": "Missing or invalid session."}`); the frontend always sends one, so
+  this only fires on direct/abusive calls. **No response shapes change.**
 - **Method:** all metrics endpoints are `GET`. Upload is `POST`.
 - **Success envelope:** `{ "status": "ok", ... }`.
 - **Empty / no-data:** the endpoint returns `status:"ok"` with empty arrays or

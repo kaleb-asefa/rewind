@@ -30,7 +30,9 @@ async def get_total_time(
     conn: Connection = Depends(get_db),
 ):
     def query():
-        history = table_registry.get_history_table(request.app.state.engine)
+        history = table_registry.get_history_table(
+            request.state.engine, request.state.session_id
+        )
         stmt = select(func.coalesce(func.sum(history.c.ms_played), 0))
         return conn.execute(stmt).scalar() or 0
 
@@ -49,7 +51,9 @@ async def get_top_artist(
     conn: Connection = Depends(get_db),
 ):
     def query():
-        history = table_registry.get_history_table(request.app.state.engine)
+        history = table_registry.get_history_table(
+            request.state.engine, request.state.session_id
+        )
         stmt = (
             select(
                 history.c.artist_name,
@@ -98,7 +102,9 @@ async def get_top_album(
     conn: Connection = Depends(get_db),
 ):
     def query():
-        history = table_registry.get_history_table(request.app.state.engine)
+        history = table_registry.get_history_table(
+            request.state.engine, request.state.session_id
+        )
         stmt = (
             select(
                 history.c.album_name,
@@ -150,7 +156,9 @@ async def get_top_track(
     conn: Connection = Depends(get_db),
 ):
     def query():
-        history = table_registry.get_history_table(request.app.state.engine)
+        history = table_registry.get_history_table(
+            request.state.engine, request.state.session_id
+        )
         stmt = (
             select(
                 history.c.track_name,

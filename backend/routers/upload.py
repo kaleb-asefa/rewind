@@ -1,6 +1,7 @@
 """Upload & image endpoints: ingest history JSON, enrich against the catalog,
 and serve cached cover art."""
 
+import asyncio
 import os
 import shutil
 import tempfile
@@ -8,11 +9,24 @@ import tempfile
 import catalog
 import images
 from database import get_db, table_registry
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from sqlalchemy.engine import Connection, Engine
 from starlette.concurrency import run_in_threadpool
 
 router = APIRouter()
+
+# Each enrichment scans the shared catalog and uses ~2 GB RAM; bound how many run
+# at once so concurrent guest uploads can't exhaust memory and crash the box.
+_ENRICH_LIMIT = int(os.getenv("REWIND_MAX_CONCURRENT_ENRICH", "1"))
+ENRICH_SEMAPHORE = asyncio.Semaphore(_ENRICH_LIMIT)
 
 MAPPING = [
     ("ts", "ts", "TIMESTAMP"),
@@ -77,8 +91,6 @@ def _process_upload(conn: Connection, upload_list: list[UploadFile]):
         conn.commit()
 
         total_rows = raw_con.execute("SELECT count(*) FROM history").fetchone()[0]
-
-        table_registry.reset()
 
         return {
             "status": "ok",
@@ -169,6 +181,7 @@ def _warm_covers(engine: Engine, sets_by_kind: dict[str, list[str]]) -> None:
 @router.post("/api/upload")
 async def upload(
     background_tasks: BackgroundTasks,
+    request: Request,
     file: UploadFile = File(None),
     files: list[UploadFile] = File(None),
     conn: Connection = Depends(get_db),
@@ -200,8 +213,12 @@ async def upload(
             status_code=500, detail=f"Failed to ingest JSON into DuckDB: {str(e)}"
         )
 
+    # Fresh data landed: drop this session's cached reflection so reads re-reflect.
+    table_registry.reset(request.state.session_id)
+
     try:
-        result["enrichment"] = await run_in_threadpool(_enrich_session, conn)
+        async with ENRICH_SEMAPHORE:
+            result["enrichment"] = await run_in_threadpool(_enrich_session, conn)
     except Exception as e:
         # Enrichment is best-effort; ingestion already succeeded.
         result["enrichment"] = {"status": "error", "error": str(e)}

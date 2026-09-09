@@ -5,6 +5,8 @@ Assembles the FastAPI app from domain routers. Business logic lives in the
 `metrics.py` (pure computation). This module only wires them together.
 """
 
+import os
+
 from database import lifespan as database_lifespan
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,12 +19,17 @@ from routers.upload import _enrich_session  # noqa: F401
 
 app = FastAPI(title="Rewind API", lifespan=database_lifespan)
 
+# We authenticate with a custom header (X-Rewind-Session), not cookies, so
+# credentials stay off and "*" + credentials (invalid/unsafe) is avoided. The
+# allowlist is env-driven; default "null" keeps file:// dev working.
+_origins = os.getenv("REWIND_ALLOWED_ORIGINS", "null").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_origins,
+    allow_credentials=False,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"],  # must allow X-Rewind-Session
 )
 
 app.include_router(upload.router)

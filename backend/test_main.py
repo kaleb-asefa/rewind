@@ -1,4 +1,7 @@
+import functools
 import os
+import sys
+
 import duckdb
 import pytest
 from fastapi.testclient import TestClient
@@ -10,20 +13,38 @@ import main
 from database import table_registry
 from main import app
 
+# Every /api request now carries a session ticket; tests use a fixed valid UUID.
+TEST_TICKET = "00000000-0000-4000-8000-000000000000"
+
+
+def _reset_state():
+    """Clear the per-ticket engine cache and reflection registry between tests."""
+    database._engine_cache.dispose_all()
+    table_registry._tables.clear()
+
 
 @pytest.fixture(autouse=True)
 def setup_and_teardown(tmp_path, monkeypatch):
-    session_db_path = str(tmp_path / "rewind.duckdb")
-    monkeypatch.setattr(database, "DB_PATH", session_db_path)
+    # Each test gets an isolated sessions dir; tickets map to files inside it.
+    monkeypatch.setattr(database, "SESSIONS_DIR", str(tmp_path))
     # Default: no catalog, so uploads skip enrichment (fast). Enrichment test overrides this.
     monkeypatch.setattr(catalog, "CATALOG_PATH", str(tmp_path / "no_catalog.parquet"))
     # Never touch the network in tests. The upload prewarm + image endpoints fetch
     # Spotify oEmbed covers over HTTP, which otherwise blocks every upload test on
     # dozens of real requests. Image tests override this stub with their own fetch.
     monkeypatch.setattr(images, "_fetch_thumbnail", lambda kind, sid: None)
-    table_registry.reset()
+    # Inject the ticket header on every TestClient by default so existing tests
+    # need no per-call change; individual requests can still override it.
+    monkeypatch.setattr(
+        sys.modules[__name__],
+        "TestClient",
+        functools.partial(TestClient, headers={"X-Rewind-Session": TEST_TICKET}),
+    )
+    _reset_state()
+    # Convenience handle for tests that query the session's engine directly.
+    app.state.engine = database.get_engine(TEST_TICKET)
     yield
-    table_registry.reset()
+    _reset_state()
 
 def test_upload_and_sqlalchemy_core_query():
     with TestClient(app) as client:
@@ -39,7 +60,7 @@ def test_upload_and_sqlalchemy_core_query():
 
         # Verify querying reflected table via SQLAlchemy Core engine
         engine = app.state.engine
-        history = table_registry.get_history_table(engine)
+        history = table_registry.get_history_table(engine, TEST_TICKET)
 
         stmt = select(func.count()).select_from(history)
         with engine.connect() as conn:
@@ -1646,6 +1667,46 @@ def test_superlatives_endpoint():
         assert isinstance(data["shortest"], list)
 
         assert client.get("/api/metrics/superlatives?range=bogus").status_code == 400
+
+
+def test_session_isolation():
+    """Two tickets → two isolated histories; neither sees the other's data."""
+    ticket_a = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    ticket_b = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            up = client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")},
+                headers={"X-Rewind-Session": ticket_a},
+            )
+        assert up.status_code == 200
+
+        # Ticket A sees its own data.
+        res_a = client.get(
+            "/api/metrics/total-time", headers={"X-Rewind-Session": ticket_a}
+        )
+        assert res_a.status_code == 200
+        assert res_a.json()["total_minutes"] > 0
+
+        # Ticket B has a separate (empty) file → the no-history empty state.
+        res_b = client.get(
+            "/api/metrics/total-time", headers={"X-Rewind-Session": ticket_b}
+        )
+        assert res_b.status_code == 400
+
+
+def test_bad_ticket_rejected():
+    """Missing / traversal / non-UUID tickets are rejected with 400 (no file escape)."""
+    with TestClient(app) as client:
+        for bad in ["", "../evil", "..", "not-a-uuid", "../../etc/passwd"]:
+            res = client.get(
+                "/api/metrics/total-time", headers={"X-Rewind-Session": bad}
+            )
+            assert res.status_code == 400, f"expected 400 for ticket {bad!r}"
 
 
 
