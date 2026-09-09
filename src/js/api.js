@@ -80,6 +80,9 @@ window.fetchWithTimeout = fetchWithTimeout;
  */
 const _coverCache = new Map();     // "kind:id" -> url string | null (resolved miss)
 const _coverInflight = new Map();  // "kind:id" -> Promise<url|null>
+// Backoff (ms) for re-fetching covers a cold batch couldn't resolve in one pass
+// (oEmbed rate-limits/times out upstream and returns them in waves).
+const COVER_RETRY_DELAYS = [1000, 2200, 4000, 7000, 11000];
 
 function _applyCover(imgEl, url) {
     if (!imgEl || !url) return;
@@ -156,25 +159,49 @@ async function _resolveCovers(kind, ids) {
  * overrides `defaultKind`). Uses the shared cache, so already-known covers show
  * instantly and only the unknown ids hit the network.
  */
-async function loadCoversBatch(container, defaultKind) {
+async function loadCoversBatch(container, defaultKind, _attempt, _prevMissing) {
     if (!container) return;
     const imgs = Array.from(container.querySelectorAll("img.cover-img[data-cover-id]"));
     if (!imgs.length) return;
 
-    const byKind = new Map();  // kind -> Set(id) still needing resolution
+    const keyOf = (img) =>
+        (img.getAttribute("data-cover-kind") || defaultKind || "track") + ":" + img.getAttribute("data-cover-id");
+
+    // Group only the still-unknown ids by kind — cache hits are applied directly.
+    const byKind = new Map();
     for (const img of imgs) {
         const kind = img.getAttribute("data-cover-kind") || defaultKind || "track";
         const id = img.getAttribute("data-cover-id");
-        if (!id) continue;
+        if (!id || _coverCache.has(kind + ":" + id)) continue;
         if (!byKind.has(kind)) byKind.set(kind, new Set());
         byKind.get(kind).add(id);
     }
+    if (byKind.size) {
+        await Promise.all(Array.from(byKind, ([kind, idSet]) => _resolveCovers(kind, Array.from(idSet))));
+    }
 
-    await Promise.all(Array.from(byKind, ([kind, idSet]) => _resolveCovers(kind, Array.from(idSet))));
-
+    // Reveal what we now know; count covers still unresolved (still hidden).
+    let missing = 0;
     for (const img of imgs) {
-        const kind = img.getAttribute("data-cover-kind") || defaultKind || "track";
-        _applyCover(img, _coverCache.get(kind + ":" + img.getAttribute("data-cover-id")));
+        if (!img.isConnected || !img.getAttribute("data-cover-id")) continue;
+        if (!img.classList.contains("hidden")) continue;  // already shown
+        const url = _coverCache.get(keyOf(img));
+        if (url) _applyCover(img, url);
+        else missing += 1;
+    }
+
+    // Cold fetches of many covers get rate-limited/timed-out upstream and come
+    // back in waves, so one pass leaves gaps. Retry the stragglers on a backoff
+    // so they fill in on their own instead of needing a manual re-render. Keep
+    // going only while making progress (or for the first couple of passes), so
+    // genuine art-less tracks don't retry forever.
+    const attempt = _attempt || 0;
+    const improving = _prevMissing == null || missing < _prevMissing || attempt < 3;
+    if (missing && improving && attempt < COVER_RETRY_DELAYS.length && container.isConnected) {
+        setTimeout(
+            () => loadCoversBatch(container, defaultKind, attempt + 1, missing),
+            COVER_RETRY_DELAYS[attempt],
+        );
     }
 }
 

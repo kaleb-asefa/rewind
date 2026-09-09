@@ -352,10 +352,11 @@
     // (instead of one request per featured entity), so covers land together and
     // don't flood the server (best-effort, cached server-side).
     let coversFetched = { tracks: false, artists: false };
+    const COVER_RETRY_DELAYS = [1000, 2500, 5000, 9000];
 
-    async function prefetchCovers(list, kind) {
+    async function prefetchCovers(list, kind, attempt) {
         if (!window.fetchWithTimeout) return;
-        const targets = list.filter((it) => it.spotifyId);
+        const targets = list.filter((it) => it.spotifyId && !it.coverLoaded);
         if (!targets.length) return;
         const ids = Array.from(new Set(targets.map((t) => t.spotifyId)));
         try {
@@ -363,10 +364,17 @@
                 `/api/images?kind=${kind}&ids=${encodeURIComponent(ids.join(","))}`, {}, 15000);
             const map = (res.ok && res.data && res.data.images) || {};
             for (const item of targets) {
-                if (map[item.spotifyId]) item.image = map[item.spotifyId];
+                if (map[item.spotifyId]) { item.image = map[item.spotifyId]; item.coverLoaded = true; }
             }
         } catch (_) { /* covers are non-critical */ }
         renderChart();
+        // oEmbed rate-limits cold fetches and returns covers in waves; retry the
+        // ones still on the placeholder so they appear without a manual re-render.
+        const a = attempt || 0;
+        const remaining = list.filter((it) => it.spotifyId && !it.coverLoaded).length;
+        if (remaining && a < COVER_RETRY_DELAYS.length) {
+            setTimeout(() => prefetchCovers(list, kind, a + 1), COVER_RETRY_DELAYS[a]);
+        }
     }
 
     // Prefetch a category's covers once, only when that tab is actually shown.
