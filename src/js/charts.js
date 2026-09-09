@@ -193,27 +193,37 @@
         return items;
     }
 
-    // Warm the sibling entity tabs (and their covers) during idle time, so
-    // switching to Tracks / Albums / Genres is instant instead of "click, wait".
-    // Idempotent: getList + preloadCovers dedupe against their caches.
+    // Warm the sibling entity tabs AND the other years (data + covers) during
+    // idle time, so switching year or entity is instant instead of "click, wait".
+    // Idempotent: getList + preloadCovers dedupe against their caches, and covers
+    // overlap heavily across years, so the incremental cost shrinks fast.
     let prefetchScheduled = false;
     function schedulePrefetch() {
         if (prefetchScheduled) return;
         prefetchScheduled = true;
         const idle = window.requestIdleCallback || ((f) => setTimeout(f, 500));
-        idle(() => { prefetchScheduled = false; prefetchSiblings(state.range, state.sort); });
+        idle(() => { prefetchScheduled = false; prefetchNeighbors(); });
     }
-    async function prefetchSiblings(range, sort) {
-        for (const entity of Object.keys(ENTITIES)) {
-            if (entity === state.entity) continue;
-            try {
-                const items = await getList(entity, sort, range);
-                const cfg = ENTITIES[entity];
-                if (cfg.cover && window.preloadCovers && items.length) {
-                    const ids = items.slice(0, 24).map((it) => it.id).filter(Boolean);
-                    await window.preloadCovers(cfg.cover, ids);
-                }
-            } catch (_) { /* prefetch is best-effort */ }
+    async function warmView(entity, sort, range) {
+        const cfg = ENTITIES[entity];
+        try {
+            const items = await getList(entity, sort, range);
+            if (cfg.cover && window.preloadCovers && items.length) {
+                const n = Math.min(items.length, Math.max(state.depth, 20), 50);
+                await window.preloadCovers(cfg.cover, items.slice(0, n).map((it) => it.id).filter(Boolean));
+            }
+        } catch (_) { /* prefetch is best-effort */ }
+    }
+    async function prefetchNeighbors() {
+        const { entity, sort, range } = state;
+        const years = (apiYears && apiYears.length ? apiYears : AVAILABLE_YEARS).map(String);
+        // Current entity across every year → instant year switching.
+        for (const r of ["all", ...years]) {
+            if (r !== range) await warmView(entity, sort, r);
+        }
+        // Sibling entities for the current year → instant entity switching.
+        for (const e of Object.keys(ENTITIES)) {
+            if (e !== entity) await warmView(e, sort, range);
         }
     }
 

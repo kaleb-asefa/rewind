@@ -80,6 +80,8 @@ window.fetchWithTimeout = fetchWithTimeout;
  */
 const _coverCache = new Map();     // "kind:id" -> url string | null (resolved miss)
 const _coverInflight = new Map();  // "kind:id" -> Promise<url|null>
+const _warmedBytes = new Set();    // urls whose bytes we've asked the browser to cache
+const _warmingImgs = new Set();    // hold Image refs until they load (so GC can't cancel)
 
 function _applyCover(imgEl, url) {
     if (!imgEl || !url) return;
@@ -185,6 +187,19 @@ async function loadCoversBatch(container, defaultKind) {
 async function preloadCovers(kind, ids) {
     if (!kind || !Array.isArray(ids) || !ids.length) return;
     await _resolveCovers(kind, ids);
+    // Warm the browser image cache too — the URL cache alone still costs a CDN
+    // byte-fetch on first display; pre-decoding the bytes makes the later
+    // <img src> paint instantly, matching a return-visit.
+    for (const id of ids) {
+        const url = id && _coverCache.get(kind + ":" + id);
+        if (!url || _warmedBytes.has(url)) continue;
+        _warmedBytes.add(url);
+        const im = new Image();
+        _warmingImgs.add(im);
+        im.decoding = "async";
+        im.onload = im.onerror = () => _warmingImgs.delete(im);
+        im.src = url;
+    }
 }
 
 window.loadCover = loadCover;
