@@ -297,8 +297,10 @@
             name: d.name || "Unknown",
             artist_name: d.artist_name || null,
             id: d.id || null,
+            image_url: d.image_url || null,
             cumulative: Array.isArray(d.cumulative_minutes) ? d.cumulative_minutes : [],
         }));
+        if (window.primeCoverUrls) window.primeCoverUrls(entity, items);  // inline covers → skip /api/images
 
         progress = 0;
         isPlaying = false;        // stay paused after data loads

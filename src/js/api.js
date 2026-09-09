@@ -202,6 +202,23 @@ async function preloadCovers(kind, ids) {
     }
 }
 
+/**
+ * Seed the cover cache from URLs the backend returned inline on a metric
+ * response (item.image_url), so loadCoversBatch / preloadCovers skip the extra
+ * /api/images round-trip. Null/absent urls are left uncached for the fallback.
+ */
+function primeCoverUrls(kind, items) {
+    if (!kind || !Array.isArray(items)) return;
+    for (const it of items) {
+        const id = it && it.id;
+        const url = it && it.image_url;
+        if (id && url && !_coverCache.has(kind + ":" + id)) {
+            _coverCache.set(kind + ":" + id, url);
+        }
+    }
+}
+
 window.loadCover = loadCover;
 window.loadCoversBatch = loadCoversBatch;
 window.preloadCovers = preloadCovers;
+window.primeCoverUrls = primeCoverUrls;

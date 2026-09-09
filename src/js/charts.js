@@ -208,7 +208,9 @@
         const cfg = ENTITIES[entity];
         try {
             const items = await getList(entity, sort, range);
-            if (cfg.cover && window.preloadCovers && items.length) {
+            if (!cfg.cover || !items.length) return;
+            if (window.primeCoverUrls) window.primeCoverUrls(cfg.cover, items);  // inline urls → skip /api/images
+            if (window.preloadCovers) {
                 const n = Math.min(items.length, Math.max(state.depth, 20), 50);
                 await window.preloadCovers(cfg.cover, items.slice(0, n).map((it) => it.id).filter(Boolean));
             }
@@ -326,6 +328,7 @@
 
         const { entity, sort, range, search } = state;
         const full = await getList(entity, sort, range);
+        if (ENTITIES[entity].cover && window.primeCoverUrls) window.primeCoverUrls(ENTITIES[entity].cover, full);
         lastFull = full;
         syncYears();
 

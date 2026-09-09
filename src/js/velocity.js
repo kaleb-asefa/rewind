@@ -355,7 +355,8 @@
 
     async function prefetchCovers(list, kind) {
         if (!window.fetchWithTimeout) return;
-        const targets = list.filter((it) => it.spotifyId);
+        // Only fetch covers the backend didn't already return inline (image_url).
+        const targets = list.filter((it) => it.spotifyId && !it.image_url);
         if (!targets.length) return;
         const ids = Array.from(new Set(targets.map((t) => t.spotifyId)));
         try {
@@ -363,7 +364,7 @@
                 `/api/images?kind=${kind}&ids=${encodeURIComponent(ids.join(","))}`, {}, 15000);
             const map = (res.ok && res.data && res.data.images) || {};
             for (const item of targets) {
-                if (map[item.spotifyId]) item.image = map[item.spotifyId];
+                if (map[item.spotifyId]) { item.image = map[item.spotifyId]; item.image_url = map[item.spotifyId]; }
             }
         } catch (_) { /* covers are non-critical */ }
         renderChart();
@@ -419,7 +420,8 @@
                     id: `track-${idx + 1}`,
                     title: item.track_name || 'Unknown Track',
                     subtitle: item.artist_name || 'Unknown Artist',
-                    image: MUSIC_NOTE_AVATAR,
+                    image: item.image_url || MUSIC_NOTE_AVATAR,
+                    image_url: item.image_url || null,
                     spotifyId: item.id || null,
                     color: LINE_COLOR,
                     ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
@@ -433,7 +435,8 @@
                     id: `artist-${idx + 1}`,
                     title: item.artist_name || 'Unknown Artist',
                     subtitle: `${item.total_streams || 0} streams`,
-                    image: ARTIST_AVATAR,
+                    image: item.image_url || ARTIST_AVATAR,
+                    image_url: item.image_url || null,
                     spotifyId: item.id || null,
                     color: LINE_COLOR,
                     ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
