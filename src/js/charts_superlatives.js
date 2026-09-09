@@ -152,7 +152,7 @@
                 }
             }
         }
-        if (!data) {
+        if (!data && window.REWIND_ALLOW_SAMPLE) {
             data = {
                 obsession: SAMPLE_OBSESSION.map((o, i) => Object.assign({ rank: i + 1 }, o)),
                 binges: SAMPLE_BINGES.map((o, i) => Object.assign({ rank: i + 1 }, o)),
@@ -162,8 +162,31 @@
                 shortest: SAMPLE_SHORTEST.map((o, i) => Object.assign({ rank: i + 1 }, o)),
             };
         }
-        cache[range] = data;
+        if (data) cache[range] = data;
         return data;
+    }
+
+    // Hide the record cards and show a single honest "upload" message when there
+    // is no real data (rather than inventing placeholder records).
+    function setEmpty(isEmpty) {
+        const section = document.getElementById("superlatives");
+        if (!section) return;
+        const grid = section.querySelector(".grid");
+        let msg = section.querySelector(".superlatives-empty");
+        if (isEmpty) {
+            if (grid) grid.classList.add("hidden");
+            if (!msg) {
+                msg = document.createElement("div");
+                msg.className = "superlatives-empty glass-card rounded-2xl p-8 text-center";
+                msg.innerHTML = '<span class="material-symbols-outlined text-3xl text-on-surface-variant opacity-40">emoji_events</span>' +
+                    '<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Nothing to show yet \u2014 <a href="upload.html" class="text-primary hover:underline">upload your Spotify history</a>.</p>';
+                section.appendChild(msg);
+            }
+            msg.classList.remove("hidden");
+        } else {
+            if (msg) msg.classList.add("hidden");
+            if (grid) grid.classList.remove("hidden");
+        }
     }
 
     // opts = { value(item), badge(item)|string, sub(item), cover(item)? }.
@@ -205,6 +228,8 @@
     async function render() {
         const data = await fetchData(state.range);
         syncYears();
+        if (!data) { setEmpty(true); return; }
+        setEmpty(false);
         renderList("obsession-list", data.obsession, { value: times, badge: "in a day", sub: withDate });
         renderList("binge-list", data.binges, { value: (it) => fmtMins(it.minutes), badge: "in one sitting", sub: bingeSub, cover: (it) => artistCover(it.id) });
         renderList("most-skipped-list", data.most_skipped, { value: skipVal, badge: "skipped", sub: skipSub });

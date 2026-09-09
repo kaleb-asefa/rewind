@@ -189,7 +189,7 @@
     }
     async function fetchOverTime() {
         if (!document.getElementById('year-tabs')) return;
-        let data = SAMPLE_OVER_TIME;
+        let data = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout('/api/metrics/over-time');
@@ -197,9 +197,15 @@
                     data = res.data;
                 }
             } catch (_e) {
-                /* keep sample fallback until the endpoint is available */
+                /* no data */
             }
         }
+        if (!data) {
+            if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('over-time', false); renderOverTime(SAMPLE_OVER_TIME); return; }
+            E.chapterEmpty('over-time', true);
+            return;
+        }
+        E.chapterEmpty('over-time', false);
         renderOverTime(data);
     }
 

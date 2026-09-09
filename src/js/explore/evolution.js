@@ -173,7 +173,7 @@
     }
     async function fetchEvolution() {
         if (!document.getElementById('genre-evo-svg')) return;
-        let data = SAMPLE_EVOLUTION;
+        let data = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout('/api/metrics/evolution');
@@ -182,9 +182,15 @@
                     data = res.data;
                 }
             } catch (_e) {
-                /* keep sample fallback until the endpoint is available */
+                /* no data */
             }
         }
+        if (!data) {
+            if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('evolution', false); renderEvolution(SAMPLE_EVOLUTION); return; }
+            E.chapterEmpty('evolution', true);
+            return;
+        }
+        E.chapterEmpty('evolution', false);
         renderEvolution(data);
     }
 

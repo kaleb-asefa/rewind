@@ -203,8 +203,16 @@
         streak: { longest: 34, current: 2, active_days: 432 },
     };
 
+    function renderRhythm(d) {
+        renderClock(d.hourly);
+        renderWeekday(d.weekday);
+        renderSeason(d.monthly);
+        setChronotype(d.chronotype);
+        setBusiest(d.busiest_weekday);
+        setStreak(d.streak);
+    }
     async function fetchRhythm() {
-        let d = SAMPLE;
+        let d = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout('/api/metrics/rhythm');
@@ -212,15 +220,16 @@
                     d = res.data;
                 }
             } catch (_e) {
-                /* keep sample fallback */
+                /* no data */
             }
         }
-        renderClock(d.hourly);
-        renderWeekday(d.weekday);
-        renderSeason(d.monthly);
-        setChronotype(d.chronotype);
-        setBusiest(d.busiest_weekday);
-        setStreak(d.streak);
+        if (!d) {
+            if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('rhythm', false); renderRhythm(SAMPLE); return; }
+            E.chapterEmpty('rhythm', true);
+            return;
+        }
+        E.chapterEmpty('rhythm', false);
+        renderRhythm(d);
     }
 
     /* ---- Hover (delegated, survives re-render) ---- */

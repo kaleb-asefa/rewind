@@ -95,7 +95,7 @@
 
     async function fetchBehavior() {
         if (!document.getElementById('shuffle-bar')) return;
-        let b = SAMPLE_BEHAVIOR;
+        let b = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout('/api/metrics/behavior');
@@ -103,9 +103,15 @@
                     b = res.data;
                 }
             } catch (_e) {
-                /* keep sample fallback */
+                /* no data */
             }
         }
+        if (!b) {
+            if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('habits', false); renderBehavior(SAMPLE_BEHAVIOR); return; }
+            E.chapterEmpty('habits', true);
+            return;
+        }
+        E.chapterEmpty('habits', false);
         renderBehavior(b);
     }
 

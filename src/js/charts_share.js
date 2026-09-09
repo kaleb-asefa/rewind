@@ -447,7 +447,7 @@
 
         async function loadData() {
             const f = window.fetchWithTimeout;
-            if (!f) return SAMPLE;
+            if (!f) return window.REWIND_ALLOW_SAMPLE ? SAMPLE : null;
             const chart = async (entity) => {
                 try {
                     const res = await f("/api/metrics/chart?entity=" + entity + "&sort=minutes&limit=5&range=all");
@@ -457,7 +457,7 @@
             const [artists, tracks, albums, genres] = await Promise.all([
                 chart("artist"), chart("track"), chart("album"), chart("genre"),
             ]);
-            if (!artists.length && !tracks.length) return SAMPLE;  // backend offline/empty
+            if (!artists.length && !tracks.length) return window.REWIND_ALLOW_SAMPLE ? SAMPLE : null;  // backend offline/empty
 
             let totalMinutes = 0, audio = {};
             try {
@@ -477,7 +477,25 @@
             return { artists, tracks, albums, genres, totalMinutes, audio };
         }
 
+        function cardNoData() {
+            background();
+            wordmark(200);
+            ctx.textAlign = "center";
+            ctx.fillStyle = WHITE;
+            ctx.font = "800 68px " + FONT;
+            ctx.fillText("Nothing to share yet", W / 2, H / 2 - 20);
+            ctx.fillStyle = GRAY;
+            ctx.font = "500 42px " + FONT;
+            ctx.fillText("Upload your Spotify history first.", W / 2, H / 2 + 54);
+            ctx.textAlign = "left";
+            footer();
+        }
+
         function buildDeck(d) {
+            if (!d) {
+                deck = [{ title: "Rewind", render: cardNoData }];
+                return;
+            }
             const topArtist = d.artists[0] || { name: "\u2014" };
             const topTrack = d.tracks[0] || { name: "\u2014" };
             deck = [

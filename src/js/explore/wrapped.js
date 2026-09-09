@@ -75,7 +75,7 @@
     }
     async function fetchWrapped() {
         if (!document.getElementById('personality-badges')) return;
-        let data = SAMPLE_WRAPPED;
+        let data = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout('/api/metrics/wrapped');
@@ -83,9 +83,15 @@
                     data = res.data;
                 }
             } catch (_e) {
-                /* keep sample fallback until the endpoint is available */
+                /* no data */
             }
         }
+        if (!data) {
+            if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('wrapped', false); renderWrapped(SAMPLE_WRAPPED); return; }
+            E.chapterEmpty('wrapped', true);
+            return;
+        }
+        E.chapterEmpty('wrapped', false);
         renderWrapped(data);
     }
 

@@ -114,7 +114,7 @@
     }
     async function fetchSoundDetail() {
         if (!document.getElementById('tempo-bars')) return;
-        let data = SAMPLE_SOUND_DETAIL;
+        let data = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout('/api/metrics/sound-detail');
@@ -123,9 +123,15 @@
                     data = res.data;
                 }
             } catch (_e) {
-                /* keep sample fallback until the endpoint is available */
+                /* no data */
             }
         }
+        if (!data) {
+            if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('sound-detail', false); renderSoundDetail(SAMPLE_SOUND_DETAIL); return; }
+            E.chapterEmpty('sound-detail', true);
+            return;
+        }
+        E.chapterEmpty('sound-detail', false);
         renderSoundDetail(data);
     }
 

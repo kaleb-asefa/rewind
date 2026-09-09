@@ -179,8 +179,15 @@
             }
         }
         if (!items) {
-            const periods = samplePeriods(entity);
-            items = (periods[range] || periods.all).slice().sort((a, b) => b[sort] - a[sort]);
+            // No real data (nothing uploaded yet, or the API is unreachable).
+            // Only the labeled sample mockup shows placeholder data; real pages
+            // get an empty list so render() shows the honest "upload" state.
+            if (window.REWIND_ALLOW_SAMPLE) {
+                const periods = samplePeriods(entity);
+                items = (periods[range] || periods.all).slice().sort((a, b) => b[sort] - a[sort]);
+            } else {
+                items = [];
+            }
         }
         cache[key] = items;
         return items;

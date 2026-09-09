@@ -92,7 +92,7 @@
     }
     async function fetchDeepCuts() {
         if (!document.getElementById('concentration-bar')) return;
-        let data = SAMPLE_DEEP_CUTS;
+        let data = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout('/api/metrics/deep-cuts');
@@ -101,9 +101,15 @@
                     data = res.data;
                 }
             } catch (_e) {
-                /* keep sample fallback until the endpoint is available */
+                /* no data */
             }
         }
+        if (!data) {
+            if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('deep-cuts', false); renderDeepCuts(SAMPLE_DEEP_CUTS); return; }
+            E.chapterEmpty('deep-cuts', true);
+            return;
+        }
+        E.chapterEmpty('deep-cuts', false);
         renderDeepCuts(data);
     }
 

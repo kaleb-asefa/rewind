@@ -77,7 +77,7 @@
     }
     async function fetchDiscovery() {
         if (!document.getElementById('discovery-bar')) return;
-        let d = SAMPLE_DISCOVERY;
+        let d = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout('/api/metrics/discovery');
@@ -85,9 +85,15 @@
                     d = res.data;
                 }
             } catch (_e) {
-                /* keep sample fallback until the endpoint is available */
+                /* no data */
             }
         }
+        if (!d) {
+            if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('discovery', false); renderDiscovery(SAMPLE_DISCOVERY); return; }
+            E.chapterEmpty('discovery', true);
+            return;
+        }
+        E.chapterEmpty('discovery', false);
         renderDiscovery(d);
     }
 

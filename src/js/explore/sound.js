@@ -181,7 +181,7 @@
     };
     async function fetchSound() {
         if (!document.getElementById('mood-svg')) return;
-        let s = SAMPLE_SOUND;
+        let s = null;
         let coverage = null;
         if (window.fetchWithTimeout) {
             try {
@@ -191,9 +191,15 @@
                     coverage = typeof res.data.coverage === 'number' ? res.data.coverage : null;
                 }
             } catch (_e) {
-                /* keep sample fallback */
+                /* no data */
             }
         }
+        if (!s) {
+            if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('sound', false); renderSound(SAMPLE_SOUND); setCoverageNote(null); return; }
+            E.chapterEmpty('sound', true);
+            return;
+        }
+        E.chapterEmpty('sound', false);
         renderSound(s);
         setCoverageNote(coverage);
     }

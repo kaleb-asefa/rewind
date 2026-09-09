@@ -120,7 +120,7 @@
 
     async function fetchTaste() {
         if (!document.getElementById('genre-bars')) return;
-        let t = SAMPLE_TASTE;
+        let t = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout('/api/metrics/taste');
@@ -128,9 +128,15 @@
                     t = res.data;
                 }
             } catch (_e) {
-                /* keep sample fallback */
+                /* no data */
             }
         }
+        if (!t) {
+            if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('taste', false); renderTaste(SAMPLE_TASTE); return; }
+            E.chapterEmpty('taste', true);
+            return;
+        }
+        E.chapterEmpty('taste', false);
         renderTaste(t);
     }
 

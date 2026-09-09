@@ -77,7 +77,7 @@
     }
     async function fetchListeningLife() {
         if (!document.getElementById('life-peaks')) return;
-        let data = SAMPLE_LISTENING_LIFE;
+        let data = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout('/api/metrics/listening-life');
@@ -85,9 +85,15 @@
                     data = res.data;
                 }
             } catch (_e) {
-                /* keep sample fallback until the endpoint is available */
+                /* no data */
             }
         }
+        if (!data) {
+            if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('listening-life', false); renderListeningLife(SAMPLE_LISTENING_LIFE); return; }
+            E.chapterEmpty('listening-life', true);
+            return;
+        }
+        E.chapterEmpty('listening-life', false);
         renderListeningLife(data);
     }
 

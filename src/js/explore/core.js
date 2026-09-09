@@ -132,6 +132,39 @@
         });
     }
 
+    /* ---- Per-chapter empty state (same honesty as the overview cards) ---- */
+    // When a chapter has no real data — nothing uploaded yet, or the API is
+    // unreachable — hide its content and show one small "no data" card instead
+    // of inventing sample numbers the user might mistake for their own.
+    function chapterEmpty(sectionId, isEmpty) {
+        const section = document.getElementById(sectionId);
+        if (!section) return;
+        const children = Array.from(section.children);
+        let msg = children.find((c) => c.classList.contains('chapter-empty')) || null;
+        if (isEmpty) {
+            children.forEach((c, i) => {
+                if (i === 0 || c === msg) return; // keep the chapter header
+                c.classList.add('hidden');
+            });
+            if (!msg) {
+                msg = document.createElement('div');
+                msg.className = 'chapter-empty glass-card rounded-2xl p-8 text-center';
+                msg.innerHTML =
+                    '<span class="material-symbols-outlined text-3xl text-on-surface-variant opacity-40">bar_chart</span>' +
+                    '<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Nothing to show yet — ' +
+                    '<a href="upload.html" class="text-primary hover:underline">upload your Spotify history</a>.</p>';
+                section.appendChild(msg);
+            }
+            msg.classList.remove('hidden');
+        } else {
+            if (msg) msg.classList.add('hidden');
+            children.forEach((c, i) => {
+                if (i === 0 || c === msg) return;
+                c.classList.remove('hidden');
+            });
+        }
+    }
+
     const E = {
         reduceMotion,
         plays,
@@ -145,6 +178,7 @@
         hideTip,
         coverCell,
         loadCovers,
+        chapterEmpty,
         chapters: [],
     };
     window.RewindExplore = E;
