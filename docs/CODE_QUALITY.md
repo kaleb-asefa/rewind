@@ -51,9 +51,9 @@
   identically in `SELECT`/`GROUP BY` (a DuckDB constraint) — an **internally-validated** literal
   (e.g. a timezone offset resolved from a whitelist). Whitelist enum-like params (see the
   `bar-race` `entity` guard → `400`).
-- **Preserve the test contract.** Tests monkeypatch `database.DB_PATH` and reach
-  `main._enrich_session` / `main._WEEKDAY_NAMES`. If you move those, **re-export them from
-  `main.py`** or the suite breaks.
+- **Preserve the test contract.** Tests monkeypatch `database.SESSIONS_DIR`, send the
+  `X-Rewind-Session` ticket header, and reach `main._enrich_session` / `main._WEEKDAY_NAMES`.
+  If you move those, **re-export them from `main.py`** or the suite breaks.
 - **Run checks before done:** `cd backend && uv run python -m py_compile <changed>.py && uv run pytest -q`.
 
 ---

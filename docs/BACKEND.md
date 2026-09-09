@@ -7,10 +7,10 @@ Implementation active in `backend/`. FastAPI + DuckDB + SQLAlchemy Core engine s
 ## Architecture: FastAPI + DuckDB, Session-Scoped
 
 - **Framework:** FastAPI
-- **Database:** DuckDB — session database stored at `data/sessions/rewind.duckdb`
+- **Database:** DuckDB — **one file per guest**, `data/sessions/<ticket>.duckdb`, keyed by the `X-Rewind-Session` UUID header so guests are fully isolated (see `MULTI_USER.md`).
 - **Query layer:** SQLAlchemy Core (`Table`/`select` constructs), not raw SQL strings
-- **Engine Lifecycle:** FastAPI `lifespan` context manager manages engine instance (`app.state.engine`); request-scoped connections yielded via `Depends(get_db)`.
-- **Table Reflection:** Managed lazily by `TableRegistry` in `database.py` and reset post-upload (`table_registry.reset()`).
+- **Engine Lifecycle:** `get_db` reads and validates the ticket, resolves it through a bounded per-ticket engine cache (`get_engine`), and exposes the engine + session id on `request.state`. The `lifespan` runs the TTL cleanup task and disposes cached engines on shutdown.
+- **Table Reflection:** Managed lazily and **per ticket** by `TableRegistry` in `database.py`, reset after each upload (`table_registry.reset(session_id)`).
 - **Async Concurrency:** Blocking database query operations are offloaded to worker threads via FastAPI's `run_in_threadpool` to prevent event-loop blocking.
 
 ### Ingestion & Schema Normalization
@@ -20,7 +20,7 @@ On upload (`POST /api/upload`), the backend ingests single or multiple Spotify E
 2. Existing JSON keys are matched against the defined schema mapping (`MAPPING` in `routers/upload.py`).
 3. Fields present in the export are safely converted via `TRY_CAST({col} AS {dtype})`, while missing schema fields default to `CAST(NULL AS {dtype})`.
 4. The schema-normalized dataset is appended into the `history` table.
-5. `table_registry.reset()` is invoked so reflected tables pick up new data cleanly.
+5. `table_registry.reset(session_id)` is invoked so the session's reflected table picks up new data cleanly.
 6. **Catalog enrichment** (`catalog.py`): the upload then joins the session's distinct `track_id`s against the read-only 45M-track catalog (`data/metadata/catalog_sorted.parquet`) and materializes the matched rows into a small `track_features` table. The scan is memory-capped (`memory_limit`, `threads`) and streamed, so the multi-GB catalog is read once per upload, never in a metric request. Missing catalog = enrichment is skipped (ingestion still succeeds).
 
 ### Querying & Active Metric Endpoints
@@ -42,7 +42,7 @@ async def get_top_artist(
     conn: Connection = Depends(get_db),
 ):
     def query():
-        history = table_registry.get_history_table(request.app.state.engine)
+        history = table_registry.get_history_table(request.state.engine, request.state.session_id)
         stmt = (
             select(
                 history.c.artist_name,
@@ -72,11 +72,9 @@ The frontend communicates with FastAPI endpoints via `src/js/api.js`:
 **Column selection:** every field from the Spotify export is stored except `ip_addr_decrypted` and `user_agent_decrypted` — network and device-fingerprint data with no analytical use case. Excluded at ingestion.
 
 **Session lifecycle:**
-- Database stored in `data/sessions/rewind.duckdb`
-- Ephemeral session design
+- One DuckDB file per guest ticket at `data/sessions/<ticket>.duckdb`
+- Ephemeral by design — a background task deletes session files idle past `REWIND_SESSION_TTL_HOURS` (default 48)
 
 ## Open Items
 
-- Session TTL and cleanup mechanism
-- Multi-session isolation / UUID per user session
 - Heatmap, most hated artist/track, active days, and unique songs metric endpoints
