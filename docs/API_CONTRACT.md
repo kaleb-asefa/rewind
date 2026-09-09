@@ -60,9 +60,9 @@ neither needs to read the other's code.
 
 | Endpoint | Params | Key response fields |
 |---|---|---|
-| `/api/metrics/artist-rank` | — | `months[]` (weekly keys), `data[{name,monthly_ranks[]}]` |
-| `/api/metrics/track-rank` | — | `months[]`, `data[{name,monthly_ranks[]}]` |
-| `/api/metrics/bar-race` | `entity`, `limit` | `months[]`, `featured[{name,id,cumulative_minutes[]}]` |
+| `/api/metrics/artist-rank` | — | `months[]` (weekly keys), `data[{name,monthly_ranks[],image_url}]` |
+| `/api/metrics/track-rank` | — | `months[]`, `data[{name,monthly_ranks[],image_url}]` |
+| `/api/metrics/bar-race` | `entity`, `limit` | `months[]`, `featured[{name,id,cumulative_minutes[],image_url}]` |
 | `/api/metrics/rhythm` | — | `hourly[24]`, `peak_hour`, `weekday[7]`, `busiest_weekday`, `monthly[12]`, `chronotype{label,position}`, `streak{longest,current,active_days}`, `total_streams` |
 | `/api/metrics/audio` | — | `avg{energy,valence,danceability,acousticness,vocal}`, `tempo_avg`, `mode{major}`, `tracks[{name,valence,energy,plays}]`, `coverage`, `matched`, `total` |
 | `/api/metrics/taste` | — | `genres[{name,plays}]`, `mainstream`, `distinct_genres`, `eras[{decade,plays}]`, `avg_year`, `gems[{name,artist,id,plays}]` |
@@ -74,8 +74,13 @@ neither needs to read the other's code.
 | `/api/metrics/sound-detail` | — | `tempo{buckets[]}`, `key{major_share}`, `danceable[]`, `energy_split{workout,wind_down}` |
 | `/api/metrics/deep-cuts` | — | `concentration{top10_share}`, `album_commitment{deep_share}`, `top_day_track`, `no_skip` |
 | `/api/metrics/wrapped` | — | `personality[]`, `longest_track`, `shortest_track` |
-| `/api/metrics/chart` | `entity=artist\|track\|album\|genre`, `sort=minutes\|streams`, `limit`, `range=all\|YYYY\|4w\|6m` | `items[{rank,name,artist,id,minutes,streams,share,prev_rank}]`, `years[]` |
+| `/api/metrics/chart` | `entity=artist\|track\|album\|genre`, `sort=minutes\|streams`, `limit`, `range=all\|YYYY\|4w\|6m` | `items[{rank,name,artist,id,minutes,streams,share,prev_rank,image_url}]`, `years[]` |
 | `/api/metrics/superlatives` | `range`, `limit` | `obsession[]`, `binges[]`, `most_skipped[]`, `never_skipped[]`, `longest[]`, `shortest[]`, `years[]` |
+
+> `image_url` (string\|null, additive): each item's cached cover URL, read-only from the `images`
+> table by `(kind, spotify_id)`. `null` when the id is missing, not yet warmed, or a genuine
+> art-less miss (`genre` items have no cover → always `null`). Never triggers an oEmbed fetch;
+> resolve `null`s via the `/api/images` fallback.
 
 ### Ingest + images (`backend/routers/upload.py`)
 

@@ -390,6 +390,117 @@ def test_upload_prewarms_top_covers(monkeypatch):
         assert cached > 0
 
 
+def test_inline_image_url_on_charts_and_ranks(tmp_path, monkeypatch):
+    """chart / artist-rank / track-rank / bar-race return each item's cached cover
+    inline (url for a hit, null for a '' miss and for uncached ids) and never fetch."""
+
+    def boom(*args, **kwargs):
+        raise AssertionError("oEmbed fetch must not happen in chart/rank endpoints")
+
+    # Any synchronous fetch inside these endpoints would blow up the test.
+    monkeypatch.setattr(images, "_safe_fetch", boom)
+
+    with TestClient(app) as client:
+        sample = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json"
+        )
+        with open(sample, "rb") as f:
+            resp = client.post(
+                "/api/upload",
+                files={"file": (os.path.basename(sample), f, "application/json")},
+            )
+        assert resp.status_code == 200
+
+        engine = app.state.engine
+
+        # Enrich against a fixture catalog so artist_id / album_id exist (track ids
+        # come straight from history). Ids are synthetic but stable per name.
+        with engine.connect() as conn:
+            raw = conn.connection.driver_connection
+            rows = raw.execute(
+                "SELECT replace(track_uri, 'spotify:track:', '') AS tid, "
+                "any_value(track_name), any_value(artist_name), any_value(album_name) "
+                "FROM history WHERE track_uri LIKE 'spotify:track:%' GROUP BY tid"
+            ).fetchall()
+
+        fixture = str(tmp_path / "catalog_fixture.parquet")
+        fx = duckdb.connect()
+        fx.execute(
+            "CREATE TABLE c (track_id VARCHAR, track_name VARCHAR, artist_name VARCHAR, "
+            "artist_id VARCHAR, album_name VARCHAR, album_id VARCHAR)"
+        )
+        fx.executemany(
+            "INSERT INTO c VALUES (?, ?, ?, ?, ?, ?)",
+            [
+                (tid, tn, an, f"art_{an}", alb, f"alb_{alb}_{an}")
+                for tid, tn, an, alb in rows
+            ],
+        )
+        fx.execute(f"COPY c TO '{fixture}' (FORMAT PARQUET)")
+        fx.close()
+
+        monkeypatch.setattr(catalog, "CATALOG_PATH", fixture)
+        with engine.connect() as conn:
+            main._enrich_session(conn)
+
+        HIT = "https://cover/hit.jpg"
+
+        def seed_images(kind, hit_id, miss_id):
+            """Fresh cache with exactly one hit (url) and one '' miss for `kind`."""
+            with engine.connect() as conn:
+                raw = conn.connection.driver_connection
+                images._ensure_table(raw)
+                raw.execute("DELETE FROM images")
+                raw.execute(
+                    "INSERT INTO images (kind, spotify_id, image_url, fetched_at) "
+                    "VALUES (?, ?, ?, now())",
+                    [kind, hit_id, HIT],
+                )
+                raw.execute(
+                    "INSERT INTO images (kind, spotify_id, image_url, fetched_at) "
+                    "VALUES (?, ?, ?, now())",
+                    [kind, miss_id, ""],
+                )
+                conn.commit()
+
+        def assert_inline(path, kind, get_items):
+            # Discover the ids this endpoint returns, then seed a hit + a '' miss.
+            items = get_items(client.get(path).json())
+            ids = [it["id"] for it in items if it.get("id")]
+            assert len(set(ids)) >= 2, f"{path}: need >=2 distinct ids to test hit+miss"
+            hit_id, miss_id = ids[0], next(i for i in ids if i != ids[0])
+            seed_images(kind, hit_id, miss_id)
+
+            items = get_items(client.get(path).json())
+            saw_hit = saw_miss = saw_uncached = False
+            for it in items:
+                assert "image_url" in it  # additive field present on every item
+                iid = it.get("id")
+                if iid == hit_id:
+                    assert it["image_url"] == HIT
+                    saw_hit = True
+                elif iid == miss_id:
+                    assert it["image_url"] is None  # '' → null, not ''
+                    saw_miss = True
+                else:
+                    assert it["image_url"] is None  # uncached / id-less → null
+                    saw_uncached = True
+            assert saw_hit and saw_miss and saw_uncached
+
+        assert_inline("/api/metrics/chart?entity=track&limit=50", "track", lambda d: d["items"])
+        assert_inline("/api/metrics/chart?entity=artist&limit=50", "artist", lambda d: d["items"])
+        assert_inline("/api/metrics/chart?entity=album&limit=50", "album", lambda d: d["items"])
+        assert_inline("/api/metrics/track-rank?limit=12", "track", lambda d: d["data"])
+        assert_inline("/api/metrics/artist-rank?limit=12", "artist", lambda d: d["data"])
+        assert_inline("/api/metrics/bar-race?entity=track&limit=12", "track", lambda d: d["data"])
+        assert_inline("/api/metrics/bar-race?entity=artist&limit=12", "artist", lambda d: d["data"])
+        assert_inline("/api/metrics/bar-race?entity=album&limit=12", "album", lambda d: d["data"])
+
+        # Genre has no cover: image_url is present and null on every item.
+        genre = client.get("/api/metrics/chart?entity=genre&limit=20").json()
+        assert all(it["image_url"] is None for it in genre["items"])
+
+
 def test_artist_rank_trends_allow_enter_leave():
     with TestClient(app) as client:
         sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
