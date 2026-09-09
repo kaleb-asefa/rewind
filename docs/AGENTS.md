@@ -58,6 +58,14 @@ Development can run in two scoped agents working in separate git worktrees:
   Shared files (`docs/API_CONTRACT.md`, this file) are edited in `main` first, before branches diverge.
 - **One server, one DB:** DuckDB is single-writer and `data/` is gitignored — run exactly one
   backend server (`:8000`); the frontend opens its own pages via `file://`.
+- **Fix problems at their source — never stitch a cross-worktree workaround.** If the root
+  cause, or the *most efficient* fix, lives in the other worktree's domain, do **not** patch
+  around it in your own scope just because you technically can. Stop, say so, and hand the work
+  to the correct agent (via `docs/API_CONTRACT.md` when the seam changes) — even if a local
+  workaround would "work". Correctness and efficiency beat staying in your lane. Example: cover
+  art arriving in partial waves is a backend fetch/cache concern (warm the cache server-side);
+  the frontend must **not** hide it behind client retry/polling loops. Only a genuinely
+  presentational fix (rendering, reveal timing, layout) stays with the frontend.
 
 See `docs/API_CONTRACT.md` §5 for the worktree runbook.
 

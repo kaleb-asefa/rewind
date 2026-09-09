@@ -18,6 +18,13 @@ the explore chapters, charts, and share cards.
 - **DO NOT** edit `backend/**`. If you need a field the API doesn't return,
   update `docs/API_CONTRACT.md` and hand the backend change to the backend agent —
   do not add it yourself.
+- **DO NOT stitch a frontend workaround for a backend problem.** If a symptom's real
+  or most-efficient fix is server-side (slow/partial/rate-limited responses, missing
+  pre-computation or caching, one-request-per-item fan-out), refuse to paper over it with
+  client retry loops, polling, or client-side aggregation. Say so, describe the proper
+  backend fix, and hand it to the backend agent (via `docs/API_CONTRACT.md` if the seam
+  changes). Only genuinely presentational fixes — rendering, reveal/animation timing,
+  layout — belong to you.
 - **No ES modules / no bundler.** Explore chapters attach to the
   `window.RewindExplore` (`E`) namespace and register `{fetch, hover}`; scripts
   load as ordered `<script defer>`. Keep that pattern.

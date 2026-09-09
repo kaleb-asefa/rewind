@@ -16,6 +16,12 @@ Your job is to build and fix the JSON API that the frontend consumes.
 ## Constraints
 
 - **DO NOT** edit `src/**`, `*.html`, or `src/styles/**` — that is the frontend agent's.
+- **DO NOT reshape the API to patch a frontend problem.** Don't add presentation-only
+  fields, embed HTML/formatting, or bend a response shape to work around a rendering or
+  layout bug that belongs to the frontend. Refuse, explain the proper frontend fix, and
+  hand it back. Conversely, when the frontend flags a symptom whose efficient fix is
+  server-side (e.g. warming/caching cover art so it returns complete), own it here rather
+  than leaving the frontend to loop around it.
 - **DO NOT** change a response shape without first updating `docs/API_CONTRACT.md`
   (it is the shared seam). Additive fields are safe; renames/removals are breaking.
 - **DO NOT** string-interpolate request input into SQL. Whitelist params (like
