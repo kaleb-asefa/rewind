@@ -128,6 +128,47 @@ body, header, section, footer, .glass-player, .spotify-card {
 .animate-vinyl {
     animation: rotate-slow 20s linear infinite;
 }
+
+/* Cassette / Rewind Deck hero */
+.cassette-deck {
+    transition: box-shadow 0.2s ease;
+}
+.reel-spin {
+    animation-name: rotate-slow;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    transition: animation-duration 0.3s ease;
+}
+.cassette-deck.is-rewinding .reel-spin {
+    animation-duration: 0.25s !important;
+    animation-direction: reverse;
+}
+.vu-meter .vu-bar {
+    width: 3px;
+    border-radius: 9999px;
+    background: rgb(var(--color-primary));
+    transform-origin: bottom;
+    animation: vu-pulse 1.1s ease-in-out infinite;
+}
+.vu-bar:nth-child(1) { height: 30%; animation-delay: 0s; }
+.vu-bar:nth-child(2) { height: 70%; animation-delay: 0.12s; }
+.vu-bar:nth-child(3) { height: 45%; animation-delay: 0.24s; }
+.vu-bar:nth-child(4) { height: 90%; animation-delay: 0.06s; }
+.vu-bar:nth-child(5) { height: 55%; animation-delay: 0.3s; }
+.vu-bar:nth-child(6) { height: 35%; animation-delay: 0.18s; }
+.vu-bar:nth-child(7) { height: 65%; animation-delay: 0.36s; }
+@keyframes vu-pulse {
+    0%, 100% { transform: scaleY(0.4); opacity: 0.55; }
+    50% { transform: scaleY(1); opacity: 1; }
+}
+.cassette-deck.is-rewinding .vu-bar {
+    animation-duration: 0.2s;
+}
+@media (prefers-reduced-motion: reduce) {
+    .animate-vinyl, .reel-spin, .vu-bar {
+        animation: none !important;
+    }
+}
 .glass-player {
     background: var(--glass-bg);
     backdrop-filter: blur(24px);
