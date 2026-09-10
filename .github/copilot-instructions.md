@@ -5,14 +5,33 @@ FastAPI/DuckDB backend. **Read `docs/AGENTS.md` first** — it is the project's 
 (fixed tech stack, fixed Overview-page scope, design system, out-of-scope list). This file is
 a supplement focused on commands and architecture; do not duplicate/override `docs/AGENTS.md`.
 
-## Scoped agents (this repo uses split ownership)
+## Worktrees & agent ownership (check this BEFORE editing any file)
 
-- `.github/agents/backend.agent.md` — owns `backend/**` only.
-- `.github/agents/frontend.agent.md` — owns `src/**`, `src/styles/**`, `*.html` only.
-- `docs/API_CONTRACT.md` is the frontend↔backend seam (endpoint shapes). Update it *first*
-  when a response shape changes; additive fields are safe, renames/removals are breaking.
-- Never patch around the other domain's bug in your own scope — fix it at the source and
-  hand off via the contract doc if needed.
+Development runs as two scoped agents in **separate git worktrees** of the same repo.
+Always confirm which worktree/branch you are in (`git rev-parse --show-toplevel`,
+`git branch --show-current`) and edit only the paths you own.
+
+| Worktree | Branch | Agent | Owns (may edit) |
+|---|---|---|---|
+| `../rewind` | `main` | — | integration + live-data checkout; shared docs land here first |
+| `../rewind-backend` | `work/backend` | `.github/agents/backend.agent.md` | `backend/**` only |
+| `../rewind-frontend` | `work/frontend` | `.github/agents/frontend.agent.md` | `src/**`, `src/styles/**`, `*.html` only |
+
+- **Never edit outside your worktree's scope**, even if the fix is trivial and you technically
+  can. Hand it to the owning agent instead.
+- **Never stitch a cross-domain workaround.** If the root cause (or the most efficient fix)
+  lives in the other domain, stop and hand it over — client retry loops for a server-side
+  caching problem, or presentation-only fields bent into the API, are both violations.
+  Only genuinely presentational fixes (rendering, reveal timing, layout) stay with frontend.
+- `docs/API_CONTRACT.md` is the frontend↔backend seam and the handoff mechanism. Update it
+  *first* when a response shape changes; additive fields are safe, renames/removals are breaking.
+- **Shared files** (`docs/API_CONTRACT.md`, `docs/AGENTS.md`, `docs/SCHEMA.md`) are edited in
+  `main` **first**, before branches diverge — not on a work branch.
+- Worktree commands: `make sync` (rebase a work branch onto main), `make integrate` (from
+  `main`: merge both work branches + run tests), `make serve` (the single :8000 server).
+- **One server, one DB.** DuckDB is single-writer and `data/` is gitignored, so exactly one
+  backend server runs (from `../rewind-backend`, where `data/` is symlinked). The frontend
+  agent never starts its own server — it opens its pages via `file://` against `:8000`.
 
 ## Build / test / lint
 
@@ -59,6 +78,11 @@ DuckDB is single-writer: only run one backend server at a time (`make serve` han
 - All blocking DuckDB/file/network work inside async routes runs via `run_in_threadpool`.
 - Escape data-derived strings with `esc()` before `innerHTML` on the frontend (uploaded
   track/artist names are untrusted).
+- Metric components use `const fetcher = window.fetchWithTimeout || (async (ep) => {...})` —
+  the inline raw `fetch` is a **defensive fallback** for when `api.js` hasn't loaded, not a
+  bypass. Don't mistake it for a component that skips the shared client. `upload.js` is the
+  one real exception: it posts `FormData` with a raw `fetch` because `fetchWithTimeout`'s 5s
+  abort would kill a large history upload.
 - `main.py` re-exports `_enrich_session` and `_WEEKDAY_NAMES` because `test_main.py` imports
   them directly — don't remove those re-exports when refactoring.
 - Tests use a fixed ticket (`TEST_TICKET`) and an isolated `tmp_path` sessions dir
