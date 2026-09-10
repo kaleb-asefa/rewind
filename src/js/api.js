@@ -101,6 +101,86 @@ const _coverInflight = new Map();  // "kind:id" -> Promise<url|null>
 const _warmedBytes = new Set();    // urls whose bytes we've asked the browser to cache
 const _warmingImgs = new Set();    // hold Image refs until they load (so GC can't cancel)
 
+/**
+ * Cold-cover retry.
+ *
+ * The first request for a cover the backend hasn't cached yet has to hit
+ * Spotify oEmbed, so it can time out or come back empty. Without a retry the
+ * <img> stays `hidden` until something re-renders it — which is why a cover
+ * would only appear after navigating away and back (by then the backend had
+ * warmed it). Unresolved images are parked here and re-resolved with backoff,
+ * batched by kind so a whole page costs one request per round.
+ */
+const _pendingCovers = new Map();  // "kind:id" -> Set(<img>) still waiting
+const _RETRY_DELAYS = [1500, 4000, 9000];
+const _MAX_IDLE_ROUNDS = 3;        // consecutive rounds that resolve nothing → give up
+let _retryTimer = null;
+let _retryRound = 0;
+
+function _trackUnresolved(imgEl, kind, id) {
+    if (!imgEl || !id) return;
+    const key = kind + ":" + id;
+    if (_coverCache.has(key)) return;
+    if (!_pendingCovers.has(key)) {
+        _pendingCovers.set(key, new Set());
+        _retryRound = 0;  // new work deserves a fresh retry budget
+    }
+    _pendingCovers.get(key).add(imgEl);
+    _scheduleCoverRetry();
+}
+
+function _sweepDetached() {
+    // A re-render replaces the <img> nodes; drop the orphans so we stop
+    // retrying covers nobody is waiting on.
+    for (const [key, els] of Array.from(_pendingCovers)) {
+        for (const el of Array.from(els)) {
+            if (el.isConnected === false) els.delete(el);
+        }
+        if (!els.size) _pendingCovers.delete(key);
+    }
+}
+
+function _scheduleCoverRetry() {
+    if (_retryTimer || !_pendingCovers.size) return;
+    // Bounded by *idle* rounds, not total rounds: as long as a round keeps
+    // resolving covers we keep going (a cold or throttled backend just needs
+    // more passes), but a set that stops improving — genuine art-less misses —
+    // stops costing requests.
+    if (_retryRound >= _MAX_IDLE_ROUNDS) return;
+    const delay = _RETRY_DELAYS[Math.min(_retryRound, _RETRY_DELAYS.length - 1)];
+    _retryTimer = setTimeout(async () => {
+        _retryTimer = null;
+        _sweepDetached();
+        if (!_pendingCovers.size) return;
+
+        const byKind = new Map();
+        for (const key of _pendingCovers.keys()) {
+            const sep = key.indexOf(":");
+            const kind = key.slice(0, sep);
+            if (!byKind.has(kind)) byKind.set(kind, []);
+            byKind.get(kind).push(key.slice(sep + 1));
+        }
+
+        const flush = () => {
+            let resolved = 0;
+            for (const [key, els] of Array.from(_pendingCovers)) {
+                const url = _coverCache.get(key);
+                if (!url) continue;
+                for (const el of els) _applyCover(el, url);
+                _pendingCovers.delete(key);
+                resolved++;
+            }
+            return resolved;
+        };
+
+        await Promise.all(
+            Array.from(byKind, ([kind, ids]) => _resolveCovers(kind, ids, flush)),
+        );
+        _retryRound = flush() > 0 ? 0 : _retryRound + 1;
+        _scheduleCoverRetry();
+    }, delay);
+}
+
 function _applyCover(imgEl, url) {
     if (!imgEl || !url) return;
     imgEl.decoding = "async";
@@ -144,57 +224,116 @@ async function loadCover(imgEl, kind, id) {
     _coverInflight.delete(key);
     if (url) _coverCache.set(key, url);  // cache hits only; misses/failures retry later
     _applyCover(imgEl, url);
+    if (!url) _trackUnresolved(imgEl, kind, id);
 }
 
 /**
- * Resolve a kind's cover ids into the shared cache in one request.
- * Only unknown ids are fetched; cache hits are stored, misses/failures are left
- * uncached so a later call retries. Never touches the DOM.
+ * Resolve a kind's cover ids into the shared cache.
+ *
+ * Cold covers cost the backend one Spotify oEmbed round-trip each (~1s,
+ * resolved serially), so a single request for every id on a page would blow the
+ * timeout and resolve nothing. Ids are therefore split into small chunks fetched
+ * with bounded concurrency: each request stays well inside its timeout, and a
+ * slow chunk can no longer sink the ones that already succeeded.
+ *
+ * `onProgress` fires after each chunk lands so callers can reveal covers as they
+ * arrive instead of waiting for the slowest one. Only unknown ids are fetched;
+ * misses/failures are left uncached so a later call retries. Never touches the DOM.
  */
-async function _resolveCovers(kind, ids) {
+const _COVER_CHUNK = 8;        // ~8s worst case per request when fully cold
+const _COVER_CONCURRENCY = 3;  // enough to stay fast without swamping oEmbed
+
+async function _resolveCovers(kind, ids, onProgress) {
     const need = [];
+    const seen = new Set();
     for (const id of ids) {
-        if (id && !_coverCache.has(kind + ":" + id)) need.push(id);
+        if (id && !seen.has(id) && !_coverCache.has(kind + ":" + id)) {
+            seen.add(id);
+            need.push(id);
+        }
     }
     if (!need.length) return;
-    try {
-        const res = await fetchWithTimeout(
-            `/api/images?kind=${encodeURIComponent(kind)}&ids=${encodeURIComponent(need.join(","))}`,
-            {},
-            15000,  // one request for many covers; cold fetches need headroom
-        );
-        const map = (res.ok && res.data && res.data.images) || {};
-        for (const id of need) if (map[id]) _coverCache.set(kind + ":" + id, map[id]);
-    } catch (_) {
-        /* transient — leave uncached so a later call retries */
+
+    const chunks = [];
+    for (let i = 0; i < need.length; i += _COVER_CHUNK) {
+        chunks.push(need.slice(i, i + _COVER_CHUNK));
     }
+
+    let next = 0;
+    async function worker() {
+        while (next < chunks.length) {
+            const chunk = chunks[next++];
+            try {
+                const res = await fetchWithTimeout(
+                    `/api/images?kind=${encodeURIComponent(kind)}&ids=${encodeURIComponent(chunk.join(","))}`,
+                    {},
+                    20000,
+                );
+                const map = (res.ok && res.data && res.data.images) || {};
+                let got = false;
+                for (const id of chunk) {
+                    if (map[id]) {
+                        _coverCache.set(kind + ":" + id, map[id]);
+                        got = true;
+                    }
+                }
+                if (got && onProgress) onProgress();
+            } catch (_) {
+                /* transient — leave uncached so a later call retries */
+            }
+        }
+    }
+
+    await Promise.all(
+        Array.from({ length: Math.min(_COVER_CONCURRENCY, chunks.length) }, worker),
+    );
 }
 
 /**
- * Batch-load every cover in a container in a single request per kind.
+ * Batch-load every cover in a container, chunked per kind.
  * Reads each <img class="cover-img" data-cover-id> (optional data-cover-kind
  * overrides `defaultKind`). Uses the shared cache, so already-known covers show
- * instantly and only the unknown ids hit the network.
+ * instantly and only the unknown ids hit the network. Covers are revealed as
+ * each chunk resolves, so a cold page fills in progressively instead of staying
+ * blank until the slowest request finishes.
  */
 async function loadCoversBatch(container, defaultKind) {
     if (!container) return;
     const imgs = Array.from(container.querySelectorAll("img.cover-img[data-cover-id]"));
     if (!imgs.length) return;
 
+    const kindOf = (img) => img.getAttribute("data-cover-kind") || defaultKind || "track";
+
     const byKind = new Map();  // kind -> Set(id) still needing resolution
     for (const img of imgs) {
-        const kind = img.getAttribute("data-cover-kind") || defaultKind || "track";
         const id = img.getAttribute("data-cover-id");
         if (!id) continue;
+        const kind = kindOf(img);
         if (!byKind.has(kind)) byKind.set(kind, new Set());
         byKind.get(kind).add(id);
     }
 
-    await Promise.all(Array.from(byKind, ([kind, idSet]) => _resolveCovers(kind, Array.from(idSet))));
+    // Show anything already cached before touching the network.
+    const applyResolved = () => {
+        for (const img of imgs) {
+            const url = _coverCache.get(kindOf(img) + ":" + img.getAttribute("data-cover-id"));
+            if (url) _applyCover(img, url);
+        }
+    };
+    applyResolved();
+
+    await Promise.all(
+        Array.from(byKind, ([kind, idSet]) =>
+            _resolveCovers(kind, Array.from(idSet), applyResolved),
+        ),
+    );
 
     for (const img of imgs) {
-        const kind = img.getAttribute("data-cover-kind") || defaultKind || "track";
-        _applyCover(img, _coverCache.get(kind + ":" + img.getAttribute("data-cover-id")));
+        const kind = kindOf(img);
+        const id = img.getAttribute("data-cover-id");
+        const url = _coverCache.get(kind + ":" + id);
+        _applyCover(img, url);
+        if (!url) _trackUnresolved(img, kind, id);
     }
 }
 

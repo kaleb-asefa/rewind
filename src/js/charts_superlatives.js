@@ -212,7 +212,6 @@
                 "</div>";
             })
             .join("");
-        loadCovers(el);
     }
 
     const times = (it) => "\u00d7" + it.count;
@@ -236,6 +235,10 @@
         renderList("never-skipped-list", data.never_skipped, { value: playsVal, badge: "never skipped", sub: artistOnly });
         renderList("longest-list", data.longest, { value: durVal, badge: playsBadge, sub: artistOnly });
         renderList("shortest-list", data.shortest, { value: durVal, badge: playsBadge, sub: artistOnly });
+        // Resolve every list's covers together: one /api/images call per kind for
+        // the whole section instead of six competing cold requests.
+        const section = document.getElementById("superlatives");
+        if (section) loadCovers(section);
     }
 
     function setActive(el, value) {
