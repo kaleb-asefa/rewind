@@ -184,14 +184,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         let response;
+        // Direct fetch (not fetchWithTimeout) since uploads need a long/no
+        // timeout for enrichment; still must carry the session ticket so the
+        // upload lands in this browser's own per-session DuckDB file.
+        let t = localStorage.getItem("rewind_session");
+        if (!t) {
+          t = crypto.randomUUID();
+          localStorage.setItem("rewind_session", t);
+        }
+        const headers = { "X-Rewind-Session": t };
         try {
           response = await fetch("http://127.0.0.1:8000/api/upload", {
             method: "POST",
+            headers,
             body: formData,
           });
         } catch (err) {
           response = await fetch("http://localhost:8000/api/upload", {
             method: "POST",
+            headers,
             body: formData,
           });
         }

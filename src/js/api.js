@@ -4,6 +4,20 @@
  * and strict timeout limits using AbortController.
  */
 
+/**
+ * Multi-user guest ticket (see docs/MULTI_USER.md + API_CONTRACT.md §2).
+ * Generated once per browser and persisted, so the backend can route each
+ * visitor to their own isolated per-session DuckDB file.
+ */
+function _getSessionTicket() {
+    let t = localStorage.getItem("rewind_session");
+    if (!t) {
+        t = crypto.randomUUID();
+        localStorage.setItem("rewind_session", t);
+    }
+    return t;
+}
+
 async function fetchWithTimeout(endpoint, options = {}, timeoutMs = 5000) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -11,6 +25,10 @@ async function fetchWithTimeout(endpoint, options = {}, timeoutMs = 5000) {
     const fetchOptions = {
         ...options,
         signal: controller.signal,
+        headers: {
+            ...(options.headers || {}),
+            "X-Rewind-Session": _getSessionTicket(),
+        },
     };
 
     let response;
