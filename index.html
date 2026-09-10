@@ -253,20 +253,6 @@
         <div
           class="relative z-10 max-w-3xl w-full mx-container-padding-mobile glass-player p-8 md:p-16 rounded-2xl flex flex-col items-center text-center"
         >
-          <!-- Now Playing Label -->
-          <div
-            class="flex items-center gap-2 mb-8 bg-primary/10 px-4 py-1.5 rounded-full text-primary font-label-caps text-[10px] tracking-[0.2em] uppercase"
-          >
-            <span class="flex h-2 w-2 relative">
-              <span
-                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
-              ></span>
-              <span
-                class="relative inline-flex rounded-full h-2 w-2 bg-primary"
-              ></span>
-            </span>
-            Press Rewind to Begin
-          </div>
           <!-- Headline -->
           <h1
             class="font-display-lg text-display-lg-mobile md:text-display-lg mb-4 text-on-surface leading-[1.1] tracking-tight font-bold"
@@ -281,7 +267,7 @@
           <!-- Cassette Deck -->
           <div
             id="cassette-deck"
-            class="cassette-deck w-full max-w-sm mx-auto mb-10 rounded-xl bg-surface-container-high border border-outline-variant/40 p-6 shadow-spotify-dialog"
+            class="cassette-deck w-full max-w-sm mx-auto mb-10 rounded-xl bg-surface-container-high border border-outline-variant/40 p-6"
           >
             <div class="flex items-center justify-between px-8 mb-5">
               <svg
@@ -315,7 +301,7 @@
                 </g>
               </svg>
             </div>
-            <!-- Tape Window: label, VU meter, counter -->
+            <!-- Tape Window: label, counter -->
             <div
               class="tape-window flex items-center justify-between gap-3 rounded-lg bg-surface-dim px-4 py-3 border border-outline-variant/30"
             >
@@ -323,15 +309,6 @@
                 class="font-label-caps text-[10px] text-on-surface-variant tracking-[0.2em] uppercase"
                 >Side A</span
               >
-              <div class="vu-meter flex items-end gap-1 h-6" aria-hidden="true">
-                <span class="vu-bar"></span>
-                <span class="vu-bar"></span>
-                <span class="vu-bar"></span>
-                <span class="vu-bar"></span>
-                <span class="vu-bar"></span>
-                <span class="vu-bar"></span>
-                <span class="vu-bar"></span>
-              </div>
               <span
                 id="tape-counter"
                 class="font-label-caps text-[10px] text-primary tracking-[0.1em]"
@@ -440,7 +417,7 @@
               Get your full history
             </h2>
             <div
-              class="relative group aspect-video rounded-lg overflow-hidden shadow-spotify-dialog bg-surface-container-highest transition-all duration-700"
+              class="relative group aspect-video rounded-lg overflow-hidden bg-surface-container-highest transition-all duration-700"
             >
               <div
                 class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
@@ -555,7 +532,7 @@
         class="py-section-gap px-container-padding-mobile md:px-container-padding-desktop"
       >
         <div
-          class="max-w-7xl mx-auto bg-surface-container-low rounded-lg overflow-hidden p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 shadow-spotify-card"
+          class="max-w-7xl mx-auto bg-surface-container-low rounded-lg overflow-hidden p-8 md:p-16 flex flex-col md:flex-row items-center gap-12"
         >
           <div class="flex flex-col lg:flex-row items-center gap-12 w-full">
             <div class="lg:w-[40%] space-y-6">
@@ -581,7 +558,7 @@
                 ></div>
                 <img
                   alt="Rewind Dashboard Preview"
-                  class="relative rounded-lg shadow-spotify-dialog w-full h-auto transform transition-transform duration-500 group-hover:scale-[1.01]"
+                  class="relative rounded-lg w-full h-auto transform transition-transform duration-500 group-hover:scale-[1.01]"
                   src="src/styles/static/image.png"
                 />
               </div>
@@ -609,7 +586,7 @@
           class="absolute -inset-4 bg-primary/5 rounded-3xl blur-3xl opacity-50"
         ></div>
         <div
-          class="relative bg-surface-container-low rounded-lg overflow-hidden shadow-spotify-dialog transition-all duration-700"
+          class="relative bg-surface-container-low rounded-lg overflow-hidden transition-all duration-700"
         >
           <img
             alt="Community Leaderboard Preview"
