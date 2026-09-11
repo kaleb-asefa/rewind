@@ -79,7 +79,7 @@
         let dots = '';
         tracks.forEach((t, i) => {
             const r = 4 + (t.plays / maxPlays) * 7;
-            dots += '<circle class="mood-dot" data-t="' + i + '" cx="' + px(t.valence).toFixed(1) + '" cy="' + py(t.energy).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="rgb(30,215,96)" fill-opacity="0.75"/>';
+            dots += '<circle class="mood-dot" data-t="' + i + '" cx="' + px(t.valence).toFixed(1) + '" cy="' + py(t.energy).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="rgb(var(--accent-rgb))" fill-opacity="0.75"/>';
         });
         let sv = 0, se = 0, sp = 0;
         tracks.forEach((t) => { sv += t.valence * t.plays; se += t.energy * t.plays; sp += t.plays; });
@@ -93,7 +93,7 @@
         setText('mood-sweetspot', sweet);
     }
 
-    const MIX_SHADES = ['rgb(30,215,96)', 'rgba(30,215,96,0.72)', 'rgba(30,215,96,0.48)', 'rgba(30,215,96,0.3)'];
+    const MIX_SHADES = ['rgb(var(--accent-rgb))', 'rgba(var(--accent-rgb), 0.72)', 'rgba(var(--accent-rgb), 0.48)', 'rgba(var(--accent-rgb), 0.3)'];
     function renderMoodMix(mix) {
         const bar = document.getElementById('mood-mix');
         if (!bar) return;
@@ -147,7 +147,7 @@
         const np = at(p, R - 16);
         svg.innerHTML =
             '<path d="' + bg + '" fill="none" stroke="var(--grid-line-strong)" stroke-width="12" stroke-linecap="round"/>' +
-            '<path d="' + val + '" fill="none" stroke="rgb(30,215,96)" stroke-width="12" stroke-linecap="round"/>' +
+            '<path d="' + val + '" fill="none" stroke="rgb(var(--accent-rgb))" stroke-width="12" stroke-linecap="round"/>' +
             '<line x1="' + cx + '" y1="' + cy + '" x2="' + np[0].toFixed(1) + '" y2="' + np[1].toFixed(1) + '" stroke="var(--emphasis)" stroke-width="3" stroke-linecap="round"/>' +
             '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="var(--emphasis)"/>' +
             '<text x="' + (cx - R) + '" y="' + (cy + 18) + '" fill="var(--axis-label)" font-size="9" text-anchor="middle">Slow</text>' +

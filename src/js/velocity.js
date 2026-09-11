@@ -190,7 +190,7 @@
             line.setAttribute('y1', y);
             line.setAttribute('x2', SVG_W - PADDING_RIGHT + 20);
             line.setAttribute('y2', y);
-            line.setAttribute('stroke', r === 1 ? 'rgba(30, 215, 96, 0.25)' : 'var(--grid-line)');
+            line.setAttribute('stroke', r === 1 ? 'rgba(var(--accent-rgb), 0.25)' : 'var(--grid-line)');
             line.setAttribute('stroke-width', r === 1 ? '1.5' : '1');
             if (r !== 1) line.setAttribute('stroke-dasharray', '4 4');
             yGroup.appendChild(line);
@@ -199,7 +199,7 @@
             text.setAttribute('x', PADDING_LEFT - 12);
             text.setAttribute('y', y + 4);
             text.setAttribute('text-anchor', 'end');
-            text.setAttribute('fill', r === 1 ? 'rgb(30,215,96)' : 'var(--axis-label)');
+            text.setAttribute('fill', r === 1 ? 'rgb(var(--accent-rgb))' : 'var(--axis-label)');
             text.setAttribute('font-size', '10');
             text.setAttribute('font-weight', r === 1 ? '800' : '600');
             text.setAttribute('font-family', 'Space Mono, monospace');
@@ -238,7 +238,7 @@
                 line.setAttribute('x2', x);
                 line.setAttribute('y2', SVG_H - PADDING_BOTTOM + 5);
                 const stroke = yearStart
-                    ? 'rgba(30, 215, 96, 0.25)'
+                    ? 'rgba(var(--accent-rgb), 0.25)'
                     : (monthStart ? 'var(--grid-line-strong)' : 'var(--grid-line)');
                 line.setAttribute('stroke', stroke);
                 line.setAttribute('stroke-width', yearStart ? '1.5' : '1');
@@ -249,7 +249,7 @@
                     text.setAttribute('x', x);
                     text.setAttribute('y', SVG_H - PADDING_BOTTOM + 20);
                     text.setAttribute('text-anchor', 'middle');
-                    text.setAttribute('fill', yearStart ? 'rgb(30,215,96)' : 'var(--axis-label)');
+                    text.setAttribute('fill', yearStart ? 'rgb(var(--accent-rgb))' : 'var(--axis-label)');
                     text.setAttribute('font-size', yearStart ? '11' : '10');
                     text.setAttribute('font-weight', yearStart ? '800' : '700');
                     text.setAttribute('font-family', 'Space Mono, monospace');
@@ -294,7 +294,7 @@
                 <div class="tip-avatar-ring" style="border: 2px solid ${item.color};">
                     ${isRankOne ? '<div class="pulse-ring"></div>' : ''}
                     <img src="${item.image}" alt="${item.title}" class="w-full h-full rounded-full object-cover"/>
-                    <div class="rank-badge-pill" style="border-color: ${item.color}; color: ${isRankOne ? 'rgb(30,215,96)' : 'var(--chip-fg)'};">
+                    <div class="rank-badge-pill" style="border-color: ${item.color}; color: ${isRankOne ? 'rgb(var(--accent-rgb))' : 'var(--chip-fg)'};">
                         #${Math.round(currentRank)}
                     </div>
                 </div>
@@ -346,7 +346,7 @@
     }
 
     // Single theme green for every trend line (tips are identified by their labels).
-    const LINE_COLOR = 'rgb(30,215,96)';
+    const LINE_COLOR = 'rgb(var(--accent-rgb))';
 
     // Lazy-load cover art for the tip avatars in ONE batched request per category
     // (instead of one request per featured entity), so covers land together and

@@ -72,7 +72,7 @@
                     boxShadow: {
                         'spotify-card': 'var(--card-shadow)',
                         'spotify-dialog': 'var(--card-shadow-strong)',
-                        'spotify-green': '0 8px 24px rgba(30, 215, 96, 0.25)',
+                        'spotify-green': '0 8px 24px rgba(var(--accent-rgb), 0.25)',
                     },
                 },
             },

@@ -110,9 +110,9 @@
             hits += '<rect class="evo-hit" data-i="' + i + '" x="' + x.toFixed(1) + '" y="0" width="' + step.toFixed(1) + '" height="' + H + '" fill="transparent" />';
         }
         const html =
-            '<path d="' + area + '" fill="rgba(30,215,96,0.14)"/>' +
-            '<path d="' + line + '" fill="none" stroke="rgb(30,215,96)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
-            '<circle class="evo-dot" r="4" fill="var(--emphasis)" stroke="rgb(30,215,96)" stroke-width="2.5" style="opacity:0"/>' +
+            '<path d="' + area + '" fill="rgba(var(--accent-rgb), 0.14)"/>' +
+            '<path d="' + line + '" fill="none" stroke="rgb(var(--accent-rgb))" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '<circle class="evo-dot" r="4" fill="var(--emphasis)" stroke="rgb(var(--accent-rgb))" stroke-width="2.5" style="opacity:0"/>' +
             hits;
         return { pts, html };
     }

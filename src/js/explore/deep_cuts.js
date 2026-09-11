@@ -24,8 +24,8 @@
         const bar = document.getElementById('concentration-bar');
         if (bar) {
             bar.innerHTML =
-                '<div style="width:' + top + '%;background:rgb(30,215,96)"></div>' +
-                '<div style="width:' + (100 - top) + '%;background:rgba(30,215,96,0.28)"></div>';
+                '<div style="width:' + top + '%;background:rgb(var(--accent-rgb))"></div>' +
+                '<div style="width:' + (100 - top) + '%;background:rgba(var(--accent-rgb), 0.28)"></div>';
         }
     }
 
@@ -41,8 +41,8 @@
         const bar = document.getElementById('album-bar');
         if (bar) {
             bar.innerHTML =
-                '<div style="width:' + deep + '%;background:rgb(30,215,96)"></div>' +
-                '<div style="width:' + (100 - deep) + '%;background:rgba(30,215,96,0.28)"></div>';
+                '<div style="width:' + deep + '%;background:rgb(var(--accent-rgb))"></div>' +
+                '<div style="width:' + (100 - deep) + '%;background:rgba(var(--accent-rgb), 0.28)"></div>';
         }
     }
 

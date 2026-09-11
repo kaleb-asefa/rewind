@@ -32,8 +32,8 @@
         const bar = document.getElementById('discovery-bar');
         if (bar) {
             bar.innerHTML =
-                '<div style="width:' + discovery + '%;background:rgb(30,215,96)"></div>' +
-                '<div style="width:' + familiar + '%;background:rgba(30,215,96,0.28)"></div>';
+                '<div style="width:' + discovery + '%;background:rgb(var(--accent-rgb))"></div>' +
+                '<div style="width:' + familiar + '%;background:rgba(var(--accent-rgb), 0.28)"></div>';
         }
     }
     function renderRediscoveries(items) {

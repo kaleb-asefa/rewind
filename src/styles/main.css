@@ -1,82 +1,97 @@
 /* Spotify-Inspired Visual Design System Tokens & Base Styles */
+
+/* LIGHT THEME — canvas-based elevation.
+   Light mode is not an inverted dark mode. Elevation here runs the opposite
+   way: the page canvas is the *darkest* light surface and each level lifts
+   toward white, carried by a soft shadow. Cards must therefore be brighter
+   than the background they sit on.
+
+   Nothing is pure white and no text is pure black. A #fff canvas under
+   #121212 text is ~18.9:1 — far past the AA it needs, and the glare is what
+   makes a light theme tiring to read. The ramp below tops out at #fcfcfa for
+   the highest elevation only (dialogs, tooltips), keeps the canvas near
+   #e8e7e3, and carries a faint warm tint so large areas read as paper rather
+   than as a lightbox. */
 :root {
-    --color-background: 255 255 255;
-    --color-surface: 250 250 250;
-    --color-surface-dim: 238 238 238;
-    --color-surface-bright: 255 255 255;
-    --color-surface-container-lowest: 255 255 255;
-    --color-surface-container-low: 245 245 245;
-    --color-surface-container: 238 238 238;
-    --color-surface-container-high: 229 229 229;
-    --color-surface-container-highest: 221 221 221;
-    --color-surface-variant: 238 238 238;
-    --color-on-background: 18 18 18;
-    --color-on-surface: 18 18 18;
-    --color-on-surface-variant: 95 95 95;
-    --color-outline: 124 124 124;
-    --color-outline-variant: 221 221 221;
-    /* Spotify Green is unreadable as text on white (2.6:1). Light mode deepens
-       the accent to keep the brand hue while clearing WCAG AA; the vivid
-       #1ed760 survives as --color-primary-container for large data fills. */
-    --color-primary: 16 124 57;
+    --color-background: 232 231 227;
+    --color-surface: 244 243 240;
+    --color-surface-dim: 222 221 216;
+    --color-surface-bright: 250 250 248;
+    --color-surface-container-lowest: 252 252 250;
+    --color-surface-container-low: 240 239 235;
+    --color-surface-container: 235 234 230;
+    --color-surface-container-high: 227 226 221;
+    --color-surface-container-highest: 219 218 212;
+    --color-surface-variant: 237 236 232;
+    --color-on-background: 35 35 32;
+    --color-on-surface: 35 35 32;
+    --color-on-surface-variant: 69 69 64;
+    --color-outline: 138 137 131;
+    --color-outline-variant: 214 213 207;
+    /* Spotify Green is unreadable as text on a light surface (2.6:1), so the
+       accent deepens to clear AA on every surface in the ramp above. Filled
+       controls drop from the neon #1ed760 to the classic #1db954, which is
+       far less strident on a pale page and still takes a black label. */
+    --color-primary: 14 107 49;
     --color-on-primary: 255 255 255;
-    --color-primary-container: 30 215 96;
+    --color-primary-container: 29 185 84;
     --color-on-primary-container: 18 18 18;
-    --color-secondary: 106 106 106;
+    --color-secondary: 69 69 64;
     --color-on-secondary: 255 255 255;
-    --color-secondary-container: 238 238 238;
-    --color-on-secondary-container: 18 18 18;
-    --color-tertiary: 106 106 106;
+    --color-secondary-container: 237 236 232;
+    --color-on-secondary-container: 35 35 32;
+    --color-tertiary: 69 69 64;
     --color-on-tertiary: 255 255 255;
-    --color-tertiary-container: 221 221 221;
-    --color-on-tertiary-container: 18 18 18;
-    --color-error: 198 33 56;
+    --color-tertiary-container: 219 218 212;
+    --color-on-tertiary-container: 35 35 32;
+    --color-error: 179 23 47;
     --color-on-error: 255 255 255;
-    --color-error-container: 255 218 220;
-    --color-on-error-container: 120 20 30;
-    --color-inverse-surface: 18 18 18;
-    --color-inverse-on-surface: 255 255 255;
+    --color-error-container: 250 223 226;
+    --color-on-error-container: 110 18 32;
+    --color-inverse-surface: 35 35 32;
+    --color-inverse-on-surface: 250 250 248;
     --color-inverse-primary: 30 215 96;
     --color-surface-tint: 29 185 84;
     --color-primary-fixed: 30 215 96;
     --color-on-primary-fixed: 18 18 18;
     --color-primary-fixed-dim: 29 185 84;
     --color-on-primary-fixed-variant: 18 18 18;
-    --color-secondary-fixed: 238 238 238;
-    --color-on-secondary-fixed: 18 18 18;
-    --color-secondary-fixed-dim: 221 221 221;
-    --color-on-secondary-fixed-variant: 106 106 106;
-    --color-tertiary-fixed: 238 238 238;
-    --color-on-tertiary-fixed: 18 18 18;
-    --color-tertiary-fixed-dim: 221 221 221;
-    --color-on-tertiary-fixed-variant: 106 106 106;
-    --glass-bg: rgba(255, 255, 255, 0.72);
-    --glass-border: rgba(0, 0, 0, 0.06);
-    --scrubber-knob: 255 255 255;
-    --hero-glow: rgba(29, 185, 84, 0.12);
-    --vinyl-opacity: 0.15;
-    --heatmap-empty: #e5e5e5;
+    --color-secondary-fixed: 237 236 232;
+    --color-on-secondary-fixed: 35 35 32;
+    --color-secondary-fixed-dim: 219 218 212;
+    --color-on-secondary-fixed-variant: 69 69 64;
+    --color-tertiary-fixed: 237 236 232;
+    --color-on-tertiary-fixed: 35 35 32;
+    --color-tertiary-fixed-dim: 219 218 212;
+    --color-on-tertiary-fixed-variant: 69 69 64;
+    --glass-bg: rgba(240, 239, 235, 0.78);
+    --glass-border: rgba(0, 0, 0, 0.07);
+    --scrubber-knob: 252 252 250;
+    --hero-glow: rgba(29, 185, 84, 0.10);
+    --vinyl-opacity: 0.12;
+    --heatmap-empty: #deddd6;
 
     /* Component tokens — every hardcoded colour below lives here so that
        cards, tooltips, hovers and chart chrome follow the active theme.
        Light surfaces use soft, low-opacity shadows; the heavy 0.3–0.5 shadows
        from docs/design.md are a dark-surface elevation device and turn muddy
-       on white. */
-    --card-bg: rgba(255, 255, 255, 0.88);
-    --card-bg-hover: #f2f2f2;
-    --card-border: rgba(0, 0, 0, 0.08);
-    --card-shadow: rgba(0, 0, 0, 0.08) 0px 6px 16px;
-    --card-shadow-strong: rgba(0, 0, 0, 0.12) 0px 8px 24px;
-    --fullscreen-bg: #ffffff;
-    --metric-gradient: linear-gradient(135deg, #ffffff 0%, #e8f6ed 100%);
-    --metric-gradient-border: rgba(29, 185, 84, 0.22);
+       on paper. Because the canvas is tinted rather than white, these shadows
+       actually register, which is what separates a card from the page. */
+    --card-bg: rgba(250, 250, 247, 0.82);
+    --card-bg-hover: #edece8;
+    --card-border: rgba(0, 0, 0, 0.07);
+    --card-shadow: rgba(0, 0, 0, 0.07) 0px 6px 16px;
+    --card-shadow-strong: rgba(0, 0, 0, 0.10) 0px 8px 24px;
+    --fullscreen-bg: #f4f3f0;
+    --metric-gradient: linear-gradient(135deg, #f7f6f3 0%, #e2efe7 100%);
+    --metric-gradient-border: rgba(14, 107, 49, 0.18);
     /* Hover washes: tint toward the opposite end of the surface ramp. */
-    --hover-overlay: rgba(0, 0, 0, 0.045);
-    --hover-overlay-strong: rgba(0, 0, 0, 0.06);
+    --hover-overlay: rgba(0, 0, 0, 0.04);
+    --hover-overlay-strong: rgba(0, 0, 0, 0.055);
     /* Maximum-contrast text/stroke used to highlight a hovered data point. */
-    --emphasis: #121212;
-    --scrollbar-thumb: #d4d4d4;
-    --heatmap-outline: rgba(0, 0, 0, 0.45);
+    --emphasis: #232320;
+    --scrollbar-thumb: #cbcac3;
+    --heatmap-outline: rgba(0, 0, 0, 0.42);
     /* Floating chips stay dark in both themes: a high-contrast chip over the
        page reads as a deliberate overlay and keeps the green accent legible. */
     --tooltip-bg: #252525;
@@ -84,20 +99,20 @@
     --tooltip-muted: rgba(255, 255, 255, 0.7);
     --tooltip-border: rgba(255, 255, 255, 0.08);
     --tooltip-shadow: rgba(0, 0, 0, 0.28) 0px 8px 24px;
-    --chip-bg: #ffffff;
-    --chip-fg: #121212;
-    --chip-border: rgba(0, 0, 0, 0.12);
-    --chip-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
-    --pill-shadow: rgba(0, 0, 0, 0.12) 0px 4px 10px;
-    --data-shadow: drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.18));
+    --chip-bg: #fbfbf9;
+    --chip-fg: #232320;
+    --chip-border: rgba(0, 0, 0, 0.10);
+    --chip-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    --pill-shadow: rgba(0, 0, 0, 0.10) 0px 4px 10px;
+    --data-shadow: drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.14));
     /* Chart chrome — gridlines, axis labels and text halos for the SVG/DOM
        charts built in src/js/**. Referenced as var() from JS so a theme toggle
        restyles an already-rendered chart without a re-render. */
-    --grid-line: rgba(0, 0, 0, 0.09);
-    --grid-line-strong: rgba(0, 0, 0, 0.13);
-    --axis-label: rgba(0, 0, 0, 0.5);
-    --text-halo: 0 1px 3px rgba(255, 255, 255, 0.85);
-    --bar-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+    --grid-line: rgba(0, 0, 0, 0.08);
+    --grid-line-strong: rgba(0, 0, 0, 0.12);
+    --axis-label: rgba(0, 0, 0, 0.6);
+    --text-halo: 0 1px 3px rgba(250, 250, 247, 0.85);
+    --bar-shadow: 0 2px 5px rgba(0, 0, 0, 0.10);
     /* Bar-race ramp: one fixed shade per racer. Light mode anchors darker so
        every bar keeps contrast against a white surface. */
     --race-1: #1db954;
@@ -110,6 +125,10 @@
     --race-8: #1aa64e;
     /* Sequential genre ramp (single hue, fading). Light mode fades a deeper
        green toward white so the faintest band stays visible. */
+    /* Brand accent for data fills/strokes, kept apart from --color-primary
+       (text) because a graphic only needs 3:1. Light mode steps off the neon
+       #1ed760, which sits at 2.6:1 on paper and glares next to it. */
+    --accent-rgb: 23, 143, 66;
     --genre-1: #0f8b3b;
     --genre-2: rgba(15, 139, 59, 0.8);
     --genre-3: rgba(15, 139, 59, 0.62);
@@ -210,6 +229,7 @@
     --race-6: #57cf7e;
     --race-7: #149c46;
     --race-8: #39d06e;
+    --accent-rgb: 30, 215, 96;
     --genre-1: #1ed760;
     --genre-2: rgba(30, 215, 96, 0.78);
     --genre-3: rgba(30, 215, 96, 0.6);
@@ -340,10 +360,10 @@ body, header, section, footer, .glass-player, .spotify-card {
     z-index: 10;
     position: relative;
 }
-.heatmap-cell[data-level="1"] { background: rgba(30, 215, 96, 0.22); }
-.heatmap-cell[data-level="2"] { background: rgba(30, 215, 96, 0.45); }
-.heatmap-cell[data-level="3"] { background: rgba(30, 215, 96, 0.68); }
-.heatmap-cell[data-level="4"] { background: #1ed760; }
+.heatmap-cell[data-level="1"] { background: rgba(var(--accent-rgb), 0.22); }
+.heatmap-cell[data-level="2"] { background: rgba(var(--accent-rgb), 0.45); }
+.heatmap-cell[data-level="3"] { background: rgba(var(--accent-rgb), 0.68); }
+.heatmap-cell[data-level="4"] { background: rgb(var(--accent-rgb)); }
 .heatmap-cell[data-future="true"],
 .heatmap-cell[data-padding="true"] {
     visibility: hidden;
@@ -420,7 +440,7 @@ body, header, section, footer, .glass-player, .spotify-card {
     opacity: 1;
 }
 #heatmap-tooltip .count {
-    color: #1ed760;
+    color: rgb(var(--accent-rgb));
     font-weight: 700;
 }
 #heatmap-tooltip .top {
@@ -491,11 +511,53 @@ body, header, section, footer, .glass-player, .spotify-card {
     opacity: 0.95;
 }
 
+/* Native range inputs render with the UA accent (blue) unless fully restyled,
+   which made the scrubber the one control ignoring the design system in both
+   themes. This is also what --scrubber-knob was declared for. */
+.velocity-scrubber {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--grid-line-strong);
+    accent-color: rgb(var(--accent-rgb));
+}
+.velocity-scrubber::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: rgb(var(--accent-rgb));
+    border: 2px solid rgb(var(--scrubber-knob));
+    box-shadow: var(--pill-shadow);
+    cursor: pointer;
+}
+.velocity-scrubber::-moz-range-thumb {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: rgb(var(--accent-rgb));
+    border: 2px solid rgb(var(--scrubber-knob));
+    box-shadow: var(--pill-shadow);
+    cursor: pointer;
+}
+.velocity-scrubber::-moz-range-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--grid-line-strong);
+}
+.velocity-scrubber:focus-visible {
+    outline: 2px solid rgb(var(--color-primary));
+    outline-offset: 3px;
+}
+
 .pulse-ring {
     position: absolute;
     inset: -3px;
     border-radius: 50%;
-    border: 2px solid rgb(30, 215, 96);
+    border: 2px solid rgb(var(--accent-rgb));
     animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     pointer-events: none;
 }
@@ -634,7 +696,7 @@ html { scroll-behavior: smooth; }
 .clock-bar.is-hover { stroke: var(--emphasis); stroke-opacity: 1; stroke-width: 9; }
 .clock-hit, .season-hit { cursor: pointer; }
 #season-dot, #season-vline { transition: opacity 0.15s ease; pointer-events: none; }
-.weekday-col:hover .weekday-bar { background: rgb(30, 215, 96); }
+.weekday-col:hover .weekday-bar { background: rgb(var(--accent-rgb)); }
 
 /* chapter 03 charts */
 .mood-dot { cursor: pointer; transition: fill 0.12s ease; }
@@ -646,21 +708,21 @@ html { scroll-behavior: smooth; }
 .genre-row .genre-bar-fill { transition: width 0.5s ease, filter 0.12s ease; }
 .genre-row:hover .genre-bar-fill { filter: brightness(1.15); }
 .genre-row:hover .genre-name { color: var(--emphasis); }
-.era-col:hover .era-bar { background: rgb(30, 215, 96); }
+.era-col:hover .era-bar { background: rgb(var(--accent-rgb)); }
 .gem-row { transition: background 0.12s ease; }
 .gem-row:hover { background: var(--hover-overlay-strong); }
 
 /* chapter 07 listening-life milestones */
 .life-milestone-line {
     height: 2px;
-    background: rgba(30, 215, 96, 0.28);
+    background: rgba(var(--accent-rgb), 0.28);
 }
 .life-milestone-dot {
     transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
 .life-milestone:hover .life-milestone-dot {
     transform: scale(1.22);
-    box-shadow: 0 0 0 5px rgba(30, 215, 96, 0.14);
+    box-shadow: 0 0 0 5px rgba(var(--accent-rgb), 0.14);
 }
 
 /* chapter 08 over-time */
@@ -684,7 +746,7 @@ html { scroll-behavior: smooth; }
 
 /* chapter 10 sound detail */
 .tempo-bar { transition: background 0.15s ease; }
-.tempo-col:hover .tempo-bar { background: rgb(30, 215, 96); }
+.tempo-col:hover .tempo-bar { background: rgb(var(--accent-rgb)); }
 
 .rhythm-tooltip {
     position: fixed;
@@ -707,7 +769,7 @@ html { scroll-behavior: smooth; }
 }
 .rhythm-tooltip.visible { opacity: 1; }
 .rhythm-tooltip .rt-title { font-weight: 700; }
-.rhythm-tooltip .rt-val { color: #1ed760; font-size: 11px; font-weight: 600; }
+.rhythm-tooltip .rt-val { color: rgb(var(--accent-rgb)); font-size: 11px; font-weight: 600; }
 /* ── Charts page: numbered leaderboards ───────────────────────── */
 .chart-tab,
 .chart-sort,
@@ -732,7 +794,7 @@ html { scroll-behavior: smooth; }
 .chart-row { transition: background 0.12s ease; }
 .chart-row:hover { background: var(--hover-overlay); }
 .chart-row--match {
-    background: rgba(30, 215, 96, 0.10);
-    box-shadow: inset 3px 0 0 0 rgb(30, 215, 96);
+    background: rgba(var(--accent-rgb), 0.10);
+    box-shadow: inset 3px 0 0 0 rgb(var(--accent-rgb));
 }
-.chart-row--match:hover { background: rgba(30, 215, 96, 0.14); }
+.chart-row--match:hover { background: rgba(var(--accent-rgb), 0.14); }
