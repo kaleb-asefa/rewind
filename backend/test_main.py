@@ -12,6 +12,7 @@ import catalog
 import database
 import images
 import main
+import metrics
 from database import table_registry
 from main import app
 from routers import upload as upload_router
@@ -940,6 +941,7 @@ def test_discovery_empty_when_no_history():
         data = client.get("/api/metrics/discovery").json()
         assert data == {
             "status": "ok",
+            "year": None,
             "new_artist_share": 0.0,
             "new_artists_monthly": 0.0,
             "one_off_share": 0.0,
@@ -979,6 +981,7 @@ def test_listening_life_empty_when_no_history():
         data = client.get("/api/metrics/listening-life").json()
         assert data == {
             "status": "ok",
+            "year": None,
             "peaks": [],
             "typical_session_minutes": 0,
             "session_mix": [],
@@ -1015,6 +1018,7 @@ def test_over_time_empty_when_no_history():
         data = client.get("/api/metrics/over-time").json()
         assert data == {
             "status": "ok",
+            "year": None,
             "years": [],
             "music_age": {},
             "time_machine": {},
@@ -1087,12 +1091,22 @@ def test_over_time_returns_years_and_catalog(tmp_path, monkeypatch):
         for point in data["nostalgia"]:
             assert point["period"] and 1900 < point["avg_year"] < 2100
 
+        # A year filter narrows the highlights to that year and flips the
+        # nostalgia trend from year-by-year to month-by-month inside it.
+        target = data["years"][0]["year"]
+        scoped = client.get(f"/api/metrics/over-time?year={target}").json()
+        assert scoped["year"] == target
+        assert [y["year"] for y in scoped["years"]] == [target]
+        assert scoped["nostalgia"]
+        assert all(p["period"] in set(metrics._MONTH_ABBR) for p in scoped["nostalgia"])
+
 
 def test_evolution_empty_when_no_history():
     with TestClient(app) as client:
         data = client.get("/api/metrics/evolution").json()
         assert data == {
             "status": "ok",
+            "year": None,
             "genre_evolution": {"periods": [], "genres": []},
             "mood_trend": [],
             "day_night": {},
@@ -1163,12 +1177,22 @@ def test_evolution_returns_trends_from_track_features(tmp_path, monkeypatch):
             if key in data["day_night"]:
                 assert 0 <= data["day_night"][key]["energy"] <= 1
 
+        # Inside one year the same trends switch to month-by-month periods.
+        target = int(evo["periods"][0])
+        scoped = client.get(f"/api/metrics/evolution?year={target}").json()
+        assert scoped["year"] == target
+        months = set(metrics._MONTH_ABBR)
+        assert scoped["genre_evolution"]["periods"]
+        assert all(p in months for p in scoped["genre_evolution"]["periods"])
+        assert all(p["period"] in months for p in scoped["mood_trend"])
+
 
 def test_sound_detail_empty_when_no_history():
     with TestClient(app) as client:
         data = client.get("/api/metrics/sound-detail").json()
         assert data == {
             "status": "ok",
+            "year": None,
             "tempo": {"buckets": []},
             "key": {},
             "danceable": [],
@@ -1240,6 +1264,7 @@ def test_deep_cuts_empty_when_no_history():
         data = client.get("/api/metrics/deep-cuts").json()
         assert data == {
             "status": "ok",
+            "year": None,
             "concentration": {},
             "album_commitment": {},
             "top_day_track": {},
@@ -1279,6 +1304,7 @@ def test_wrapped_empty_when_no_history():
         data = client.get("/api/metrics/wrapped").json()
         assert data == {
             "status": "ok",
+            "year": None,
             "personality": [],
             "longest_track": {},
             "shortest_track": {},
@@ -1345,6 +1371,131 @@ def test_wrapped_returns_personality_and_extremes(tmp_path, monkeypatch):
         assert shortest["name"] and shortest["id"]
         assert shortest["seconds"] >= 30
         assert longest["seconds"] >= shortest["seconds"]
+
+
+# ── Explore year filter ───────────────────────────────────────────────────────
+_EXPLORE_ENDPOINTS = (
+    "artist-rank", "track-rank", "bar-race", "rhythm", "audio", "taste",
+    "behavior", "discovery", "listening-life", "over-time", "evolution",
+    "sound-detail", "deep-cuts", "wrapped",
+)
+
+
+def test_years_empty_when_no_history():
+    with TestClient(app) as client:
+        assert client.get("/api/metrics/years").json() == {"status": "ok", "years": []}
+
+
+def test_years_lists_history_years_newest_first():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")},
+            )
+
+        years = client.get("/api/metrics/years").json()["years"]
+        assert len(years) >= 2
+        assert [y["year"] for y in years] == sorted((y["year"] for y in years), reverse=True)
+        for y in years:
+            assert isinstance(y["year"], int)
+            assert y["streams"] > 0 and y["minutes"] > 0
+
+
+def test_year_filter_partitions_history():
+    """Every play belongs to exactly one year, so the per-year splits of a
+    history-only metric must add back up to the all-time numbers."""
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")},
+            )
+
+        years = client.get("/api/metrics/years").json()["years"]
+        assert len(years) >= 2
+        all_time = client.get("/api/metrics/rhythm").json()
+        assert all_time["year"] is None
+
+        per_year = {}
+        for y in years:
+            scoped = client.get(f"/api/metrics/rhythm?year={y['year']}").json()
+            assert scoped["status"] == "ok"
+            assert scoped["year"] == y["year"]
+            # A single year can never hold more plays than the whole history.
+            assert 0 < scoped["total_streams"] < all_time["total_streams"]
+            assert scoped["total_streams"] == y["streams"]
+            per_year[y["year"]] = scoped["total_streams"]
+
+        assert sum(per_year.values()) == all_time["total_streams"]
+
+
+def test_year_filter_with_no_data_returns_empty_state():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2025_1.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2025_1.json", f, "application/json")},
+            )
+
+        # A year the session has no plays in is an honest empty state, not a 500.
+        rhythm = client.get("/api/metrics/rhythm?year=1999").json()
+        assert rhythm["status"] == "ok"
+        assert rhythm["year"] == 1999
+        assert rhythm["total_streams"] == 0
+        assert rhythm["hourly"] == [0] * 24
+
+        behavior = client.get("/api/metrics/behavior?year=1999").json()
+        assert behavior["status"] == "ok" and behavior["shuffle"] is None
+
+        deep = client.get("/api/metrics/deep-cuts?year=1999").json()
+        assert deep["status"] == "ok" and deep["concentration"] == {}
+
+
+def test_year_filter_scopes_every_explore_endpoint():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json"
+        )
+        with open(sample_json_path, "rb") as f:
+            client.post(
+                "/api/upload",
+                files={"file": ("Streaming_History_Audio_2022-2025_0.json", f, "application/json")},
+            )
+
+        target = client.get("/api/metrics/years").json()["years"][0]["year"]
+        for endpoint in _EXPLORE_ENDPOINTS:
+            res = client.get(f"/api/metrics/{endpoint}?year={target}")
+            assert res.status_code == 200, endpoint
+            data = res.json()
+            assert data["status"] == "ok", endpoint
+            # Every endpoint echoes the applied filter (null = all time).
+            assert data["year"] == target, endpoint
+            assert client.get(f"/api/metrics/{endpoint}").json()["year"] is None, endpoint
+
+        # The climb chapter's frames must stay inside the selected year.
+        race = client.get(f"/api/metrics/bar-race?year={target}").json()
+        assert race["months"]
+        assert all(m.startswith(str(target)) for m in race["months"])
+
+
+def test_year_filter_rejects_invalid_values():
+    with TestClient(app) as client:
+        for endpoint in _EXPLORE_ENDPOINTS:
+            assert client.get(f"/api/metrics/{endpoint}?year=bogus").status_code == 400, endpoint
+            assert client.get(f"/api/metrics/{endpoint}?year=99").status_code == 400, endpoint
+            assert client.get(f"/api/metrics/{endpoint}?year=2024a").status_code == 400, endpoint
+            # "all" is the documented default and must stay accepted.
+            assert client.get(f"/api/metrics/{endpoint}?year=all").status_code == 200, endpoint
 
 
 def test_chart_empty_when_no_history():

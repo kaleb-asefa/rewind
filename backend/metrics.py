@@ -213,6 +213,12 @@ _WEEKDAY_NAMES = {
     7: "Sunday",
 }
 
+# Trend x-axis labels when a single year is in focus (month 1 → index 0).
+_MONTH_ABBR = (
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+)
+
 
 def _listening_streaks(days: list) -> dict:
     """Longest and latest consecutive-day streaks from sorted distinct dates."""

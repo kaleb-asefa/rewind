@@ -1,5 +1,10 @@
 """Explore-page (deep dive) metrics: rank velocity, bar race, rhythm, audio,
-taste, behavior, discovery and listening life."""
+taste, behavior, discovery and listening life.
+
+Every metric endpoint here takes an optional `year` filter (`all` = default =
+every play ever, or a 4-digit year); `/api/metrics/years` lists the years a
+session actually has data for.
+"""
 
 import unicodedata
 from datetime import timedelta
@@ -12,6 +17,7 @@ from metrics import (
     _compute_bar_race,
     _ENERGY_LOUDNESS_ADJ,
     _listening_streaks,
+    _MONTH_ABBR,
     _smoothed_rank_frames,
     _tz_offset_minutes,
     _umbrella_genre,
@@ -23,7 +29,81 @@ from starlette.concurrency import run_in_threadpool
 router = APIRouter()
 
 
-def _canonical_artist_rows(raw_con, period_trunc):
+# ── Year filter ───────────────────────────────────────────────────────────────
+def _parse_year(year: str):
+    """``'all'`` (the default) → ``None`` = every play ever; a 4-digit year → int.
+
+    Anything else is a 400. This whitelist is the *only* reason the value is safe
+    to inline into SQL further down, so never widen it to free text.
+    """
+    value = (year or "all").strip().lower()
+    if value == "all":
+        return None
+    if not (value.isdigit() and len(value) == 4):
+        raise HTTPException(status_code=400, detail="Invalid year filter.")
+    return int(value)
+
+
+def _year_clause(year, off: int, alias: str = "") -> str:
+    """`` AND EXTRACT(year FROM ts + tz) = YYYY`` fragment, or ``''`` for all time.
+
+    Year boundaries use the same local-time shift the rest of the page uses, so a
+    play at 23:00 on New Year's Eve lands in the year the listener lived it.
+    `year` and `off` are validated ints → safe to inline. `alias` is the table
+    prefix for joined queries (e.g. ``"h."``).
+    """
+    if year is None:
+        return ""
+    return f" AND EXTRACT(year FROM {alias}ts + to_minutes({int(off)})) = {int(year)}"
+
+
+def _year_where(clause: str) -> str:
+    """A year clause promoted to a standalone WHERE (empty when unfiltered)."""
+    return " WHERE" + clause[len(" AND"):] if clause else ""
+
+
+def _period_label(value: int, year) -> str:
+    """Trend x-axis label: the year when unfiltered, the month inside one year."""
+    if year is None:
+        return str(value)
+    return _MONTH_ABBR[value - 1] if 1 <= value <= 12 else str(value)
+
+
+def _available_years(raw_con, off: int):
+    """Years this session has plays in, newest first, with their volume so the
+    filter can show how much data each year holds."""
+    try:
+        rows = raw_con.execute(
+            f"SELECT EXTRACT(year FROM ts + to_minutes({int(off)}))::INTEGER AS y, "
+            "COUNT(*) AS streams, SUM(COALESCE(ms_played, 0)) AS ms "
+            "FROM history WHERE ts IS NOT NULL GROUP BY y ORDER BY y DESC"
+        ).fetchall()
+    except Exception:
+        return []
+    return [
+        {
+            "year": int(r[0]),
+            "streams": int(r[1]),
+            "minutes": round((r[2] or 0) / 60000, 2),
+        }
+        for r in rows
+    ]
+
+
+@router.get("/api/metrics/years")
+async def get_years(conn: Connection = Depends(get_db)):
+    """Year options for the explore-page filter. Empty list (never a 500) when the
+    session has no history yet — the frontend then shows "All time" alone."""
+
+    def query():
+        raw_con = conn.connection.driver_connection
+        return _available_years(raw_con, _tz_offset_minutes(raw_con))
+
+    years = await run_in_threadpool(query)
+    return {"status": "ok", "years": years}
+
+
+def _canonical_artist_rows(raw_con, period_trunc, year=None, off=0):
     """Per-period ``(period, display_name, ms, streams)`` rows with accent/case
     artist-name variants merged (Spotify exports the same artist under multiple
     spellings, e.g. 'GIVĒON' vs 'Giveon'). Grouped by a diacritic-insensitive
@@ -31,6 +111,8 @@ def _canonical_artist_rows(raw_con, period_trunc):
     periods so the merge holds for every frame. ``period_trunc`` is an internal
     literal ('week' / 'month'), never user input.
     """
+    inner = _year_clause(year, off)
+    outer = _year_clause(year, off, "h.")
     return raw_con.execute(
         f"""
         WITH disp AS (
@@ -39,7 +121,7 @@ def _canonical_artist_rows(raw_con, period_trunc):
             FROM (
                 SELECT artist_name, COUNT(*) AS n
                 FROM history
-                WHERE artist_name IS NOT NULL AND ts IS NOT NULL
+                WHERE artist_name IS NOT NULL AND ts IS NOT NULL{inner}
                 GROUP BY artist_name
             ) GROUP BY akey
         )
@@ -49,7 +131,7 @@ def _canonical_artist_rows(raw_con, period_trunc):
                COUNT(*) AS streams
         FROM history h
         JOIN disp ON strip_accents(upper(trim(h.artist_name))) = disp.akey
-        WHERE h.artist_name IS NOT NULL AND h.ts IS NOT NULL
+        WHERE h.artist_name IS NOT NULL AND h.ts IS NOT NULL{outer}
         GROUP BY date_trunc('{period_trunc}', h.ts), disp.name
         ORDER BY period ASC, ms DESC, streams DESC
         """
@@ -87,12 +169,16 @@ def _attach_image_urls(raw_con, kind, items):
 async def get_artist_rank(
     request: Request,
     limit: int = 10,
+    year: str = "all",
     conn: Connection = Depends(get_db),
 ):
+    yr = _parse_year(year)
+
     def query():
         raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con) if yr is not None else 0
         try:
-            monthly_data = _canonical_artist_rows(raw_con, "week")
+            monthly_data = _canonical_artist_rows(raw_con, "week", yr, off)
         except Exception:
             monthly_data = []
 
@@ -123,6 +209,7 @@ async def get_artist_rank(
     res = await run_in_threadpool(query)
     return {
         "status": "ok",
+        "year": yr,
         "start_month": res["start_month"],
         "end_month": res["end_month"],
         "total_months": res["total_months"],
@@ -135,12 +222,17 @@ async def get_artist_rank(
 async def get_track_rank(
     request: Request,
     limit: int = 10,
+    year: str = "all",
     conn: Connection = Depends(get_db),
 ):
+    yr = _parse_year(year)
+
     def query():
         raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con) if yr is not None else 0
+        clause = _year_clause(yr, off)
         try:
-            monthly_data = raw_con.execute("""
+            monthly_data = raw_con.execute(f"""
                 SELECT 
                     date_trunc('week', ts) as period,
                     track_name,
@@ -148,7 +240,7 @@ async def get_track_rank(
                     SUM(ms_played) as ms,
                     COUNT(*) as streams
                 FROM history
-                WHERE track_name IS NOT NULL AND ts IS NOT NULL
+                WHERE track_name IS NOT NULL AND ts IS NOT NULL{clause}
                 GROUP BY date_trunc('week', ts), track_name, artist_name
                 ORDER BY period ASC, ms DESC, streams DESC
             """).fetchall()
@@ -192,6 +284,7 @@ async def get_track_rank(
     res = await run_in_threadpool(query)
     return {
         "status": "ok",
+        "year": yr,
         "start_month": res["start_month"],
         "end_month": res["end_month"],
         "total_months": res["total_months"],
@@ -205,10 +298,12 @@ async def get_bar_race(
     request: Request,
     entity: str = "artist",
     limit: int = 12,
+    year: str = "all",
     conn: Connection = Depends(get_db),
 ):
     """Cumulative-listening bar race frames for artist / track / album."""
     entity = entity.lower()
+    yr = _parse_year(year)
     specs = {
         "artist": ("artist_name", 1),
         "track": ("track_name, artist_name", 2),
@@ -221,16 +316,17 @@ async def get_bar_race(
 
     def query():
         raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con) if yr is not None else 0
         try:
             if entity == "artist":
-                rows = _canonical_artist_rows(raw_con, "month")
+                rows = _canonical_artist_rows(raw_con, "month", yr, off)
                 # _compute_bar_race ignores the trailing streams column.
             else:
                 rows = raw_con.execute(
                     f"""
                     SELECT date_trunc('month', ts) AS month, {cols}, SUM(ms_played) AS ms
                     FROM history
-                    WHERE {name_col} IS NOT NULL AND ts IS NOT NULL
+                    WHERE {name_col} IS NOT NULL AND ts IS NOT NULL{_year_clause(yr, off)}
                     GROUP BY date_trunc('month', ts), {cols}
                     """
                 ).fetchall()
@@ -290,12 +386,13 @@ async def get_bar_race(
         }
 
     res = await run_in_threadpool(query)
-    return {"status": "ok", "entity": entity, "unit": "minutes", **res}
+    return {"status": "ok", "entity": entity, "year": yr, "unit": "minutes", **res}
 
 
 @router.get("/api/metrics/rhythm")
 async def get_rhythm(
     request: Request,
+    year: str = "all",
     conn: Connection = Depends(get_db),
 ):
     """Temporal listening patterns for the "When You Listen" chapter: plays by
@@ -303,10 +400,12 @@ async def get_rhythm(
     score. Timestamps are shifted from UTC into the user's local time (derived
     from their dominant conn_country) so hours read as wall-clock.
     """
+    yr = _parse_year(year)
 
     def query():
         raw_con = conn.connection.driver_connection
         off = _tz_offset_minutes(raw_con)
+        clause = _year_clause(yr, off)
 
         def fetch(sql, params=None):
             try:
@@ -317,7 +416,7 @@ async def get_rhythm(
         hourly = [0] * 24
         for h, c in fetch(
             "SELECT EXTRACT(hour FROM ts + to_minutes(?))::INTEGER AS h, COUNT(*) "
-            "FROM history WHERE ts IS NOT NULL GROUP BY h",
+            f"FROM history WHERE ts IS NOT NULL{clause} GROUP BY h",
             [off],
         ):
             if h is not None and 0 <= int(h) <= 23:
@@ -326,7 +425,7 @@ async def get_rhythm(
         weekday = [0] * 7  # Mon..Sun
         for d, c in fetch(
             "SELECT EXTRACT(isodow FROM ts + to_minutes(?))::INTEGER AS d, COUNT(*) "
-            "FROM history WHERE ts IS NOT NULL GROUP BY d",
+            f"FROM history WHERE ts IS NOT NULL{clause} GROUP BY d",
             [off],
         ):
             if d is not None and 1 <= int(d) <= 7:
@@ -335,7 +434,7 @@ async def get_rhythm(
         monthly = [0] * 12  # Jan..Dec
         for m, c in fetch(
             "SELECT EXTRACT(month FROM ts + to_minutes(?))::INTEGER AS m, COUNT(*) "
-            "FROM history WHERE ts IS NOT NULL GROUP BY m",
+            f"FROM history WHERE ts IS NOT NULL{clause} GROUP BY m",
             [off],
         ):
             if m is not None and 1 <= int(m) <= 12:
@@ -343,7 +442,7 @@ async def get_rhythm(
 
         day_rows = fetch(
             "SELECT DISTINCT CAST(ts + to_minutes(?) AS DATE) AS day FROM history "
-            "WHERE ts IS NOT NULL ORDER BY day",
+            f"WHERE ts IS NOT NULL{clause} ORDER BY day",
             [off],
         )
         days = [r[0] for r in day_rows]
@@ -361,6 +460,7 @@ async def get_rhythm(
 
     return {
         "status": "ok",
+        "year": yr,
         "hourly": hourly,
         "peak_hour": peak_hour,
         "weekday": weekday,
@@ -375,6 +475,7 @@ async def get_rhythm(
 @router.get("/api/metrics/audio")
 async def get_audio(
     request: Request,
+    year: str = "all",
     conn: Connection = Depends(get_db),
 ):
     """Audio-feature profile for the "Your Sound" chapter, from the enriched
@@ -382,6 +483,7 @@ async def get_audio(
     valence/energy for the mood map, and catalog coverage. Empty when the
     track_features slice is missing (unenriched session).
     """
+    yr = _parse_year(year)
 
     _JOIN = (
         "FROM history h JOIN track_features f "
@@ -403,11 +505,13 @@ async def get_audio(
 
     def query():
         raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con) if yr is not None else 0
+        join = _JOIN + _year_clause(yr, off, "h.")
         try:
             agg = raw_con.execute(
                 "SELECT AVG(" + _ADJ_E + "), AVG(f.valence), AVG(f.danceability), "
                 "AVG(f.acousticness), AVG(f.instrumentalness), AVG(f.tempo), "
-                "AVG(CASE WHEN f.mode = 1 THEN 1.0 ELSE 0.0 END), COUNT(*) " + _JOIN
+                "AVG(CASE WHEN f.mode = 1 THEN 1.0 ELSE 0.0 END), COUNT(*) " + join
             ).fetchone()
         except Exception:
             return None
@@ -419,7 +523,7 @@ async def get_audio(
             trows = raw_con.execute(
                 "SELECT any_value(h.track_name), any_value(f.valence), any_value("
                 + _ADJ_E + "), COUNT(*) AS plays "
-                + _JOIN + " AND h.track_name IS NOT NULL "
+                + join + " AND h.track_name IS NOT NULL "
                 "AND f.valence IS NOT NULL AND f.energy IS NOT NULL "
                 "GROUP BY f.track_id ORDER BY plays DESC LIMIT 24"
             ).fetchall()
@@ -429,6 +533,7 @@ async def get_audio(
         try:
             total = raw_con.execute(
                 "SELECT COUNT(*) FROM history WHERE track_uri LIKE 'spotify:track:%'"
+                + _year_clause(yr, off)
             ).fetchone()[0]
         except Exception:
             total = 0
@@ -460,6 +565,7 @@ async def get_audio(
     if not res:
         return {
             "status": "ok",
+            "year": yr,
             "avg": None,
             "tracks": [],
             "coverage": 0.0,
@@ -468,15 +574,16 @@ async def get_audio(
         }
     total = res["total"]
     res["coverage"] = round(res["matched"] / total, 4) if total else 0.0
-    return {"status": "ok", **res}
+    return {"status": "ok", "year": yr, **res}
 
 
 @router.get("/api/metrics/taste")
-async def get_taste(conn: Connection = Depends(get_db)):
+async def get_taste(year: str = "all", conn: Connection = Depends(get_db)):
     """Genre / era / popularity profile for the "Your Taste" chapter, from the
     enriched track_features slice. Empty genres when unenriched → the frontend
     keeps its sample fallback.
     """
+    yr = _parse_year(year)
 
     _JOIN = (
         "FROM history h JOIN track_features f "
@@ -486,12 +593,14 @@ async def get_taste(conn: Connection = Depends(get_db)):
 
     def query():
         raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con) if yr is not None else 0
+        join = _JOIN + _year_clause(yr, off, "h.")
 
         # Primary genre → plays, then fold into umbrella buckets in Python.
         try:
             grows = raw_con.execute(
                 "SELECT lower(split_part(f.artist_genres, ',', 1)) AS g, COUNT(*) AS plays "
-                + _JOIN + " AND f.artist_genres IS NOT NULL AND f.artist_genres <> '' "
+                + join + " AND f.artist_genres IS NOT NULL AND f.artist_genres <> '' "
                 "GROUP BY g"
             ).fetchall()
         except Exception:
@@ -513,7 +622,7 @@ async def get_taste(conn: Connection = Depends(get_db)):
 
         try:
             mainstream = raw_con.execute(
-                "SELECT AVG(f.popularity) " + _JOIN + " AND f.popularity IS NOT NULL"
+                "SELECT AVG(f.popularity) " + join + " AND f.popularity IS NOT NULL"
             ).fetchone()[0]
         except Exception:
             mainstream = None
@@ -523,13 +632,13 @@ async def get_taste(conn: Connection = Depends(get_db)):
         try:
             erows = raw_con.execute(
                 "SELECT CAST(floor(CAST(f.release_year AS INTEGER) / 10) * 10 AS INTEGER) AS decade, "
-                "COUNT(*) AS plays " + _JOIN
+                "COUNT(*) AS plays " + join
                 + " AND f.release_year IS NOT NULL AND CAST(f.release_year AS INTEGER) > 1900 "
                 "GROUP BY decade ORDER BY decade"
             ).fetchall()
             eras = [{"decade": int(d), "plays": int(p)} for d, p in erows]
             ay = raw_con.execute(
-                "SELECT AVG(CAST(f.release_year AS DOUBLE)) " + _JOIN
+                "SELECT AVG(CAST(f.release_year AS DOUBLE)) " + join
                 + " AND f.release_year IS NOT NULL AND CAST(f.release_year AS INTEGER) > 1900"
             ).fetchone()[0]
             avg_year = int(round(ay)) if ay else None
@@ -541,7 +650,7 @@ async def get_taste(conn: Connection = Depends(get_db)):
         try:
             gemrows = raw_con.execute(
                 "SELECT f.track_id, any_value(h.track_name), any_value(h.artist_name), COUNT(*) AS plays "
-                + _JOIN + " AND f.popularity IS NOT NULL AND f.popularity < 0.4 "
+                + join + " AND f.popularity IS NOT NULL AND f.popularity < 0.4 "
                 "AND h.track_name IS NOT NULL "
                 "GROUP BY f.track_id HAVING COUNT(*) >= 5 ORDER BY plays DESC LIMIT 4"
             ).fetchall()
@@ -562,6 +671,7 @@ async def get_taste(conn: Connection = Depends(get_db)):
     if not res:
         return {
             "status": "ok",
+            "year": yr,
             "genres": [],
             "mainstream": None,
             "distinct_genres": 0,
@@ -569,11 +679,11 @@ async def get_taste(conn: Connection = Depends(get_db)):
             "avg_year": None,
             "gems": [],
         }
-    return {"status": "ok", **res}
+    return {"status": "ok", "year": yr, **res}
 
 
 @router.get("/api/metrics/behavior")
-async def get_behavior(conn: Connection = Depends(get_db)):
+async def get_behavior(year: str = "all", conn: Connection = Depends(get_db)):
     """Listening-habit profile for the "How You Listen" chapter, from history only
     (100% coverage, no catalog dependency). shuffle=None when history is missing so
     the frontend keeps its sample fallback.
@@ -581,11 +691,14 @@ async def get_behavior(conn: Connection = Depends(get_db)):
     "Skip" is defined as pressing next (reason_end = 'fwdbtn') — a deliberate action,
     more reliable than the coarse `skipped` flag or a raw <30s cutoff.
     """
+    yr = _parse_year(year)
 
     _MUSIC = "FROM history WHERE track_uri LIKE 'spotify:track:%'"
 
     def query():
         raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con) if yr is not None else 0
+        clause = _year_clause(yr, off)
 
         try:
             row = raw_con.execute(
@@ -595,7 +708,7 @@ async def get_behavior(conn: Connection = Depends(get_db)):
                 "AVG(CASE WHEN COALESCE(reason_end, '') = 'trackdone' THEN 1.0 ELSE 0.0 END) AS finished, "
                 "AVG(CASE WHEN COALESCE(reason_end, '') <> 'trackdone' AND ms_played < 30000 THEN 1.0 ELSE 0.0 END) AS under30, "
                 "AVG(CASE WHEN COALESCE(reason_end, '') <> 'trackdone' AND ms_played >= 30000 THEN 1.0 ELSE 0.0 END) AS partial, "
-                "COUNT(*) AS n " + _MUSIC
+                "COUNT(*) AS n " + _MUSIC + clause
             ).fetchone()
         except Exception:
             return None
@@ -609,7 +722,8 @@ async def get_behavior(conn: Connection = Depends(get_db)):
         try:
             b = raw_con.execute(
                 "WITH o AS ("
-                "  SELECT ts, LAG(ts) OVER (ORDER BY ts) AS prev FROM history WHERE ts IS NOT NULL"
+                "  SELECT ts, LAG(ts) OVER (ORDER BY ts) AS prev FROM history "
+                f" WHERE ts IS NOT NULL{clause}"
                 "), m AS ("
                 "  SELECT ts, CASE WHEN prev IS NULL OR date_diff('minute', prev, ts) > 30 THEN 1 ELSE 0 END AS ns FROM o"
                 "), s AS ("
@@ -632,6 +746,7 @@ async def get_behavior(conn: Connection = Depends(get_db)):
                 "  SELECT ts, track_uri, track_name, artist_name, ms_played, "
                 "         LAG(track_uri) OVER (ORDER BY ts) AS prev_uri "
                 "  FROM history WHERE track_uri LIKE 'spotify:track:%' AND ts IS NOT NULL"
+                f"{clause}"
                 ") SELECT split_part(track_uri, ':', 3) AS id, any_value(track_name), "
                 "any_value(artist_name), COUNT(*) AS loops "
                 "FROM o WHERE track_uri = prev_uri AND ms_played >= 30000 "
@@ -660,33 +775,38 @@ async def get_behavior(conn: Connection = Depends(get_db)):
     if not res:
         return {
             "status": "ok",
+            "year": yr,
             "shuffle": None,
             "skip_rate": None,
             "longest_binge_min": 0,
             "attention": {"under30": 0, "partial": 0, "finished": 0},
             "loops": [],
         }
-    return {"status": "ok", **res}
+    return {"status": "ok", "year": yr, **res}
 
 
 @router.get("/api/metrics/discovery")
-async def get_discovery(conn: Connection = Depends(get_db)):
+async def get_discovery(year: str = "all", conn: Connection = Depends(get_db)):
     """Discovery and loyalty patterns from history, with no catalog dependency.
 
     Artists count as new for all plays in the month they first appear. A
     rediscovery is a track played again after a 60-day gap. Momentum compares
     the latest 90 days against the preceding 90-day period.
     """
+    yr = _parse_year(year)
 
     def query():
         raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con) if yr is not None else 0
+        clause = _year_clause(yr, off)
+        hclause = _year_clause(yr, off, "h.")
         try:
             summary = raw_con.execute(
-                """
+                f"""
                 WITH plays AS (
                     SELECT artist_name, ts, date_trunc('month', ts) AS month
                     FROM history
-                    WHERE artist_name IS NOT NULL AND ts IS NOT NULL
+                    WHERE artist_name IS NOT NULL AND ts IS NOT NULL{clause}
                 ), first_month AS (
                     SELECT artist_name, MIN(month) AS first_month
                     FROM plays GROUP BY artist_name
@@ -716,13 +836,13 @@ async def get_discovery(conn: Connection = Depends(get_db)):
         rediscoveries = []
         try:
             rows = raw_con.execute(
-                """
+                f"""
                 WITH ordered AS (
                     SELECT track_uri, track_name, artist_name, ts,
                            LAG(ts) OVER (PARTITION BY track_uri ORDER BY ts) AS previous_ts
                     FROM history
                     WHERE track_uri LIKE 'spotify:track:%'
-                      AND track_name IS NOT NULL AND artist_name IS NOT NULL AND ts IS NOT NULL
+                      AND track_name IS NOT NULL AND artist_name IS NOT NULL AND ts IS NOT NULL{clause}
                 ), returning_tracks AS (
                     SELECT DISTINCT track_uri
                     FROM ordered
@@ -731,6 +851,7 @@ async def get_discovery(conn: Connection = Depends(get_db)):
                 SELECT split_part(h.track_uri, ':', 3) AS id, ANY_VALUE(h.track_name),
                        ANY_VALUE(h.artist_name), COUNT(*) AS plays
                 FROM history h JOIN returning_tracks r USING (track_uri)
+                {_year_where(hclause)}
                 GROUP BY h.track_uri
                 ORDER BY plays DESC, 2
                 LIMIT 4
@@ -746,9 +867,9 @@ async def get_discovery(conn: Connection = Depends(get_db)):
         rising = []
         try:
             rows = raw_con.execute(
-                """
+                f"""
                 WITH bounds AS (
-                    SELECT MAX(ts) AS latest FROM history WHERE ts IS NOT NULL
+                    SELECT MAX(ts) AS latest FROM history WHERE ts IS NOT NULL{clause}
                 ), artist_plays AS (
                     SELECT artist_name,
                            COUNT(*) FILTER (WHERE ts > latest - INTERVAL 90 DAY) AS recent,
@@ -757,7 +878,7 @@ async def get_discovery(conn: Connection = Depends(get_db)):
                                  AND ts <= latest - INTERVAL 90 DAY
                            ) AS previous
                     FROM history CROSS JOIN bounds
-                    WHERE artist_name IS NOT NULL AND ts IS NOT NULL
+                    WHERE artist_name IS NOT NULL AND ts IS NOT NULL{clause}
                     GROUP BY artist_name
                 )
                 SELECT artist_name, ROUND((recent - previous) * 100.0 / previous)::INTEGER
@@ -798,27 +919,32 @@ async def get_discovery(conn: Connection = Depends(get_db)):
     if not res:
         return {
             "status": "ok",
+            "year": yr,
             "new_artist_share": 0.0,
             "new_artists_monthly": 0.0,
             "one_off_share": 0.0,
             "rediscoveries": [],
             "rising": [],
         }
-    return {"status": "ok", **res}
+    return {"status": "ok", "year": yr, **res}
 
 
 @router.get("/api/metrics/listening-life")
-async def get_listening_life(conn: Connection = Depends(get_db)):
+async def get_listening_life(year: str = "all", conn: Connection = Depends(get_db)):
     """Peak listening periods, session pace, and chronological play milestones.
 
     All values use music plays from history. Peak day, week, and month are
     based on listened time; sessions split after 30 minutes without a play.
     """
+    yr = _parse_year(year)
 
     def query():
         raw_con = conn.connection.driver_connection
         off = _tz_offset_minutes(raw_con)
-        music = "WHERE track_uri LIKE 'spotify:track:%' AND ts IS NOT NULL"
+        music = (
+            "WHERE track_uri LIKE 'spotify:track:%' AND ts IS NOT NULL"
+            + _year_clause(yr, off)
+        )
 
         try:
             day = raw_con.execute(
@@ -944,26 +1070,34 @@ async def get_listening_life(conn: Connection = Depends(get_db)):
     if not res:
         return {
             "status": "ok",
+            "year": yr,
             "peaks": [],
             "typical_session_minutes": 0,
             "session_mix": [],
             "milestones": [],
         }
-    return {"status": "ok", **res}
+    return {"status": "ok", "year": yr, **res}
 
 
 @router.get("/api/metrics/over-time")
-async def get_over_time(conn: Connection = Depends(get_db)):
+async def get_over_time(year: str = "all", conn: Connection = Depends(get_db)):
     """Year-by-year highlights plus release-year context for the "Your Music,
     Over Time" chapter. Per-year top artist / top track / song-of-summer come
     from history; music age, oldest/newest tracks and the nostalgia trend need
     the enriched track_features slice and stay empty when unenriched.
+
+    With a year selected the highlights narrow to that year and the nostalgia
+    trend switches from year-by-year to month-by-month inside it.
     """
+    yr = _parse_year(year)
 
     def query():
         raw_con = conn.connection.driver_connection
         off = _tz_offset_minutes(raw_con)  # int minutes; safe to inline
-        music = "WHERE track_uri LIKE 'spotify:track:%' AND ts IS NOT NULL"
+        music = (
+            "WHERE track_uri LIKE 'spotify:track:%' AND ts IS NOT NULL"
+            + _year_clause(yr, off)
+        )
 
         # --- Per-year top artist (history only) ---
         try:
@@ -1053,6 +1187,7 @@ async def get_over_time(conn: Connection = Depends(get_db)):
             "ON split_part(h.track_uri, ':', 3) = f.track_id "
             "WHERE h.track_uri LIKE 'spotify:track:%' AND h.ts IS NOT NULL "
             "AND f.release_year IS NOT NULL AND CAST(f.release_year AS INTEGER) > 1900"
+            + _year_clause(yr, off, "h.")
         )
 
         # --- Music age: fresh (<=1yr old when played) vs catalog + average year ---
@@ -1092,15 +1227,16 @@ async def get_over_time(conn: Connection = Depends(get_db)):
         except Exception:
             time_machine = {}
 
-        # --- Nostalgia: average release year of what you played, per year ---
+        # --- Nostalgia: average release year of what you played, per period ---
         nostalgia = []
         try:
+            part = "month" if yr is not None else "year"
             rows = raw_con.execute(
-                f"SELECT EXTRACT(year FROM h.ts + to_minutes({off}))::INTEGER AS period, "
+                f"SELECT EXTRACT({part} FROM h.ts + to_minutes({off}))::INTEGER AS period, "
                 f"AVG(CAST(f.release_year AS DOUBLE)) {join} GROUP BY period ORDER BY period"
             ).fetchall()
             nostalgia = [
-                {"period": str(int(r[0])), "avg_year": int(round(r[1]))}
+                {"period": _period_label(int(r[0]), yr), "avg_year": int(round(r[1]))}
                 for r in rows if r[1]
             ]
         except Exception:
@@ -1117,21 +1253,26 @@ async def get_over_time(conn: Connection = Depends(get_db)):
     if not res:
         return {
             "status": "ok",
+            "year": yr,
             "years": [],
             "music_age": {},
             "time_machine": {},
             "nostalgia": [],
         }
-    return {"status": "ok", **res}
+    return {"status": "ok", "year": yr, **res}
 
 
 @router.get("/api/metrics/evolution")
-async def get_evolution(conn: Connection = Depends(get_db)):
+async def get_evolution(year: str = "all", conn: Connection = Depends(get_db)):
     """Taste-shift trends for the "How Your Taste Changes" chapter, from the
     enriched track_features slice: genre mix per year, average positivity and
     popularity per year, and a morning-vs-late-night energy compare. Empty when
     unenriched → the frontend keeps its sample fallback.
+
+    With a year selected every trend switches from year-by-year to month-by-month
+    inside that year; the response shape is unchanged (periods stay strings).
     """
+    yr = _parse_year(year)
 
     _JOIN = (
         "FROM history h JOIN track_features f "
@@ -1154,14 +1295,16 @@ async def get_evolution(conn: Connection = Depends(get_db)):
     def query():
         raw_con = conn.connection.driver_connection
         off = _tz_offset_minutes(raw_con)  # int minutes; safe to inline
-        year_expr = f"EXTRACT(year FROM h.ts + to_minutes({off}))::INTEGER"
+        join = _JOIN + _year_clause(yr, off, "h.")
+        part = "month" if yr is not None else "year"
+        year_expr = f"EXTRACT({part} FROM h.ts + to_minutes({off}))::INTEGER"
 
-        # --- Genre mix per year (raw primary genre, folded to umbrellas here) ---
+        # --- Genre mix per period (raw primary genre, folded to umbrellas here) ---
         try:
             rows = raw_con.execute(
                 f"SELECT {year_expr} AS year, "
                 "lower(split_part(f.artist_genres, ',', 1)) AS g, COUNT(*) AS plays "
-                + _JOIN + " AND f.artist_genres IS NOT NULL AND f.artist_genres <> '' "
+                + join + " AND f.artist_genres IS NOT NULL AND f.artist_genres <> '' "
                 "GROUP BY year, g"
             ).fetchall()
         except Exception:
@@ -1207,24 +1350,27 @@ async def get_evolution(conn: Connection = Depends(get_db)):
         if has_other:
             genres.append({"name": "Other", "shares": other_shares})
 
-        genre_evolution = {"periods": [str(y) for y in periods], "genres": genres}
+        genre_evolution = {
+            "periods": [_period_label(y, yr) for y in periods],
+            "genres": genres,
+        }
 
-        # --- Mood (avg positivity) & mainstream (avg popularity) per year ---
+        # --- Mood (avg positivity) & mainstream (avg popularity) per period ---
         def yearly(expr, cond):
             try:
                 return raw_con.execute(
-                    f"SELECT {year_expr} AS year, AVG({expr}) {_JOIN} AND {cond} "
+                    f"SELECT {year_expr} AS year, AVG({expr}) {join} AND {cond} "
                     "GROUP BY year ORDER BY year"
                 ).fetchall()
             except Exception:
                 return []
 
         mood_trend = [
-            {"period": str(int(r[0])), "valence": round(float(r[1]), 3)}
+            {"period": _period_label(int(r[0]), yr), "valence": round(float(r[1]), 3)}
             for r in yearly("f.valence", "f.valence IS NOT NULL") if r[1] is not None
         ]
         mainstream_trend = [
-            {"period": str(int(r[0])), "popularity": round(float(r[1]), 3)}
+            {"period": _period_label(int(r[0]), yr), "popularity": round(float(r[1]), 3)}
             for r in yearly("f.popularity", "f.popularity IS NOT NULL") if r[1] is not None
         ]
 
@@ -1232,7 +1378,7 @@ async def get_evolution(conn: Connection = Depends(get_db)):
         def bucket_energy(hours_sql):
             try:
                 row = raw_con.execute(
-                    f"SELECT AVG({_ADJ_E}) {_JOIN} AND f.energy IS NOT NULL "
+                    f"SELECT AVG({_ADJ_E}) {join} AND f.energy IS NOT NULL "
                     f"AND EXTRACT(hour FROM h.ts + to_minutes({off})) IN ({hours_sql})"
                 ).fetchone()
             except Exception:
@@ -1258,21 +1404,23 @@ async def get_evolution(conn: Connection = Depends(get_db)):
     if not res:
         return {
             "status": "ok",
+            "year": yr,
             "genre_evolution": {"periods": [], "genres": []},
             "mood_trend": [],
             "day_night": {},
             "mainstream_trend": [],
         }
-    return {"status": "ok", **res}
+    return {"status": "ok", "year": yr, **res}
 
 
 @router.get("/api/metrics/sound-detail")
-async def get_sound_detail(conn: Connection = Depends(get_db)):
+async def get_sound_detail(year: str = "all", conn: Connection = Depends(get_db)):
     """Audio-detail spread and standouts for "The Detail In Your Sound": tempo
     distribution, major/minor (bright vs moody) split, most danceable tracks, and
     a high-vs-low energy (workout vs wind-down) split. From the enriched
     track_features slice; empty when unenriched → the frontend keeps its sample.
     """
+    yr = _parse_year(year)
 
     _JOIN = (
         "FROM history h JOIN track_features f "
@@ -1292,6 +1440,8 @@ async def get_sound_detail(conn: Connection = Depends(get_db)):
 
     def query():
         raw_con = conn.connection.driver_connection
+        off = _tz_offset_minutes(raw_con) if yr is not None else 0
+        join = _JOIN + _year_clause(yr, off, "h.")
 
         # Tempo buckets (BPM → plain speed labels).
         try:
@@ -1303,7 +1453,7 @@ async def get_sound_detail(conn: Connection = Depends(get_db)):
                 "COUNT(*) FILTER (WHERE f.tempo >= 130 AND f.tempo < 150), "
                 "COUNT(*) FILTER (WHERE f.tempo >= 150), "
                 "COUNT(*) FILTER (WHERE f.tempo IS NOT NULL) "
-                + _JOIN
+                + join
             ).fetchone()
         except Exception:
             return None
@@ -1317,7 +1467,7 @@ async def get_sound_detail(conn: Connection = Depends(get_db)):
         try:
             m = raw_con.execute(
                 "SELECT AVG(CASE WHEN f.mode = 1 THEN 1.0 ELSE 0.0 END) "
-                + _JOIN + " AND f.mode IS NOT NULL"
+                + join + " AND f.mode IS NOT NULL"
             ).fetchone()[0]
             major_share = round(float(m), 3) if m is not None else None
         except Exception:
@@ -1329,7 +1479,7 @@ async def get_sound_detail(conn: Connection = Depends(get_db)):
             drows = raw_con.execute(
                 "SELECT split_part(h.track_uri, ':', 3) AS id, any_value(h.track_name), "
                 "any_value(h.artist_name), any_value(f.danceability) AS dnc, COUNT(*) AS plays "
-                + _JOIN + " AND h.track_name IS NOT NULL AND f.danceability IS NOT NULL "
+                + join + " AND h.track_name IS NOT NULL AND f.danceability IS NOT NULL "
                 "GROUP BY id HAVING COUNT(*) >= 5 ORDER BY dnc DESC, plays DESC LIMIT 4"
             ).fetchall()
             danceable = [
@@ -1343,7 +1493,7 @@ async def get_sound_detail(conn: Connection = Depends(get_db)):
         energy_split = {}
         try:
             w = raw_con.execute(
-                f"SELECT AVG((({_ADJ_E}) >= 0.5)::INTEGER) " + _JOIN + " AND f.energy IS NOT NULL"
+                f"SELECT AVG((({_ADJ_E}) >= 0.5)::INTEGER) " + join + " AND f.energy IS NOT NULL"
             ).fetchone()[0]
             if w is not None:
                 workout = round(float(w), 3)
@@ -1362,25 +1512,30 @@ async def get_sound_detail(conn: Connection = Depends(get_db)):
     if not res:
         return {
             "status": "ok",
+            "year": yr,
             "tempo": {"buckets": []},
             "key": {},
             "danceable": [],
             "energy_split": {},
         }
-    return {"status": "ok", **res}
+    return {"status": "ok", "year": yr, **res}
 
 
 @router.get("/api/metrics/deep-cuts")
-async def get_deep_cuts(conn: Connection = Depends(get_db)):
+async def get_deep_cuts(year: str = "all", conn: Connection = Depends(get_db)):
     """Loyalty and commitment deep cuts (history only): the top 10 artists' share
     of plays, full-album vs single listening, the track binged most in one day,
     and the heavily-played favourite you almost never skip.
     """
+    yr = _parse_year(year)
 
     def query():
         raw_con = conn.connection.driver_connection
         off = _tz_offset_minutes(raw_con)  # int minutes; safe to inline
-        music = "WHERE track_uri LIKE 'spotify:track:%' AND artist_name IS NOT NULL"
+        clause = _year_clause(yr, off)
+        music = (
+            "WHERE track_uri LIKE 'spotify:track:%' AND artist_name IS NOT NULL" + clause
+        )
 
         # Concentration: top 10 artists' share of music plays.
         try:
@@ -1407,11 +1562,11 @@ async def get_deep_cuts(conn: Connection = Depends(get_db)):
         deep_share = None
         try:
             r = raw_con.execute(
-                """
+                f"""
                 WITH album_tracks AS (
                     SELECT album_name, artist_name, COUNT(DISTINCT track_uri) AS distinct_tracks
                     FROM history
-                    WHERE album_name IS NOT NULL AND track_uri LIKE 'spotify:track:%'
+                    WHERE album_name IS NOT NULL AND track_uri LIKE 'spotify:track:%'{clause}
                     GROUP BY album_name, artist_name
                 )
                 SELECT AVG((distinct_tracks >= 3)::INTEGER) FROM album_tracks
@@ -1431,7 +1586,7 @@ async def get_deep_cuts(conn: Connection = Depends(get_db)):
                        any_value(track_name), any_value(artist_name), COUNT(*) AS plays
                 FROM history
                 WHERE track_uri LIKE 'spotify:track:%' AND ts IS NOT NULL
-                  AND track_name IS NOT NULL AND ms_played >= 30000
+                  AND track_name IS NOT NULL AND ms_played >= 30000{clause}
                 GROUP BY day, track_uri
                 ORDER BY plays DESC, day
                 LIMIT 1
@@ -1459,7 +1614,7 @@ async def get_deep_cuts(conn: Connection = Depends(get_db)):
                            any_value(artist_name), COUNT(*) AS plays,
                            AVG(CASE WHEN reason_end = 'fwdbtn' THEN 1.0 ELSE 0.0 END) AS skip_rate
                     FROM history
-                    WHERE track_uri LIKE 'spotify:track:%' AND track_name IS NOT NULL
+                    WHERE track_uri LIKE 'spotify:track:%' AND track_name IS NOT NULL{clause}
                     GROUP BY track_uri HAVING COUNT(*) >= {min_plays}
                     ORDER BY skip_rate ASC, plays DESC LIMIT 1
                     """
@@ -1488,34 +1643,38 @@ async def get_deep_cuts(conn: Connection = Depends(get_db)):
     if not res:
         return {
             "status": "ok",
+            "year": yr,
             "concentration": {},
             "album_commitment": {},
             "top_day_track": {},
             "no_skip": {},
         }
-    return {"status": "ok", **res}
+    return {"status": "ok", "year": yr, **res}
 
 
 @router.get("/api/metrics/wrapped")
-async def get_wrapped(conn: Connection = Depends(get_db)):
+async def get_wrapped(year: str = "all", conn: Connection = Depends(get_db)):
     """Finale personality synthesis + song-length extremes. Personality traits
     come from history (loyalty, chronotype, skip, shuffle) plus one catalog trait
     (mainstream); longest/shortest song need the track_features duration.
     """
+    yr = _parse_year(year)
 
     def query():
         raw_con = conn.connection.driver_connection
         off = _tz_offset_minutes(raw_con)  # int minutes; safe to inline
-        music = "WHERE track_uri LIKE 'spotify:track:%' AND ts IS NOT NULL"
+        clause = _year_clause(yr, off)
+        hclause = _year_clause(yr, off, "h.")
+        music = "WHERE track_uri LIKE 'spotify:track:%' AND ts IS NOT NULL" + clause
 
         # Discovery share (share of plays that are an artist's first month) — the
         # SAME signal Chapter 6 uses, so the Explorer/Loyalist trait agrees with it.
         try:
             row = raw_con.execute(
-                """
+                f"""
                 WITH plays AS (
                     SELECT artist_name, date_trunc('month', ts) AS month
-                    FROM history WHERE artist_name IS NOT NULL AND ts IS NOT NULL
+                    FROM history WHERE artist_name IS NOT NULL AND ts IS NOT NULL{clause}
                 ), first_month AS (
                     SELECT artist_name, MIN(month) AS first_month FROM plays GROUP BY artist_name
                 )
@@ -1547,7 +1706,7 @@ async def get_wrapped(conn: Connection = Depends(get_db)):
             beh = raw_con.execute(
                 "SELECT AVG(CASE WHEN reason_end = 'fwdbtn' THEN 1.0 ELSE 0.0 END), "
                 "AVG(CASE WHEN shuffle THEN 1.0 ELSE 0.0 END) "
-                "FROM history WHERE track_uri LIKE 'spotify:track:%'"
+                "FROM history WHERE track_uri LIKE 'spotify:track:%'" + clause
             ).fetchone()
             skip_rate = float(beh[0]) if beh and beh[0] is not None else 0.0
             shuffle = float(beh[1]) if beh and beh[1] is not None else 0.0
@@ -1561,6 +1720,7 @@ async def get_wrapped(conn: Connection = Depends(get_db)):
                 "SELECT AVG(f.popularity) FROM history h JOIN track_features f "
                 "ON split_part(h.track_uri, ':', 3) = f.track_id "
                 "WHERE h.track_uri LIKE 'spotify:track:%' AND f.popularity IS NOT NULL"
+                + hclause
             ).fetchone()[0]
             avg_pop = float(p) if p is not None else None
         except Exception:
@@ -1615,7 +1775,7 @@ async def get_wrapped(conn: Connection = Depends(get_db)):
                     f"FROM history h JOIN track_features f "
                     f"ON split_part(h.track_uri, ':', 3) = f.track_id "
                     f"WHERE h.track_uri LIKE 'spotify:track:%' AND h.track_name IS NOT NULL "
-                    f"AND f.duration IS NOT NULL AND f.duration >= 30 "
+                    f"AND f.duration IS NOT NULL AND f.duration >= 30{hclause} "
                     f"GROUP BY id ORDER BY secs {order} LIMIT 1"
                 ).fetchone()
             except Exception:
@@ -1634,11 +1794,12 @@ async def get_wrapped(conn: Connection = Depends(get_db)):
     if not res:
         return {
             "status": "ok",
+            "year": yr,
             "personality": [],
             "longest_track": {},
             "shortest_track": {},
         }
-    return {"status": "ok", **res}
+    return {"status": "ok", "year": yr, **res}
 
 
 # ── Charts: numbered leaderboards ─────────────────────────────────────────────
@@ -1672,7 +1833,7 @@ def _chart_range_clause(rng: str, off: int) -> str:
         return " AND ts >= (SELECT max(ts) FROM history) - to_days(28)"
     if rng == "6m":
         return " AND ts >= (SELECT max(ts) FROM history) - to_months(6)"
-    return f" AND EXTRACT(year FROM ts + to_minutes({off})) = {int(rng)}"
+    return _year_clause(int(rng), off)
 
 
 def _chart_rank_history(raw_con, entity, order_col, clause, limit):
