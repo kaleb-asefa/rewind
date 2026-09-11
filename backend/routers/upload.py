@@ -3,7 +3,6 @@ and serve cached cover art."""
 
 import asyncio
 import os
-import shutil
 import tempfile
 
 import catalog
@@ -20,6 +19,7 @@ from fastapi import (
 )
 from sqlalchemy.engine import Connection, Engine
 from starlette.concurrency import run_in_threadpool
+from starlette.responses import JSONResponse
 
 router = APIRouter()
 
@@ -27,6 +27,50 @@ router = APIRouter()
 # at once so concurrent guest uploads can't exhaust memory and crash the box.
 _ENRICH_LIMIT = int(os.getenv("REWIND_MAX_CONCURRENT_ENRICH", "1"))
 ENRICH_SEMAPHORE = asyncio.Semaphore(_ENRICH_LIMIT)
+
+# Upload caps (anonymous tier, so anyone can post): defaults sit well above a real
+# export — Spotify splits history into ~10 MB files, and even a 15-year account
+# lands near 200 MB — while still bounding disk use per request.
+MAX_UPLOAD_FILES = int(os.getenv("REWIND_MAX_UPLOAD_FILES", "50"))
+MAX_UPLOAD_BYTES = int(float(os.getenv("REWIND_MAX_UPLOAD_MB", "512")) * 1024 * 1024)
+_COPY_CHUNK_BYTES = 1024 * 1024
+
+
+def _too_large_detail() -> str:
+    # Report bytes below 1 MB; integer MB would render a confusing "0 MB limit".
+    mb = MAX_UPLOAD_BYTES / (1024 * 1024)
+    size = f"{mb:.0f} MB" if mb >= 1 else f"{MAX_UPLOAD_BYTES} bytes"
+    return f"Upload exceeds the {size} limit."
+
+
+async def enforce_upload_size_limit(request: Request, call_next):
+    """Reject an oversized upload before Starlette spools its body to disk.
+
+    Registered as HTTP middleware in `main.py`. Content-Length is client-supplied
+    (and absent on chunked requests), so this only catches the cheap, honest case;
+    `_process_upload` enforces the cap again on the bytes actually received.
+    """
+    if request.url.path == "/api/upload":
+        declared = request.headers.get("content-length", "")
+        if declared.isdigit() and int(declared) > MAX_UPLOAD_BYTES:
+            return JSONResponse(status_code=413, content={"detail": _too_large_detail()})
+    return await call_next(request)
+
+
+def _copy_within_budget(src, dst, budget: int) -> int:
+    """Stream `src` into `dst` in chunks, aborting once the byte budget is spent.
+
+    Returns the budget left so it can be threaded across a multi-file upload,
+    bounding the request as a whole rather than each file individually.
+    """
+    while True:
+        chunk = src.read(_COPY_CHUNK_BYTES)
+        if not chunk:
+            return budget
+        budget -= len(chunk)
+        if budget < 0:
+            raise HTTPException(status_code=413, detail=_too_large_detail())
+        dst.write(chunk)
 
 MAPPING = [
     ("ts", "ts", "TIMESTAMP"),
@@ -53,12 +97,16 @@ MAPPING = [
 
 def _process_upload(conn: Connection, upload_list: list[UploadFile]):
     temp_paths = []
+    budget = MAX_UPLOAD_BYTES
     try:
         for f in upload_list:
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
-            shutil.copyfileobj(f.file, temp_file)
-            temp_file.close()
+            # Record the path before writing so an aborted copy is still cleaned up.
             temp_paths.append(temp_file.name)
+            try:
+                budget = _copy_within_budget(f.file, temp_file, budget)
+            finally:
+                temp_file.close()
 
         raw_con = conn.connection.driver_connection
 
@@ -196,6 +244,12 @@ async def upload(
 
     if not upload_list:
         raise HTTPException(status_code=400, detail="No files provided for upload.")
+
+    if len(upload_list) > MAX_UPLOAD_FILES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Too many files: {len(upload_list)} (limit {MAX_UPLOAD_FILES}).",
+        )
 
     for f in upload_list:
         if not f.filename.endswith(".json"):

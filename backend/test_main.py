@@ -1,6 +1,8 @@
 import functools
+import io
 import os
 import sys
+import tempfile
 
 import duckdb
 import pytest
@@ -12,9 +14,25 @@ import images
 import main
 from database import table_registry
 from main import app
+from routers import upload as upload_router
 
 # Every /api request now carries a session ticket; tests use a fixed valid UUID.
 TEST_TICKET = "00000000-0000-4000-8000-000000000000"
+
+_BOUNDARY = "testboundary"
+
+
+def _multipart_body(payload: bytes) -> tuple[bytes, dict]:
+    """Hand-roll a multipart upload body so it can be sent without Content-Length."""
+    body = (
+        f"--{_BOUNDARY}\r\n"
+        'Content-Disposition: form-data; name="file"; filename="h.json"\r\n'
+        "Content-Type: application/json\r\n\r\n"
+    ).encode() + payload + f"\r\n--{_BOUNDARY}--\r\n".encode()
+    return body, {
+        "Content-Type": f"multipart/form-data; boundary={_BOUNDARY}",
+        "X-Rewind-Session": TEST_TICKET,
+    }
 
 
 def _reset_state():
@@ -1726,3 +1744,57 @@ def test_bad_ticket_rejected():
 
 
 
+
+def test_upload_rejects_too_many_files(monkeypatch):
+    """File count is capped before anything is streamed to disk."""
+    monkeypatch.setattr(upload_router, "MAX_UPLOAD_FILES", 3)
+    with TestClient(app) as client:
+        files = [
+            ("files", (f"h{i}.json", io.BytesIO(b"[]"), "application/json"))
+            for i in range(4)
+        ]
+        res = client.post("/api/upload", files=files)
+        assert res.status_code == 413
+        assert "Too many files" in res.json()["detail"]
+
+
+def test_upload_rejects_oversized_body(monkeypatch):
+    """A body over the cap is refused up front via Content-Length."""
+    monkeypatch.setattr(upload_router, "MAX_UPLOAD_BYTES", 1024)
+    with TestClient(app) as client:
+        big = io.BytesIO(b"x" * 4096)
+        res = client.post(
+            "/api/upload", files={"file": ("h.json", big, "application/json")}
+        )
+        assert res.status_code == 413
+        assert "exceeds" in res.json()["detail"]
+
+
+def test_upload_enforces_byte_cap_without_content_length(monkeypatch):
+    """Content-Length is client-controlled, so the real byte count is capped too.
+
+    Streams the body chunked (no Content-Length) so the middleware gate cannot
+    fire, proving `_process_upload` independently enforces the limit.
+    """
+    monkeypatch.setattr(upload_router, "MAX_UPLOAD_BYTES", 1024)
+    body, headers = _multipart_body(b"x" * 4096)
+
+    def _chunks():
+        yield body
+
+    with TestClient(app) as client:
+        res = client.post("/api/upload", content=_chunks(), headers=headers)
+        assert "content-length" not in {
+            k.lower() for k in res.request.headers
+        }, "test must send a chunked body for this to prove anything"
+        assert res.status_code == 413
+
+
+def test_upload_cleans_up_temp_file_on_abort(monkeypatch, tmp_path):
+    """An aborted copy must not leave its partial temp file behind."""
+    monkeypatch.setattr(upload_router, "MAX_UPLOAD_BYTES", 1024)
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    with TestClient(app) as client:
+        big = io.BytesIO(b"x" * 4096)
+        client.post("/api/upload", files={"file": ("h.json", big, "application/json")})
+    assert list(tmp_path.glob("*.json")) == []

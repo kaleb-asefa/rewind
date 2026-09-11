@@ -19,6 +19,11 @@ from routers.upload import _enrich_session  # noqa: F401
 
 app = FastAPI(title="Rewind API", lifespan=database_lifespan)
 
+# Registered before CORSMiddleware so CORS ends up outermost (Starlette makes the
+# most recently added middleware outermost) and the 413 below still gets CORS
+# headers — otherwise the browser reports it as a generic network failure.
+app.middleware("http")(upload.enforce_upload_size_limit)
+
 # We authenticate with a custom header (X-Rewind-Session), not cookies, so
 # credentials stay off and "*" + credentials (invalid/unsafe) is avoided. The
 # allowlist is env-driven; default "null" keeps file:// dev working.

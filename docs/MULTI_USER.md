@@ -1,7 +1,9 @@
 # Rewind — Multi-User Guest MVP (Backend Build Spec)
 
-> **Status:** approved plan, **not yet implemented**. This is an actionable build
-> spec for the **backend agent** (owns `backend/**`). It turns Rewind from a
+> **Status:** ✅ **implemented** (backend + the §15 frontend seam are merged to
+> `main`). Kept as the reference for *why* the guest tier is built this way.
+> This was an actionable build spec for the **backend agent** (owns `backend/**`).
+> It turns Rewind from a
 > single-user local app into a **multi-user, guest-only** app that many people can
 > use at the same time — **no accounts, no login** (that's a later phase).
 >
@@ -215,8 +217,11 @@ allow_methods=["*"], allow_headers=["*"],   # must allow X-Rewind-Session
   Validate against `_TICKET_RE` **before** building any path; never `os.path.join`
   a raw header. Reject `..`, slashes, anything non-UUID → `400`.
 - **CORS (A05).** No more `*` + credentials; explicit origin allowlist (§10).
-- **Upload DoS (A05).** Cap request size and file count (e.g. reject > N MB or
-  > 10 files) — small addition in `upload.py`. Note but low priority for MVP.
+- **Upload DoS (A05).** ✅ Two gates, because `Content-Length` is client-supplied
+  (and absent on chunked requests): `enforce_upload_size_limit` middleware rejects an
+  oversized declared body **before** Starlette spools it to disk, and
+  `_copy_within_budget` re-checks the bytes actually received while streaming each
+  file to its temp path. File count is capped separately. Both → `413`.
 - **No secrets** in code or this doc; all tunables are env vars (§13).
 - **SQL:** no user input in SQL strings (unchanged rule from `CODE_QUALITY.md`);
   the ticket never touches SQL, only the filesystem path (validated).
@@ -269,6 +274,8 @@ so uploads skip enrichment. Update to the ticket model:
 | `REWIND_MAX_CONCURRENT_ENRICH` | `1` | Enrichment semaphore size |
 | `REWIND_SESSION_TTL_HOURS` | `48` | Guest session lifetime |
 | `REWIND_CLEANUP_INTERVAL_MIN` | `60` | Cleanup scan interval |
+| `REWIND_MAX_UPLOAD_FILES` | `50` | Max files per upload request |
+| `REWIND_MAX_UPLOAD_MB` | `512` | Max total upload size per request |
 
 (Existing `REWIND_CATALOG_PATH`, `REWIND_DUCKDB_*`, `REWIND_TZ_OFFSET_HOURS`, etc.
 are unchanged.)
