@@ -1,9 +1,9 @@
 /**
  * Rewind — Wrapped-style share deck.
- * A carousel of 8 cards exported as PNGs: seven 1080×1920 portrait story cards
- * (intro, top artists / songs / albums / genres, minutes, vibe) and one
- * 1920×1080 landscape year recap — the Overview page as a single image, eight
- * metrics around the activity heatmap, scoped to the most recent year.
+ * A carousel of 10 cards exported as PNGs: seven 1080×1920 portrait story
+ * cards (intro, top artists / songs / albums / genres, minutes, vibe) and three
+ * 1920×1080 landscape year recaps — the Overview page as a single image, eight
+ * metrics around the activity heatmap, one card per recent year.
  * One idea per card and every fact shown exactly once (docs/UI_GUIDELINES.md):
  * the #1 item is the hero of its own list card, so there is no separate hero
  * card, no kicker restating the title, and no recap repeating all of it.
@@ -27,15 +27,30 @@
     // Same ramp as .heatmap-cell[data-level] in src/styles/main.css.
     const HEAT = ["#1f1f1f", "rgba(30,215,96,0.22)", "rgba(30,215,96,0.45)", "rgba(30,215,96,0.68)", GREEN];
     const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const RECAP_YEARS = 3;  // most recent years that get their own recap card
 
     // Synthetic year of activity so the offline mockup still shows a heatmap.
     function sampleDays(year) {
         const out = [];
+        const seed = (year % 7) + 3;
         for (let i = 0; i < 365; i += 1) {
             if (i % 7 === 3 || i % 11 === 0) continue;
-            out.push({ date: new Date(Date.UTC(year, 0, 1 + i)).toISOString().slice(0, 10), level: (i * 7) % 5 });
+            out.push({ date: new Date(Date.UTC(year, 0, 1 + i)).toISOString().slice(0, 10), level: (i * seed) % 5 });
         }
         return out;
+    }
+
+    function sampleRecap(year, artist, track, album, genre) {
+        const days = sampleDays(year);
+        return {
+            year,
+            heat: { year, active_days: days.length, total_streams: 5632, total_minutes: 18840, days },
+            artist: { name: artist, streams: 852 },
+            track: { name: track, artist },
+            album: { name: album, artist },
+            genre: { name: genre, streams: 1946 },
+            skipped: { name: "Baby Shark", artist: "Pinkfong", skip_pct: 98 },
+        };
     }
 
     // Offline fallback so the deck still previews without a backend.
@@ -54,15 +69,11 @@
         genres: [{ name: "Hip-Hop" }, { name: "R&B" }, { name: "Pop" }, { name: "Afrobeats" }, { name: "Indie" }],
         totalMinutes: 41267,
         audio: { avg: { energy: 0.47, valence: 0.42 } },
-        recap: {
-            year: 2026,
-            heat: { year: 2026, active_days: 311, total_streams: 5632, total_minutes: 18840, days: sampleDays(2026) },
-            artist: { name: "SZA", streams: 852 },
-            track: { name: "Nobody Gets Me", artist: "SZA" },
-            album: { name: "SOS", artist: "SZA" },
-            genre: { name: "R&B", streams: 1946 },
-            skipped: { name: "Baby Shark", artist: "Pinkfong", skip_pct: 98 },
-        },
+        recaps: [
+            sampleRecap(2026, "SZA", "Nobody Gets Me", "SOS", "R&B"),
+            sampleRecap(2025, "J. Cole", "Session 32", "Ctrl", "Hip-Hop"),
+            sampleRecap(2024, "Drake", "Lost Me", "Take Care", "Pop"),
+        ],
     };
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -414,7 +425,7 @@
             ls(3);
             ctx.font = "700 22px " + FONT;
             ctx.fillStyle = GRAY;
-            ctx.fillText(t.label, x + 30, y + 52);
+            ctx.fillText(ellipsize(t.label, w - 60), x + 30, y + 52);
             ls(0);
 
             let tx = x + 30;
@@ -491,9 +502,8 @@
         }
 
         // The Overview page as one landscape image: its eight metrics wrapped
-        // around the activity heatmap, for the most recent year only.
-        function cardRecap(d) {
-            const r = d.recap;
+        // around the activity heatmap, for a single year.
+        function cardRecap(r) {
             const heat = r.heat || {};
             background();
             wordmark(LP + 46, LP);
@@ -525,7 +535,14 @@
                 { label: "MINUTES", value: num(heat.total_minutes), sub: fmtInt((heat.total_minutes || 0) / 60) + " hours", accent: true },
                 { label: "STREAMS", value: num(heat.total_streams), sub: "songs played" },
                 { label: "ACTIVE DAYS", value: num(heat.active_days), sub: "of " + daysInYear(r.year) },
-                { label: "MOST SKIPPED", value: skip ? skip.name : "\u2014", sub: skip ? skip.artist + " \u00b7 skipped " + skip.skip_pct + "%" : "", img: (skip && skip.img) || null },
+                // The rate rides in the label so the sub-line stays the artist,
+                // like the other tiles — together they never fit on one line.
+                {
+                    label: skip && skip.skip_pct != null ? "MOST SKIPPED \u00b7 " + skip.skip_pct + "%" : "MOST SKIPPED",
+                    value: skip ? skip.name : "\u2014",
+                    sub: (skip && skip.artist) || "",
+                    img: (skip && skip.img) || null,
+                },
             ].forEach((t, i) => tile(LP + i * (tw + gap), 768, tw, th, t));
         }
 
@@ -568,29 +585,26 @@
         }
 
         function loadCovers(d, onUpdate) {
-            // The recap card reuses the same objects the cache is keyed on, so
-            // its covers cost nothing extra when they duplicate the top lists.
-            const r = d.recap || {};
-            const some = (...xs) => xs.filter(Boolean);
+            // The recap cards reuse the same objects the cache is keyed on, so
+            // their covers cost nothing extra when they duplicate the top lists.
+            const recaps = d.recaps || [];
+            const from = (key) => recaps.map((r) => r[key]).filter(Boolean);
             return Promise.all([
-                attachCovers("artist", d.artists.concat(some(r.artist)), onUpdate),
-                attachCovers("track", d.tracks.concat(some(r.track, r.skipped)), onUpdate),
-                attachCovers("album", d.albums.concat(some(r.album)), onUpdate),
+                attachCovers("artist", d.artists.concat(from("artist")), onUpdate),
+                attachCovers("track", d.tracks.concat(from("track"), from("skipped")), onUpdate),
+                attachCovers("album", d.albums.concat(from("album")), onUpdate),
             ]);
         }
 
-        // The Overview metrics for the most recent year. The heatmap endpoint
-        // already defaults to that year and carries its own totals, so it picks
-        // the year the rest of the card is then scoped to.
-        async function loadRecap(f) {
-            let heat = null;
-            try {
-                const res = await f("/api/metrics/heatmap", {}, 8000);
-                if (res.ok && res.data && Array.isArray(res.data.days) && res.data.days.length) heat = res.data;
-            } catch (_e) { /* ignore */ }
+        // Everything one recap card needs, for one year.
+        async function loadRecapYear(f, year, heat) {
+            if (!heat) {
+                try {
+                    const res = await f("/api/metrics/heatmap?year=" + year, {}, 8000);
+                    if (res.ok && res.data && Array.isArray(res.data.days) && res.data.days.length) heat = res.data;
+                } catch (_e) { /* ignore */ }
+            }
             if (!heat) return null;
-
-            const year = heat.year;
             const top = async (entity) => {
                 try {
                     const res = await f("/api/metrics/chart?entity=" + entity + "&sort=minutes&limit=1&range=" + year);
@@ -609,6 +623,26 @@
             return { year, heat, artist, track, album, genre, skipped };
         }
 
+        // One recap per recent year. The heatmap endpoint defaults to the
+        // latest year and lists the others, so it decides which years get a
+        // card and what the chart/superlatives calls are then ranged to.
+        async function loadRecaps(f) {
+            let latest = null;
+            try {
+                const res = await f("/api/metrics/heatmap", {}, 8000);
+                if (res.ok && res.data && Array.isArray(res.data.days) && res.data.days.length) latest = res.data;
+            } catch (_e) { /* ignore */ }
+            if (!latest) return [];
+
+            const years = (latest.years && latest.years.length ? latest.years.slice() : [latest.year])
+                .sort((a, b) => b - a)
+                .slice(0, RECAP_YEARS);
+            const recaps = await Promise.all(
+                years.map((y) => loadRecapYear(f, y, y === latest.year ? latest : null)),
+            );
+            return recaps.filter(Boolean);
+        }
+
         async function loadData() {
             const f = window.fetchWithTimeout;
             if (!f) return window.REWIND_ALLOW_SAMPLE ? SAMPLE : null;
@@ -624,6 +658,9 @@
             if (!artists.length && !tracks.length) return window.REWIND_ALLOW_SAMPLE ? SAMPLE : null;  // backend offline/empty
 
             let totalMinutes = 0, audio = {};
+            // Kicked off first so the year recaps resolve alongside these two
+            // rather than after them.
+            const recapsPending = loadRecaps(f);
             try {
                 const tt = await f("/api/metrics/total-time");
                 if (tt.ok && tt.data) totalMinutes = tt.data.total_minutes || 0;
@@ -632,9 +669,8 @@
                 const au = await f("/api/metrics/audio");
                 if (au.ok && au.data) audio = au.data;
             } catch (_e) { /* ignore */ }
-            const recap = await loadRecap(f);
 
-            return { artists, tracks, albums, genres, totalMinutes, audio, recap };
+            return { artists, tracks, albums, genres, totalMinutes, audio, recaps: await recapsPending };
         }
 
         function cardNoData() {
@@ -664,8 +700,10 @@
                 { title: "Minutes", render: () => cardMinutes(d) },
                 { title: "Your vibe", render: () => cardVibe(d) },
             ];
-            // Landscape, and only when there is a year to recap.
-            if (d.recap) deck.push({ title: String(d.recap.year), w: LW, h: LH, render: () => cardRecap(d) });
+            // Landscape, newest year first, and only for years that have data.
+            (d.recaps || []).forEach((r) => {
+                deck.push({ title: String(r.year), w: LW, h: LH, render: () => cardRecap(r) });
+            });
         }
 
         /* ─────────────────────── carousel ─────────────────────── */
