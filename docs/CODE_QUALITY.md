@@ -76,7 +76,11 @@
   `http://127.0.0.1:8000` in feature files or re-inline a fallback fetcher (see §6 — this is
   the current biggest debt: the host is duplicated across 8 files).
 - **Escape data-derived strings before `innerHTML`** with `esc()` (XSS). Track/artist/genre
-  names come from user uploads — treat them as untrusted.
+  names come from user uploads — treat them as untrusted, including inside row/chart markup.
+- **User-driven refetches must be race-safe.** When a control (the Explore year filter) can
+  change what's on screen mid-flight, stamp each request and drop stale responses
+  (`E.token()` / `E.stale()`), and key any "busy" state by owner so one late run can't clear
+  another's. Don't leave the previous selection's numbers on screen as if they were the new ones.
 - **Guard by element existence** (`const el = ...; if (!el) return;`) so a shared script safely
   no-ops on pages that don't have that DOM.
 - **Colours come from tokens.** Use Tailwind's token utilities or `var(--token)` /

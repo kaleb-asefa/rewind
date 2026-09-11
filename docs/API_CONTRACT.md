@@ -58,8 +58,9 @@ neither needs to read the other's code.
   month labels (`"Jan"…"Dec"`) when a year is selected. A year with no plays is
   **not** an error — it returns the normal empty shape. `/api/metrics/years` lists
   the options. The Charts endpoints (`chart`, `superlatives`) are **not** part of
-  this — they keep their own `range=all|YYYY|4w|6m`. Full frontend handoff:
-  `docs/FRONTEND_YEAR_FILTER.md`.
+  this — they keep their own `range=all|YYYY|4w|6m`. Client side, the Explore page
+  sends it through `E.withYear(path)` and drops out-of-order responses via
+  `E.token()`/`E.stale()` — see `docs/FRONTEND_YEAR_FILTER.md`.
 - **Timezone:** rhythm/heatmap/active-day/year-boundaries bucket by local time via a
   per-user offset (`metrics._tz_offset_minutes`), inlined as a safe literal.
 
@@ -139,8 +140,12 @@ neither needs to read the other's code.
 
 > Client helpers (`src/js/api.js`) — all share one in-memory cache, chunk ids 8 at a time and
 > cap concurrency at 3. Use them; never call `/api/images` by hand.
+> `coverRef(item, defaultKind) → {kind, id}` answers *which id holds this item's art*
+> (`cover_id`/`cover_kind` when present, else `id` + the endpoint's kind) — **every** cover path
+> goes through it, or albums with `id: null` silently render the placeholder.
 > `loadCoversBatch(kind, nodes)` paints `<img>`/background nodes directly.
-> `primeCoverUrls(kind, items)` seeds the cache from inline `image_url` values (no request).
+> `primeCoverUrls(kind, items)` seeds the cache from inline `image_url` values (no request),
+> keyed by the cover's own kind.
 > `resolveCoverUrls(kind, ids) → Promise<{id: url}>` returns raw URLs for non-DOM consumers
 > (canvas share deck, prefetchers).
 

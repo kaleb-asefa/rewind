@@ -131,7 +131,7 @@ These are common suggestions that are deliberately not being built yet. Do not i
   - `CHARTS.md` — Charts feature spec + creative numbered-leaderboard idea catalog
   - `BACKEND.md` — backend architecture and data-handling decisions
   - `MULTI_USER.md` — per-guest session model (`X-Rewind-Session` ticket, TTL cleanup, upload caps)
-  - `FRONTEND_YEAR_FILTER.md` — handoff for the Explore year filter (backend done, frontend pending)
+  - `FRONTEND_YEAR_FILTER.md` — the Explore year filter, end to end (API + how the control is wired)
   - `SCHEMA.md` — data schema and column-by-column storage decisions
   - `analysis.md` / `ANALYSIS_IDEAS.md` — metric methodology + analysis backlog
   - `AGENTS.md` — this file
@@ -147,7 +147,7 @@ These are common suggestions that are deliberately not being built yet. Do not i
   - `js/heatmap.js` — GitHub-style listening activity heatmap component
   - `js/spotlight.js` — spotlight search and keyboard shortcuts handler
   - `js/velocity.js` + `js/bar_race.js` — Explore chapter 01 animations (rank velocity, bar race)
-  - `js/explore/` — Explore page chapter modules on a shared `window.RewindExplore` namespace: `core.js` (helpers, tooltip, reveal/scroll-spy, chapter registry, `chapterEmpty`) + one file per chapter (`rhythm`, `sound`, `taste`, `behavior`, `discovery`, `life`, `over_time`, `evolution`, `sound_detail`, `deep_cuts`, `wrapped`)
+  - `js/explore/` — Explore page chapter modules on a shared `window.RewindExplore` namespace: `core.js` (helpers, tooltip, reveal/scroll-spy, chapter registry, `chapterEmpty`, and the page-wide year filter: `E.year`, `withYear`, `token`/`stale`, `chapterBusy`) + one file per chapter (`rhythm`, `sound`, `taste`, `behavior`, `discovery`, `life`, `over_time`, `evolution`, `sound_detail`, `deep_cuts`, `wrapped`)
   - `js/charts.js` — Charts leaderboard (entity/sort/depth/range controls, find-your-rank search)
   - `js/charts_superlatives.js` — the superlative record cards on the Charts page
   - `js/charts_share.js` — canvas-drawn Wrapped-style share deck (per-card + per-year recap cards)

@@ -118,6 +118,5 @@ The frontend communicates with FastAPI endpoints via `src/js/api.js`:
 ## Open Items
 
 - **Most hated artist / track** — still hardcoded placeholders on `overview.html`; the ranking
-  method is prototyped in `notebooks/` (completion ratio + intent-aware rejection), not wired up.
-- **Explore year filter — frontend half.** The API is live; the control and wiring are not built
-  yet (see `docs/FRONTEND_YEAR_FILTER.md`).
+  method is prototyped in `notebooks/` (completion ratio, intent-aware rejection, and the
+  contextual-rejection model in `notebooks/contextual_rejection_model.ipynb`), not wired up.

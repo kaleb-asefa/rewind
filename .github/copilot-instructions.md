@@ -96,8 +96,11 @@ DuckDB is single-writer: only run one backend server at a time (`make serve` han
   the timezone offset) are inlined as literals on purpose — a `?` placeholder in an expression
   that must also appear in `GROUP BY` breaks DuckDB's expression matching.
 - Every Explore metric endpoint takes `year=all|YYYY` and echoes `year` back; Charts endpoints
-  use `range=all|YYYY|4w|6m` instead. `/api/metrics/years` feeds the (not yet built) filter
-  control — see `docs/FRONTEND_YEAR_FILTER.md`.
+  use `range=all|YYYY|4w|6m` instead. The Explore page drives all of it from one control:
+  `E.year` + `E.withYear(path)` for the URL, `E.token()`/`E.stale()` to drop out-of-order
+  responses, `E.chapterBusy()` for the in-flight dim — see `docs/FRONTEND_YEAR_FILTER.md`.
+- Resolve cover art through `window.coverRef(item, defaultKind)`; an album with `id: null`
+  still has art under `cover_kind`/`cover_id`. Keying off `id` alone renders a placeholder.
 - `POST /api/upload` is capped (files + total bytes, env-tunable) and answers `413` when either
   cap is exceeded; surface the server's `detail` string in the UI.
 - All blocking DuckDB/file/network work inside async routes runs via `run_in_threadpool`.

@@ -1,13 +1,13 @@
-# Explore page — year filter (frontend handoff)
+# Explore page — year filter
 
-**Status:** backend is **done and live** on `work/backend`. Frontend side is **not started**.
-**Owner of the remaining work:** frontend agent (`src/**`, `*.html`).
-**Written by:** backend agent, as the handoff for a seam change.
+**Status:** ✅ **done on both sides** — the backend ships `year=all|YYYY` on every Explore
+endpoint plus `/api/metrics/years`, and `explore.html` now drives all twelve chapters from one
+control in the sticky chapter rail. Kept as the reference for *how* the filter behaves.
+**Originally written by:** the backend agent, as the handoff for a seam change.
 
-Today every Explore chapter reports all-time numbers. The backend now accepts an optional
-`year` filter on **every** Explore metric endpoint, plus a new endpoint that lists the years a
-session actually has data for. This doc is everything the frontend needs to build the control
-and wire it up — no backend reading required.
+The backend accepts an optional `year` filter on **every** Explore metric endpoint, plus an
+endpoint that lists the years a session actually has data for. §1–§2 describe that API, §3
+describes the shipped frontend.
 
 ---
 
@@ -105,79 +105,56 @@ Two consequences worth designing for:
 
 ---
 
-## 3. Frontend work to do
+## 3. How the frontend is wired
 
 ### 3.1 The control
 
-- A single filter for the **whole Explore page** — one selection drives every chapter.
-  Not a per-chapter control.
-- Options: **All time** (default, first, selected on load) then each year from
-  `/api/metrics/years`, newest first.
-- Style per `docs/design.md`: pill geometry, Spotify Green only for the active state
-  (the chapter nav pills in `explore.html` are the precedent — `.chapter-pill`).
-  A horizontally scrollable pill row matches the existing chapter nav; a compact
-  `<select>`-style dropdown is acceptable if the year count grows.
-- Placement: in the sticky chapter-nav area of `explore.html`, so it stays reachable while
-  scrolling. It must not push the nav pills off-screen on mobile.
-- Accessibility: the active option needs `aria-pressed`/`aria-current`, and the control needs
-  a label ("Filter by year").
+- One filter for the **whole Explore page** — a pill + dropdown (`#year-filter`,
+  `#year-filter-btn`, `#year-filter-label`, `#year-filter-menu`) in the sticky chapter rail.
+  "All time" first, then each year from `/api/metrics/years` with its play count as a subtitle.
+- The control stays **hidden until `/api/metrics/years` returns a year to pick**, and it
+  initialises before the scroll-spy so a rail hiccup can't leave the page unfilterable.
+- Styling follows the chapter pills (`.year-pill--active`, `.year-option--active` in
+  `main.css`); the active option carries `aria-selected`.
 
 ### 3.2 State + wiring
 
-- Keep the selected year in one place (suggest `window.RewindExplore.year`, `null` = all time)
-  and persist it in `localStorage` (e.g. `rewind_explore_year`) so a reload keeps the view.
-  Validate on read — a stored year no longer in `/api/metrics/years` must fall back to all time.
-- `core.js` already has the re-fetch hook: `init()` registers every chapter's `fetch` against
-  the `rewind:data-updated` event. On a year change, update the shared state, then
-  `window.dispatchEvent(new Event('rewind:data-updated'))` — every chapter refetches. No
-  per-chapter event plumbing needed.
-- Add one helper in `core.js` and use it everywhere instead of hand-building the query string:
+`src/js/explore/core.js` owns all of it, on the `window.RewindExplore` (`E`) namespace:
 
-  ```js
-  // core.js — appends the active year to any metrics path
-  function withYear(path) {
-      const y = E.year;
-      if (!y) return path;                       // all time → unchanged URL
-      return path + (path.includes('?') ? '&' : '?') + 'year=' + encodeURIComponent(y);
-  }
-  ```
+| Piece | What it does |
+|---|---|
+| `E.year` | Single source of truth. `null` = all time, otherwise an int. Read from `localStorage["rewind_explore_year"]` **synchronously at load**, so a restored year is on the *first* request instead of flashing all-time data first. Junk or a year that's no longer in `/api/metrics/years` degrades to all time and refetches. |
+| `E.withYear(path)` | Appends `year=` to any metrics path. Every chapter builds URLs with it — never hand-rolled query strings. |
+| `E.token()` / `E.stale(t)` | Request stamping. A fetch takes a token before it starts and bails if `E.stale(tok)`, so clicking quickly through years can't land 2023's numbers under a 2026 label. |
+| `E.chapterBusy(sectionId, isBusy, owner)` | Dims a chapter (`.chapter-busy`) while its switch is in flight. **Owner-keyed**, because chapter 01 loads the velocity chart and the bar race independently; a run that's already stale never lifts the dim. |
+| `E.yearLabel()` | `"All time"` or `"2024"` — used in copy such as the race header. |
 
-  Then: `fetcher(withYear('/api/metrics/rhythm'))`,
-  `fetcher(withYear('/api/metrics/bar-race?entity=' + entity + '&limit=12'))`.
-
-- **Files to touch** (every current caller):
-  `src/js/explore/core.js` (state + helper + control wiring),
-  `rhythm.js`, `sound.js`, `taste.js`, `behavior.js`, `discovery.js`, `life.js`,
-  `over_time.js`, `evolution.js`, `sound_detail.js`, `deep_cuts.js`, `wrapped.js`,
-  plus the climb chapter, which lives outside `explore/`:
-  `src/js/velocity.js` (`/api/metrics/track-rank`, `/api/metrics/artist-rank`) and
-  `src/js/bar_race.js` (`/api/metrics/bar-race`). `explore.html` for the control markup.
-- Keep using `window.fetchWithTimeout` (and the existing defensive `fetcher` fallback) —
-  don't introduce a new client or hardcode the host.
-- Guard against out-of-order responses: a fast click through years can land an old response
-  after a newer one. Stamp each request with the year it was issued for and drop the result if
-  the active year has moved on.
+Changing the year bumps the token, persists the value, re-renders the control and dispatches
+`rewind:data-updated` — the existing post-upload refresh hook — so all chapters refetch with no
+per-chapter event plumbing. Callers outside `explore/` (`velocity.js`, `bar_race.js`) use the
+same helpers; the climb **replaces** its frame list rather than merging it, so a filtered year
+can't keep last year's months.
 
 ### 3.3 Loading, empty and error states
 
-- Show the existing skeletons while a switch is in flight rather than leaving stale numbers
-  from the previous year on screen.
-- Year with no data → `chapterEmpty(sectionId, true)` with year-aware copy
-  ("No listening in 2019"), not the upload prompt.
-- A `400` should be impossible from the UI (options come from the API) — if one happens,
-  fall back to All time rather than leaving the page blank.
-- Anything that prints "all time" in copy (chapter intros, the share card, tooltips) should
-  read the selected year instead when one is active.
+- Chapters dim while a switch is in flight instead of showing the previous year's figures as
+  if they were the new ones.
+- Year with no data → `chapterEmpty(sectionId, true)` renders year-aware copy
+  ("No listening in 2019" + a way back to all time), never sample data.
+- A `400` is unreachable from the UI (options come from the API); a stored/unknown year falls
+  back to all time rather than leaving the page blank.
 
 ### 3.4 Acceptance checklist
 
-- [ ] "All time" is the default on first visit and matches today's numbers exactly.
-- [ ] Selecting a year refetches **all 12 chapters** (no chapter left on stale data).
-- [ ] The climb race's frames stay inside the selected year.
-- [ ] Over Time / Taste Changes render month labels (`Jan…Dec`) without layout breakage.
-- [ ] A year with no data shows the honest empty card, never sample data.
-- [ ] The selection survives a reload, and an unknown stored year degrades to All time.
-- [ ] Rapid year switching never leaves a chapter showing another year's numbers.
+Verified against the live backend with a jsdom harness driving the real page:
+
+- [x] "All time" is the default on first visit and matches the pre-filter numbers exactly.
+- [x] Selecting a year refetches **all 12 chapters** / 14 endpoints with `year=`.
+- [x] The climb race's frames stay inside the selected year.
+- [x] Over Time / Taste Changes render month labels (`Jan…Dec`) without layout breakage.
+- [x] A year with no data shows the honest empty card, never sample data.
+- [x] The selection survives a reload, and an unknown stored year degrades to All time.
+- [x] Rapid switching settles on the last click with nothing left dimmed.
 
 ---
 
