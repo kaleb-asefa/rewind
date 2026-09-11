@@ -190,7 +190,7 @@
             line.setAttribute('y1', y);
             line.setAttribute('x2', SVG_W - PADDING_RIGHT + 20);
             line.setAttribute('y2', y);
-            line.setAttribute('stroke', r === 1 ? 'rgba(83, 224, 118, 0.25)' : 'rgba(255, 255, 255, 0.05)');
+            line.setAttribute('stroke', r === 1 ? 'rgba(var(--accent-rgb), 0.25)' : 'var(--grid-line)');
             line.setAttribute('stroke-width', r === 1 ? '1.5' : '1');
             if (r !== 1) line.setAttribute('stroke-dasharray', '4 4');
             yGroup.appendChild(line);
@@ -199,7 +199,7 @@
             text.setAttribute('x', PADDING_LEFT - 12);
             text.setAttribute('y', y + 4);
             text.setAttribute('text-anchor', 'end');
-            text.setAttribute('fill', r === 1 ? '#53e076' : '#bccbb9');
+            text.setAttribute('fill', r === 1 ? 'rgb(var(--accent-rgb))' : 'var(--axis-label)');
             text.setAttribute('font-size', '10');
             text.setAttribute('font-weight', r === 1 ? '800' : '600');
             text.setAttribute('font-family', 'Space Mono, monospace');
@@ -238,8 +238,8 @@
                 line.setAttribute('x2', x);
                 line.setAttribute('y2', SVG_H - PADDING_BOTTOM + 5);
                 const stroke = yearStart
-                    ? 'rgba(83, 224, 118, 0.25)'
-                    : (monthStart ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.03)');
+                    ? 'rgba(var(--accent-rgb), 0.25)'
+                    : (monthStart ? 'var(--grid-line-strong)' : 'var(--grid-line)');
                 line.setAttribute('stroke', stroke);
                 line.setAttribute('stroke-width', yearStart ? '1.5' : '1');
                 xGroup.appendChild(line);
@@ -249,7 +249,7 @@
                     text.setAttribute('x', x);
                     text.setAttribute('y', SVG_H - PADDING_BOTTOM + 20);
                     text.setAttribute('text-anchor', 'middle');
-                    text.setAttribute('fill', yearStart ? '#53e076' : '#bccbb9');
+                    text.setAttribute('fill', yearStart ? 'rgb(var(--accent-rgb))' : 'var(--axis-label)');
                     text.setAttribute('font-size', yearStart ? '11' : '10');
                     text.setAttribute('font-weight', yearStart ? '800' : '700');
                     text.setAttribute('font-family', 'Space Mono, monospace');
@@ -294,7 +294,7 @@
                 <div class="tip-avatar-ring" style="border: 2px solid ${item.color};">
                     ${isRankOne ? '<div class="pulse-ring"></div>' : ''}
                     <img src="${item.image}" alt="${item.title}" class="w-full h-full rounded-full object-cover"/>
-                    <div class="rank-badge-pill" style="border-color: ${item.color}; color: ${isRankOne ? '#53e076' : '#ffffff'};">
+                    <div class="rank-badge-pill" style="border-color: ${item.color}; color: ${isRankOne ? 'rgb(var(--accent-rgb))' : 'var(--chip-fg)'};">
                         #${Math.round(currentRank)}
                     </div>
                 </div>
@@ -346,7 +346,7 @@
     }
 
     // Single theme green for every trend line (tips are identified by their labels).
-    const LINE_COLOR = '#53e076';
+    const LINE_COLOR = 'rgb(var(--accent-rgb))';
 
     // Lazy-load cover art for the tip avatars in ONE batched request per category
     // (instead of one request per featured entity), so covers land together and
@@ -498,7 +498,7 @@
         playSpeed = spd;
         document.querySelectorAll('[id^="speed-"]').forEach(btn => btn.className = 'px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface transition-colors');
         const activeBtn = document.getElementById(`speed-${spd === 0.25 ? '025' : spd === 0.5 ? '05' : '10'}`);
-        if (activeBtn) activeBtn.className = 'px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold';
+        if (activeBtn) activeBtn.className = 'px-2 py-0.5 rounded-full bg-primary text-on-primary font-bold';
     };
 
     window.toggleFullscreen = function () {

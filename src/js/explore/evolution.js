@@ -12,12 +12,12 @@
     };
 
     const GENRE_SHADES = [
-        '#1ed760',
-        'rgba(30,215,96,0.78)',
-        'rgba(30,215,96,0.6)',
-        'rgba(30,215,96,0.44)',
-        'rgba(30,215,96,0.3)',
-        'rgba(30,215,96,0.18)',
+        'var(--genre-1)',
+        'var(--genre-2)',
+        'var(--genre-3)',
+        'var(--genre-4)',
+        'var(--genre-5)',
+        'var(--genre-6)',
     ];
 
     const SAMPLE_EVOLUTION = {
@@ -77,7 +77,7 @@
                     '" fill="' + GENRE_SHADES[i % GENRE_SHADES.length] + '" />';
             });
             labels += '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (H - 8) +
-                '" fill="rgba(255,255,255,0.5)" font-size="10" text-anchor="middle">' + esc(period) + '</text>';
+                '" fill="var(--axis-label)" font-size="10" text-anchor="middle">' + esc(period) + '</text>';
         });
         svg.innerHTML = rects + labels;
         if (legend) {
@@ -110,9 +110,9 @@
             hits += '<rect class="evo-hit" data-i="' + i + '" x="' + x.toFixed(1) + '" y="0" width="' + step.toFixed(1) + '" height="' + H + '" fill="transparent" />';
         }
         const html =
-            '<path d="' + area + '" fill="rgba(30,215,96,0.14)"/>' +
-            '<path d="' + line + '" fill="none" stroke="rgb(30,215,96)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
-            '<circle class="evo-dot" r="4" fill="#fff" stroke="rgb(30,215,96)" stroke-width="2.5" style="opacity:0"/>' +
+            '<path d="' + area + '" fill="rgba(var(--accent-rgb), 0.14)"/>' +
+            '<path d="' + line + '" fill="none" stroke="rgb(var(--accent-rgb))" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '<circle class="evo-dot" r="4" fill="var(--emphasis)" stroke="rgb(var(--accent-rgb))" stroke-width="2.5" style="opacity:0"/>' +
             hits;
         return { pts, html };
     }

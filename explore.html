@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -11,95 +11,7 @@
     
     <!-- Tailwind CSS with Overview Design System Tokens -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
-        try {
-            tailwind.config = {
-                darkMode: "class",
-                theme: {
-                    extend: {
-                        colors: {
-                            "surface-variant": "#353534",
-                            "error-container": "#93000a",
-                            "tertiary-container": "#ff767b",
-                            "surface-container-lowest": "#0e0e0e",
-                            "surface-container-low": "#1c1b1b",
-                            "secondary-container": "#474746",
-                            "on-tertiary-container": "#730a1b",
-                            "on-primary": "#003914",
-                            "on-error": "#690005",
-                            "inverse-surface": "#e5e2e1",
-                            "on-secondary-container": "#b7b4b4",
-                            "on-tertiary": "#680114",
-                            "error": "#ffb4ab",
-                            "primary": "#53e076",
-                            "secondary-fixed": "#e5e2e1",
-                            "inverse-primary": "#006e2d",
-                            "on-tertiary-fixed-variant": "#881d28",
-                            "outline": "#869585",
-                            "on-secondary-fixed-variant": "#474746",
-                            "tertiary-fixed-dim": "#ffb3b3",
-                            "primary-fixed": "#72fe8f",
-                            "on-surface": "#e5e2e1",
-                            "on-primary-fixed-variant": "#005320",
-                            "on-surface-variant": "#bccbb9",
-                            "inverse-on-surface": "#313030",
-                            "surface-container-high": "#2a2a2a",
-                            "surface": "#131313",
-                            "on-primary-container": "#004118",
-                            "surface-tint": "#53e076",
-                            "tertiary": "#ffb3b3",
-                            "primary-fixed-dim": "#53e076",
-                            "surface-bright": "#393939",
-                            "surface-container": "#201f1f",
-                            "on-secondary-fixed": "#1c1b1b",
-                            "on-background": "#e5e2e1",
-                            "secondary": "#c8c6c5",
-                            "on-secondary": "#313030",
-                            "surface-dim": "#131313",
-                            "secondary-fixed-dim": "#c8c6c5",
-                            "on-primary-fixed": "#002108",
-                            "on-error-container": "#ffdad6",
-                            "surface-container-highest": "#353534",
-                            "primary-container": "#1db954",
-                            "background": "#121212",
-                            "outline-variant": "#3d4a3d"
-                        },
-                        borderRadius: {
-                            "DEFAULT": "1rem",
-                            "lg": "2rem",
-                            "xl": "3rem",
-                            "full": "9999px"
-                        },
-                        spacing: {
-                            "container-padding-desktop": "32px",
-                            "section-gap": "48px",
-                            "gutter": "24px",
-                            "container-padding-mobile": "16px",
-                            "base": "8px"
-                        },
-                        fontFamily: {
-                            "sans": ["Plus Jakarta Sans", "sans-serif"],
-                            "body-lg": ["Plus Jakarta Sans", "sans-serif"],
-                            "display-lg-mobile": ["Plus Jakarta Sans", "sans-serif"],
-                            "label-bold": ["Plus Jakarta Sans", "sans-serif"],
-                            "body-sm": ["Plus Jakarta Sans", "sans-serif"],
-                            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
-                            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
-                            "mono": ["Space Mono", "monospace"]
-                        },
-                        fontSize: {
-                            "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "500"}],
-                            "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
-                            "label-bold": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
-                            "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
-                            "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
-                            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
-                        }
-                    }
-                }
-            };
-        } catch(_e) {}
-    </script>
+    <script>try{var t=localStorage.getItem("rewind-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.classList.toggle("dark",t==="dark");document.documentElement.classList.toggle("light",t!=="dark");}catch(_e){}</script><script src="src/js/tailwind_config.js"></script>
     
     <!-- Modular Custom CSS & Scripts -->
     <link href="src/styles/main.css" rel="stylesheet"/>
@@ -159,7 +71,7 @@
 
         <!-- Sticky Chapter Rail (scroll-spy, auto-scrolls to the active section) -->
         <nav id="chapter-rail" class="sticky top-[64px] z-30 flex justify-center py-1">
-            <div id="chapter-rail-track" class="chapter-rail-track relative flex items-center gap-1 p-1 bg-surface-container-high/80 backdrop-blur-md rounded-full border border-white/5 overflow-x-auto max-w-full">
+            <div id="chapter-rail-track" class="chapter-rail-track relative flex items-center gap-1 p-1 bg-surface-container-high/80 backdrop-blur-md rounded-full border border-hairline overflow-x-auto max-w-full">
                 <a data-chapter href="#climb" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">01</span> The Climb
                 </a>
@@ -214,7 +126,7 @@
             </div>
 
             <!-- Category Switcher Pills -->
-            <div class="flex items-center p-1 bg-surface-container-high rounded-full border border-white/5 self-start sm:self-auto">
+            <div class="flex items-center p-1 bg-surface-container-high rounded-full border border-hairline self-start sm:self-auto">
                 <button id="tab-tracks" onclick="switchCategory('tracks')" class="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold transition-all bg-primary text-on-primary shadow-sm">
                     <span class="material-symbols-outlined text-sm">music_note</span>
                     Top 8 Tracks
@@ -230,11 +142,11 @@
         <div id="chart-card" class="glass-card rounded-2xl p-4 md:p-6 relative overflow-hidden transition-all duration-300 shadow-xl">
             
             <!-- Minimized Slim Controls Bar -->
-            <div class="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-white/5 text-body-sm font-body-sm">
+            <div class="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-hairline text-body-sm font-body-sm">
                 
                 <!-- Playback & Current Date Display -->
                 <div class="flex items-center gap-3 flex-shrink-0">
-                    <button id="play-btn" onclick="togglePlay()" class="w-8 h-8 rounded-full bg-primary hover:bg-primary-container text-on-primary flex items-center justify-center transition-all shadow hover:scale-105" title="Play/Pause">
+                    <button id="play-btn" onclick="togglePlay()" class="w-8 h-8 rounded-full bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container flex items-center justify-center transition-all shadow hover:scale-105" title="Play/Pause">
                         <span id="play-icon" class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
                     </button>
                     
@@ -242,7 +154,7 @@
                         <span class="material-symbols-outlined text-sm">restart_alt</span>
                     </button>
 
-                    <div id="current-month-display" class="text-body-sm font-label-bold tracking-tight text-on-surface font-mono uppercase bg-surface-container-high px-3 py-1 rounded-full border border-white/5">
+                    <div id="current-month-display" class="text-body-sm font-label-bold tracking-tight text-on-surface font-mono uppercase bg-surface-container-high px-3 py-1 rounded-full border border-hairline">
                         JANUARY 2022
                     </div>
                 </div>
@@ -257,9 +169,9 @@
 
                 <!-- Action Controls: Speed Pills + Fullscreen -->
                 <div class="flex items-center gap-2 flex-shrink-0">
-                    <div class="flex items-center gap-0.5 bg-surface-container-high p-0.5 rounded-full border border-white/5 text-label-bold font-mono">
+                    <div class="flex items-center gap-0.5 bg-surface-container-high p-0.5 rounded-full border border-hairline text-label-bold font-mono">
                         <button onclick="setSpeed(0.25)" id="speed-025" class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface transition-colors">0.25x</button>
-                        <button onclick="setSpeed(0.5)" id="speed-05" class="px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold">0.5x</button>
+                        <button onclick="setSpeed(0.5)" id="speed-05" class="px-2 py-0.5 rounded-full bg-primary text-on-primary font-bold">0.5x</button>
                         <button onclick="setSpeed(1)" id="speed-10" class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface transition-colors">1.0x</button>
                     </div>
 
@@ -311,7 +223,7 @@
             </div>
 
             <!-- Entity Switcher Pills -->
-            <div class="flex items-center p-1 bg-surface-container-high rounded-full border border-white/5 self-start sm:self-auto">
+            <div class="flex items-center p-1 bg-surface-container-high rounded-full border border-hairline self-start sm:self-auto">
                 <button id="race-tab-artists" onclick="switchRaceEntity('artist')" class="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold transition-all bg-primary text-on-primary shadow-sm">
                     <span class="material-symbols-outlined text-sm">artist</span>
                     Artists
@@ -331,15 +243,15 @@
         <div id="race-card" class="glass-card rounded-2xl p-4 md:p-6 relative overflow-hidden shadow-xl">
 
             <!-- Slim Controls Bar -->
-            <div class="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-white/5 text-body-sm font-body-sm">
+            <div class="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-hairline text-body-sm font-body-sm">
                 <div class="flex items-center gap-3 flex-shrink-0">
-                    <button id="race-play-btn" onclick="toggleRacePlay()" class="w-8 h-8 rounded-full bg-primary hover:bg-primary-container text-on-primary flex items-center justify-center transition-all shadow hover:scale-105" title="Play/Pause">
+                    <button id="race-play-btn" onclick="toggleRacePlay()" class="w-8 h-8 rounded-full bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container flex items-center justify-center transition-all shadow hover:scale-105" title="Play/Pause">
                         <span id="race-play-icon" class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
                     </button>
                     <button onclick="resetRace()" class="w-7 h-7 rounded-full text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-all" title="Replay">
                         <span class="material-symbols-outlined text-sm">restart_alt</span>
                     </button>
-                    <div id="race-month-display" class="text-body-sm font-label-bold tracking-tight text-on-surface font-mono uppercase bg-surface-container-high px-3 py-1 rounded-full border border-white/5">
+                    <div id="race-month-display" class="text-body-sm font-label-bold tracking-tight text-on-surface font-mono uppercase bg-surface-container-high px-3 py-1 rounded-full border border-hairline">
                         ----
                     </div>
                 </div>
@@ -351,9 +263,9 @@
                 </div>
 
                 <div class="flex items-center gap-2 flex-shrink-0">
-                    <div class="flex items-center gap-0.5 bg-surface-container-high p-0.5 rounded-full border border-white/5 text-label-bold font-mono">
+                    <div class="flex items-center gap-0.5 bg-surface-container-high p-0.5 rounded-full border border-hairline text-label-bold font-mono">
                         <button onclick="setRaceSpeed(0.25)" id="race-speed-025" class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface transition-colors">0.25x</button>
-                        <button onclick="setRaceSpeed(0.5)" id="race-speed-05" class="px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold">0.5x</button>
+                        <button onclick="setRaceSpeed(0.5)" id="race-speed-05" class="px-2 py-0.5 rounded-full bg-primary text-on-primary font-bold">0.5x</button>
                         <button onclick="setRaceSpeed(1)" id="race-speed-10" class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface transition-colors">1.0x</button>
                     </div>
 
@@ -422,7 +334,7 @@
                         </div>
                         <div id="chrono-label" class="font-headline-md text-headline-md text-on-surface mb-3">—</div>
                         <div class="relative h-2 rounded-full bg-gradient-to-r from-amber-400/60 via-surface-container-high to-primary">
-                            <div id="chrono-marker" class="absolute -top-1.5 w-5 h-5 rounded-full bg-white border-[3px] border-primary shadow -translate-x-1/2 transition-all duration-500" style="left: 50%"></div>
+                            <div id="chrono-marker" class="absolute -top-1.5 w-5 h-5 rounded-full bg-on-surface border-[3px] border-primary shadow -translate-x-1/2 transition-all duration-500" style="left: 50%"></div>
                         </div>
                         <div class="flex justify-between mt-3 font-mono text-[10px] text-on-surface-variant opacity-60">
                             <span>Early bird</span><span>Night owl</span>
@@ -1026,7 +938,7 @@
     </main>
 
     <!-- Footer (Identical Layout & Styling to overview.html) -->
-    <footer class="w-full py-section-gap bg-surface-container-lowest dark:bg-surface-container-lowest border-t border-white/5 mt-auto">
+    <footer class="w-full py-section-gap bg-surface-container-lowest dark:bg-surface-container-lowest border-t border-hairline mt-auto">
         <div class="flex flex-col md:flex-row justify-between items-center px-container-padding-desktop gap-8 md:gap-0 max-w-[1440px] mx-auto">
             <div class="flex flex-col gap-2">
                 <div class="text-label-bold font-label-bold text-on-surface-variant uppercase tracking-widest flex items-center gap-2">

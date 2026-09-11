@@ -66,20 +66,20 @@
         const py = (e) => pad + (1 - e) * plot;
         const maxPlays = Math.max.apply(null, tracks.map((t) => t.plays).concat(1));
         let g = '';
-        g += '<rect x="' + pad + '" y="' + pad + '" width="' + plot + '" height="' + plot + '" rx="14" fill="none" stroke="rgba(255,255,255,0.08)"/>';
-        g += '<line x1="' + pad + '" y1="' + py(EN_MID).toFixed(1) + '" x2="' + (S - pad) + '" y2="' + py(EN_MID).toFixed(1) + '" stroke="rgba(255,255,255,0.1)"/>';
-        g += '<line x1="' + px(VAL_MID).toFixed(1) + '" y1="' + pad + '" x2="' + px(VAL_MID).toFixed(1) + '" y2="' + (S - pad) + '" stroke="rgba(255,255,255,0.1)"/>';
-        const zl = (x, y, anchor, txt) => '<text x="' + x + '" y="' + y + '" fill="rgba(255,255,255,0.4)" font-size="10" font-weight="700" text-anchor="' + anchor + '" letter-spacing="0.05em">' + txt + '</text>';
+        g += '<rect x="' + pad + '" y="' + pad + '" width="' + plot + '" height="' + plot + '" rx="14" fill="none" stroke="var(--grid-line)"/>';
+        g += '<line x1="' + pad + '" y1="' + py(EN_MID).toFixed(1) + '" x2="' + (S - pad) + '" y2="' + py(EN_MID).toFixed(1) + '" stroke="var(--grid-line-strong)"/>';
+        g += '<line x1="' + px(VAL_MID).toFixed(1) + '" y1="' + pad + '" x2="' + px(VAL_MID).toFixed(1) + '" y2="' + (S - pad) + '" stroke="var(--grid-line-strong)"/>';
+        const zl = (x, y, anchor, txt) => '<text x="' + x + '" y="' + y + '" fill="var(--axis-label)" font-size="10" font-weight="700" text-anchor="' + anchor + '" letter-spacing="0.05em">' + txt + '</text>';
         g += zl(pad + 8, pad + 16, 'start', 'INTENSE');
         g += zl(S - pad - 8, pad + 16, 'end', 'PUMPED');
         g += zl(pad + 8, S - pad - 9, 'start', 'IN MY FEELS');
         g += zl(S - pad - 8, S - pad - 9, 'end', 'CHILL');
-        g += '<text x="' + mid + '" y="' + (S - 12) + '" fill="rgba(255,255,255,0.45)" font-size="9" font-weight="600" text-anchor="middle">SAD  →  HAPPY</text>';
-        g += '<text x="14" y="' + mid + '" fill="rgba(255,255,255,0.45)" font-size="9" font-weight="600" text-anchor="middle" transform="rotate(-90 14 ' + mid + ')">CALM  →  ENERGETIC</text>';
+        g += '<text x="' + mid + '" y="' + (S - 12) + '" fill="var(--axis-label)" font-size="9" font-weight="600" text-anchor="middle">SAD  →  HAPPY</text>';
+        g += '<text x="14" y="' + mid + '" fill="var(--axis-label)" font-size="9" font-weight="600" text-anchor="middle" transform="rotate(-90 14 ' + mid + ')">CALM  →  ENERGETIC</text>';
         let dots = '';
         tracks.forEach((t, i) => {
             const r = 4 + (t.plays / maxPlays) * 7;
-            dots += '<circle class="mood-dot" data-t="' + i + '" cx="' + px(t.valence).toFixed(1) + '" cy="' + py(t.energy).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="rgb(30,215,96)" fill-opacity="0.75"/>';
+            dots += '<circle class="mood-dot" data-t="' + i + '" cx="' + px(t.valence).toFixed(1) + '" cy="' + py(t.energy).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="rgb(var(--accent-rgb))" fill-opacity="0.75"/>';
         });
         let sv = 0, se = 0, sp = 0;
         tracks.forEach((t) => { sv += t.valence * t.plays; se += t.energy * t.plays; sp += t.plays; });
@@ -87,13 +87,13 @@
         const ringV = center && typeof center.v === 'number' ? center.v : sv / sp;
         const ringE = center && typeof center.e === 'number' ? center.e : se / sp;
         const cx = px(ringV), cy = py(ringE);
-        const you = '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="10" fill="none" stroke="#fff" stroke-width="2.5"/>' +
-            '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="3.5" fill="#fff"/>';
+        const you = '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="10" fill="none" stroke="var(--emphasis)" stroke-width="2.5"/>' +
+            '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="3.5" fill="var(--emphasis)"/>';
         svg.innerHTML = g + dots + you;
         setText('mood-sweetspot', sweet);
     }
 
-    const MIX_SHADES = ['rgb(30,215,96)', 'rgba(30,215,96,0.72)', 'rgba(30,215,96,0.48)', 'rgba(30,215,96,0.3)'];
+    const MIX_SHADES = ['rgb(var(--accent-rgb))', 'rgba(var(--accent-rgb), 0.72)', 'rgba(var(--accent-rgb), 0.48)', 'rgba(var(--accent-rgb), 0.3)'];
     function renderMoodMix(mix) {
         const bar = document.getElementById('mood-mix');
         if (!bar) return;
@@ -146,12 +146,12 @@
         const val = 'M ' + (cx - R) + ' ' + cy + ' A ' + R + ' ' + R + ' 0 0 1 ' + end[0].toFixed(1) + ' ' + end[1].toFixed(1);
         const np = at(p, R - 16);
         svg.innerHTML =
-            '<path d="' + bg + '" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="12" stroke-linecap="round"/>' +
-            '<path d="' + val + '" fill="none" stroke="rgb(30,215,96)" stroke-width="12" stroke-linecap="round"/>' +
-            '<line x1="' + cx + '" y1="' + cy + '" x2="' + np[0].toFixed(1) + '" y2="' + np[1].toFixed(1) + '" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
-            '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="#fff"/>' +
-            '<text x="' + (cx - R) + '" y="' + (cy + 18) + '" fill="rgba(255,255,255,0.5)" font-size="9" text-anchor="middle">Slow</text>' +
-            '<text x="' + (cx + R) + '" y="' + (cy + 18) + '" fill="rgba(255,255,255,0.5)" font-size="9" text-anchor="middle">Fast</text>';
+            '<path d="' + bg + '" fill="none" stroke="var(--grid-line-strong)" stroke-width="12" stroke-linecap="round"/>' +
+            '<path d="' + val + '" fill="none" stroke="rgb(var(--accent-rgb))" stroke-width="12" stroke-linecap="round"/>' +
+            '<line x1="' + cx + '" y1="' + cy + '" x2="' + np[0].toFixed(1) + '" y2="' + np[1].toFixed(1) + '" stroke="var(--emphasis)" stroke-width="3" stroke-linecap="round"/>' +
+            '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="var(--emphasis)"/>' +
+            '<text x="' + (cx - R) + '" y="' + (cy + 18) + '" fill="var(--axis-label)" font-size="9" text-anchor="middle">Slow</text>' +
+            '<text x="' + (cx + R) + '" y="' + (cy + 18) + '" fill="var(--axis-label)" font-size="9" text-anchor="middle">Fast</text>';
     }
 
     function renderPlainWords(avg, mode) {

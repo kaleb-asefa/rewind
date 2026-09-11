@@ -139,10 +139,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span class="material-symbols-outlined text-primary text-[20px]">description</span>
                     <div class="flex flex-col">
                         <span class="text-body-sm text-on-surface font-medium truncate max-w-[200px]">${file.name}</span>
-                        <span class="text-[10px] text-secondary-fixed-dim uppercase tracking-wider">${(file.size / 1024).toFixed(1)} KB</span>
+                        <span class="text-[10px] text-on-surface-variant uppercase tracking-wider">${(file.size / 1024).toFixed(1)} KB</span>
                     </div>
                 </div>
-                <button type="button" data-index="${index}" class="remove-file-btn text-secondary-fixed-dim hover:text-error transition-colors">
+                <button type="button" data-index="${index}" class="remove-file-btn text-on-surface-variant hover:text-error transition-colors">
                     <span class="material-symbols-outlined text-[18px]">close</span>
                 </button>
             `;

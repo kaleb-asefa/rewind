@@ -78,8 +78,8 @@
         const bar = document.getElementById('age-bar');
         if (bar) {
             bar.innerHTML =
-                '<div style="width:' + fresh + '%;background:rgb(30,215,96)"></div>' +
-                '<div style="width:' + (100 - fresh) + '%;background:rgba(30,215,96,0.28)"></div>';
+                '<div style="width:' + fresh + '%;background:rgb(var(--accent-rgb))"></div>' +
+                '<div style="width:' + (100 - fresh) + '%;background:rgba(var(--accent-rgb), 0.28)"></div>';
         }
     }
 
@@ -145,13 +145,13 @@
         }
         svg.innerHTML =
             '<defs><linearGradient id="nostalgia-fill" x1="0" y1="0" x2="0" y2="1">' +
-            '<stop offset="0%" stop-color="rgb(30,215,96)" stop-opacity="0.35"/>' +
-            '<stop offset="100%" stop-color="rgb(30,215,96)" stop-opacity="0"/>' +
+            '<stop offset="0%" stop-color="rgb(var(--accent-rgb))" stop-opacity="0.35"/>' +
+            '<stop offset="100%" stop-color="rgb(var(--accent-rgb))" stop-opacity="0"/>' +
             '</linearGradient></defs>' +
             '<path d="' + area + '" fill="url(#nostalgia-fill)"/>' +
-            '<path d="' + line + '" fill="none" stroke="rgb(30,215,96)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
-            '<line id="nostalgia-vline" x1="0" y1="0" x2="0" y2="' + H + '" stroke="rgb(30,215,96)" stroke-opacity="0.3" stroke-width="1" style="opacity:0" />' +
-            '<circle id="nostalgia-dot" r="4.5" fill="#fff" stroke="rgb(30,215,96)" stroke-width="2.5" style="opacity:0" />' +
+            '<path d="' + line + '" fill="none" stroke="rgb(var(--accent-rgb))" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '<line id="nostalgia-vline" x1="0" y1="0" x2="0" y2="' + H + '" stroke="rgb(var(--accent-rgb))" stroke-opacity="0.3" stroke-width="1" style="opacity:0" />' +
+            '<circle id="nostalgia-dot" r="4.5" fill="var(--emphasis)" stroke="rgb(var(--accent-rgb))" stroke-width="2.5" style="opacity:0" />' +
             hits;
     }
     function showNostalgiaPoint(i) {

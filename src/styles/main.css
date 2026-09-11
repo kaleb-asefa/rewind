@@ -1,58 +1,140 @@
 /* Spotify-Inspired Visual Design System Tokens & Base Styles */
+
+/* LIGHT THEME — canvas-based elevation.
+   Light mode is not an inverted dark mode. Elevation here runs the opposite
+   way: the page canvas is the *darkest* light surface and each level lifts
+   toward white, carried by a soft shadow. Cards must therefore be brighter
+   than the background they sit on.
+
+   Nothing is pure white and no text is pure black. A #fff canvas under
+   #121212 text is ~18.9:1 — far past the AA it needs, and the glare is what
+   makes a light theme tiring to read. The ramp below tops out at #fcfcfa for
+   the highest elevation only (dialogs, tooltips), keeps the canvas near
+   #e8e7e3, and carries a faint warm tint so large areas read as paper rather
+   than as a lightbox. */
 :root {
-    --color-background: 255 255 255;
-    --color-surface: 250 250 250;
-    --color-surface-dim: 238 238 238;
-    --color-surface-bright: 255 255 255;
-    --color-surface-container-lowest: 255 255 255;
-    --color-surface-container-low: 245 245 245;
-    --color-surface-container: 238 238 238;
-    --color-surface-container-high: 229 229 229;
-    --color-surface-container-highest: 221 221 221;
-    --color-surface-variant: 238 238 238;
-    --color-on-background: 18 18 18;
-    --color-on-surface: 18 18 18;
-    --color-on-surface-variant: 106 106 106;
-    --color-outline: 124 124 124;
-    --color-outline-variant: 221 221 221;
-    --color-primary: 29 185 84;
+    --color-background: 232 231 227;
+    --color-surface: 244 243 240;
+    --color-surface-dim: 222 221 216;
+    --color-surface-bright: 250 250 248;
+    --color-surface-container-lowest: 252 252 250;
+    --color-surface-container-low: 240 239 235;
+    --color-surface-container: 235 234 230;
+    --color-surface-container-high: 227 226 221;
+    --color-surface-container-highest: 219 218 212;
+    --color-surface-variant: 237 236 232;
+    --color-on-background: 35 35 32;
+    --color-on-surface: 35 35 32;
+    --color-on-surface-variant: 69 69 64;
+    --color-outline: 138 137 131;
+    --color-outline-variant: 214 213 207;
+    /* Spotify Green is unreadable as text on a light surface (2.6:1), so the
+       accent deepens to clear AA on every surface in the ramp above. Filled
+       controls drop from the neon #1ed760 to the classic #1db954, which is
+       far less strident on a pale page and still takes a black label. */
+    --color-primary: 14 107 49;
     --color-on-primary: 255 255 255;
-    --color-primary-container: 30 215 96;
+    --color-primary-container: 29 185 84;
     --color-on-primary-container: 18 18 18;
-    --color-secondary: 106 106 106;
+    --color-secondary: 69 69 64;
     --color-on-secondary: 255 255 255;
-    --color-secondary-container: 238 238 238;
-    --color-on-secondary-container: 18 18 18;
-    --color-tertiary: 106 106 106;
+    --color-secondary-container: 237 236 232;
+    --color-on-secondary-container: 35 35 32;
+    --color-tertiary: 69 69 64;
     --color-on-tertiary: 255 255 255;
-    --color-tertiary-container: 221 221 221;
-    --color-on-tertiary-container: 18 18 18;
-    --color-error: 243 114 127;
+    --color-tertiary-container: 219 218 212;
+    --color-on-tertiary-container: 35 35 32;
+    --color-error: 179 23 47;
     --color-on-error: 255 255 255;
-    --color-error-container: 255 218 220;
-    --color-on-error-container: 120 20 30;
-    --color-inverse-surface: 18 18 18;
-    --color-inverse-on-surface: 255 255 255;
+    --color-error-container: 250 223 226;
+    --color-on-error-container: 110 18 32;
+    --color-inverse-surface: 35 35 32;
+    --color-inverse-on-surface: 250 250 248;
     --color-inverse-primary: 30 215 96;
     --color-surface-tint: 29 185 84;
     --color-primary-fixed: 30 215 96;
     --color-on-primary-fixed: 18 18 18;
     --color-primary-fixed-dim: 29 185 84;
     --color-on-primary-fixed-variant: 18 18 18;
-    --color-secondary-fixed: 238 238 238;
-    --color-on-secondary-fixed: 18 18 18;
-    --color-secondary-fixed-dim: 221 221 221;
-    --color-on-secondary-fixed-variant: 106 106 106;
-    --color-tertiary-fixed: 238 238 238;
-    --color-on-tertiary-fixed: 18 18 18;
-    --color-tertiary-fixed-dim: 221 221 221;
-    --color-on-tertiary-fixed-variant: 106 106 106;
-    --glass-bg: rgba(255, 255, 255, 0.72);
-    --glass-border: rgba(0, 0, 0, 0.06);
-    --scrubber-knob: 255 255 255;
-    --hero-glow: rgba(29, 185, 84, 0.12);
-    --vinyl-opacity: 0.15;
-    --heatmap-empty: #e5e5e5;
+    --color-secondary-fixed: 237 236 232;
+    --color-on-secondary-fixed: 35 35 32;
+    --color-secondary-fixed-dim: 219 218 212;
+    --color-on-secondary-fixed-variant: 69 69 64;
+    --color-tertiary-fixed: 237 236 232;
+    --color-on-tertiary-fixed: 35 35 32;
+    --color-tertiary-fixed-dim: 219 218 212;
+    --color-on-tertiary-fixed-variant: 69 69 64;
+    --glass-bg: rgba(240, 239, 235, 0.78);
+    --glass-border: rgba(0, 0, 0, 0.07);
+    --scrubber-knob: 252 252 250;
+    --hero-glow: rgba(29, 185, 84, 0.10);
+    --vinyl-opacity: 0.12;
+    --heatmap-empty: #deddd6;
+
+    /* Component tokens — every hardcoded colour below lives here so that
+       cards, tooltips, hovers and chart chrome follow the active theme.
+       Light surfaces use soft, low-opacity shadows; the heavy 0.3–0.5 shadows
+       from docs/design.md are a dark-surface elevation device and turn muddy
+       on paper. Because the canvas is tinted rather than white, these shadows
+       actually register, which is what separates a card from the page. */
+    --card-bg: rgba(250, 250, 247, 0.82);
+    --card-bg-hover: #edece8;
+    --card-border: rgba(0, 0, 0, 0.07);
+    --card-shadow: rgba(0, 0, 0, 0.07) 0px 6px 16px;
+    --card-shadow-strong: rgba(0, 0, 0, 0.10) 0px 8px 24px;
+    --fullscreen-bg: #f4f3f0;
+    --metric-gradient: linear-gradient(135deg, #f7f6f3 0%, #e2efe7 100%);
+    --metric-gradient-border: rgba(14, 107, 49, 0.18);
+    /* Hover washes: tint toward the opposite end of the surface ramp. */
+    --hover-overlay: rgba(0, 0, 0, 0.04);
+    --hover-overlay-strong: rgba(0, 0, 0, 0.055);
+    /* Maximum-contrast text/stroke used to highlight a hovered data point. */
+    --emphasis: #232320;
+    --scrollbar-thumb: #cbcac3;
+    --heatmap-outline: rgba(0, 0, 0, 0.42);
+    /* Floating chips stay dark in both themes: a high-contrast chip over the
+       page reads as a deliberate overlay and keeps the green accent legible. */
+    --tooltip-bg: #252525;
+    --tooltip-fg: #ffffff;
+    --tooltip-muted: rgba(255, 255, 255, 0.7);
+    --tooltip-border: rgba(255, 255, 255, 0.08);
+    --tooltip-shadow: rgba(0, 0, 0, 0.28) 0px 8px 24px;
+    --chip-bg: #fbfbf9;
+    --chip-fg: #232320;
+    --chip-border: rgba(0, 0, 0, 0.10);
+    --chip-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    --pill-shadow: rgba(0, 0, 0, 0.10) 0px 4px 10px;
+    --data-shadow: drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.14));
+    /* Chart chrome — gridlines, axis labels and text halos for the SVG/DOM
+       charts built in src/js/**. Referenced as var() from JS so a theme toggle
+       restyles an already-rendered chart without a re-render. */
+    --grid-line: rgba(0, 0, 0, 0.08);
+    --grid-line-strong: rgba(0, 0, 0, 0.12);
+    --axis-label: rgba(0, 0, 0, 0.6);
+    --text-halo: 0 1px 3px rgba(250, 250, 247, 0.85);
+    --bar-shadow: 0 2px 5px rgba(0, 0, 0, 0.10);
+    /* Bar-race ramp: one fixed shade per racer. Light mode anchors darker so
+       every bar keeps contrast against a white surface. */
+    --race-1: #1db954;
+    --race-2: #15a247;
+    --race-3: #2ec566;
+    --race-4: #0f8b3b;
+    --race-5: #26b35b;
+    --race-6: #128f42;
+    --race-7: #0b7530;
+    --race-8: #1aa64e;
+    /* Sequential genre ramp (single hue, fading). Light mode fades a deeper
+       green toward white so the faintest band stays visible. */
+    /* Brand accent for data fills/strokes, kept apart from --color-primary
+       (text) because a graphic only needs 3:1. Light mode steps off the neon
+       #1ed760, which sits at 2.6:1 on paper and glares next to it. */
+    --accent-rgb: 23, 143, 66;
+    --genre-1: #0f8b3b;
+    --genre-2: rgba(15, 139, 59, 0.8);
+    --genre-3: rgba(15, 139, 59, 0.62);
+    --genre-4: rgba(15, 139, 59, 0.46);
+    --genre-5: rgba(15, 139, 59, 0.32);
+    --genre-6: rgba(15, 139, 59, 0.2);
 }
 
 .dark {
@@ -74,7 +156,7 @@
     --color-primary: 30 215 96;
     --color-on-primary: 0 0 0;
     --color-primary-container: 29 185 84;
-    --color-on-primary-container: 255 255 255;
+    --color-on-primary-container: 18 18 18;
     --color-secondary: 179 179 179;
     --color-on-secondary: 18 18 18;
     --color-secondary-container: 31 31 31;
@@ -109,6 +191,51 @@
     --hero-glow: rgba(30, 215, 96, 0.08);
     --vinyl-opacity: 0.25;
     --heatmap-empty: #1f1f1f;
+
+    --card-bg: rgba(28, 27, 27, 0.85);
+    --card-bg-hover: #1f1f1f;
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-shadow: rgba(0, 0, 0, 0.3) 0px 8px 8px;
+    --card-shadow-strong: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+    --fullscreen-bg: #121212;
+    --metric-gradient: linear-gradient(135deg, #181818 0%, #1a2e1f 100%);
+    --metric-gradient-border: rgba(30, 215, 96, 0.12);
+    --hover-overlay: rgba(255, 255, 255, 0.04);
+    --hover-overlay-strong: rgba(255, 255, 255, 0.05);
+    --emphasis: #ffffff;
+    --scrollbar-thumb: #353535;
+    --heatmap-outline: rgba(255, 255, 255, 0.55);
+    --tooltip-bg: #252525;
+    --tooltip-fg: #ffffff;
+    --tooltip-muted: rgba(255, 255, 255, 0.7);
+    --tooltip-border: rgba(255, 255, 255, 0.08);
+    --tooltip-shadow: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+    --chip-bg: #121212;
+    --chip-fg: #ffffff;
+    --chip-border: rgba(255, 255, 255, 0.15);
+    --chip-shadow: 0 3px 10px rgba(0, 0, 0, 0.6);
+    --pill-shadow: rgba(0, 0, 0, 0.3) 0px 4px 10px;
+    --data-shadow: drop-shadow(0px 2px 6px rgba(0, 0, 0, 0.6));
+    --grid-line: rgba(255, 255, 255, 0.06);
+    --grid-line-strong: rgba(255, 255, 255, 0.1);
+    --axis-label: rgba(255, 255, 255, 0.45);
+    --text-halo: 0 1px 3px rgba(0, 0, 0, 0.7);
+    --bar-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+    --race-1: #6ef58e;
+    --race-2: #53e076;
+    --race-3: #3fce68;
+    --race-4: #1db954;
+    --race-5: #2bbf63;
+    --race-6: #57cf7e;
+    --race-7: #149c46;
+    --race-8: #39d06e;
+    --accent-rgb: 30, 215, 96;
+    --genre-1: #1ed760;
+    --genre-2: rgba(30, 215, 96, 0.78);
+    --genre-3: rgba(30, 215, 96, 0.6);
+    --genre-4: rgba(30, 215, 96, 0.44);
+    --genre-5: rgba(30, 215, 96, 0.3);
+    --genre-6: rgba(30, 215, 96, 0.18);
 }
 
 html {
@@ -170,6 +297,9 @@ body, header, section, footer, .glass-player, .spotify-card {
 .dark .spotify-card:hover {
     background-color: rgb(var(--color-surface-container-high));
 }
+.light .spotify-card:hover {
+    background-color: rgb(var(--color-surface-container));
+}
 .theme-icon {
     transition: transform 0.35s ease, opacity 0.2s ease;
 }
@@ -177,18 +307,25 @@ body, header, section, footer, .glass-player, .spotify-card {
     transform: rotate(30deg) scale(0.9);
 }
 
+/* Hairline divider/border that stays visible on both themes — `border-white/5`
+   is invisible on a white surface. */
+.border-hairline {
+    border-color: var(--card-border);
+}
+
 .glass-card {
-    background: #181818;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: rgba(0, 0, 0, 0.3) 0px 8px 8px;
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .glass-card:hover {
-    background: #1f1f1f;
+    background: var(--card-bg-hover);
 }
 .metric-gradient {
-    background: linear-gradient(135deg, #181818 0%, #1a2e1f 100%);
-    border-color: rgba(30, 215, 96, 0.12);
+    background: var(--metric-gradient);
+    border-color: var(--metric-gradient-border);
 }
 
 /* GitHub-Style Listening Activity Heatmap */
@@ -217,16 +354,16 @@ body, header, section, footer, .glass-player, .spotify-card {
 }
 .heatmap-cell:hover,
 .heatmap-cell:focus-visible {
-    outline: 1px solid rgba(255, 255, 255, 0.55);
+    outline: 1px solid var(--heatmap-outline);
     outline-offset: 1px;
     transform: scale(1.2);
     z-index: 10;
     position: relative;
 }
-.heatmap-cell[data-level="1"] { background: rgba(30, 215, 96, 0.22); }
-.heatmap-cell[data-level="2"] { background: rgba(30, 215, 96, 0.45); }
-.heatmap-cell[data-level="3"] { background: rgba(30, 215, 96, 0.68); }
-.heatmap-cell[data-level="4"] { background: #1ed760; }
+.heatmap-cell[data-level="1"] { background: rgba(var(--accent-rgb), 0.22); }
+.heatmap-cell[data-level="2"] { background: rgba(var(--accent-rgb), 0.45); }
+.heatmap-cell[data-level="3"] { background: rgba(var(--accent-rgb), 0.68); }
+.heatmap-cell[data-level="4"] { background: rgb(var(--accent-rgb)); }
 .heatmap-cell[data-future="true"],
 .heatmap-cell[data-padding="true"] {
     visibility: hidden;
@@ -244,7 +381,7 @@ body, header, section, footer, .glass-player, .spotify-card {
 }
 .heatmap-month {
     grid-row: 1;
-    color: #b3b3b3;
+    color: rgb(var(--color-on-surface-variant));
     font-size: 10px;
     white-space: nowrap;
     align-self: end;
@@ -263,7 +400,7 @@ body, header, section, footer, .glass-player, .spotify-card {
     flex-shrink: 0;
 }
 .heatmap-day {
-    color: #b3b3b3;
+    color: rgb(var(--color-on-surface-variant));
     font-size: 10px;
     display: flex;
     align-items: center;
@@ -275,13 +412,13 @@ body, header, section, footer, .glass-player, .spotify-card {
     overflow-y: hidden;
     padding-bottom: 4px;
     scrollbar-width: thin;
-    scrollbar-color: #353535 transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 .heatmap-scroll::-webkit-scrollbar {
     height: 6px;
 }
 .heatmap-scroll::-webkit-scrollbar-thumb {
-    background: #353535;
+    background: var(--scrollbar-thumb);
     border-radius: 9999px;
 }
 #heatmap-tooltip {
@@ -290,10 +427,10 @@ body, header, section, footer, .glass-player, .spotify-card {
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.12s ease;
-    background: #252525;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+    background: var(--tooltip-bg);
+    color: var(--tooltip-fg);
+    border: 1px solid var(--tooltip-border);
+    box-shadow: var(--tooltip-shadow);
     border-radius: 6px;
     padding: 6px 10px;
     font-size: 11px;
@@ -303,11 +440,11 @@ body, header, section, footer, .glass-player, .spotify-card {
     opacity: 1;
 }
 #heatmap-tooltip .count {
-    color: #1ed760;
+    color: rgb(var(--accent-rgb));
     font-weight: 700;
 }
 #heatmap-tooltip .top {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--tooltip-muted);
     font-size: 10px;
 }
 
@@ -318,7 +455,7 @@ body, header, section, footer, .glass-player, .spotify-card {
     stroke-linecap: round;
     stroke-linejoin: round;
     opacity: 0.95;
-    filter: drop-shadow(0px 2px 6px rgba(0, 0, 0, 0.6));
+    filter: var(--data-shadow);
 }
 
 .tip-container {
@@ -336,8 +473,8 @@ body, header, section, footer, .glass-player, .spotify-card {
     height: 38px;
     border-radius: 50%;
     padding: 2px;
-    background: #1c1b1b;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+    background: var(--chip-bg);
+    box-shadow: var(--card-shadow-strong);
     position: relative;
 }
 
@@ -345,14 +482,14 @@ body, header, section, footer, .glass-player, .spotify-card {
     position: absolute;
     top: -4px;
     right: -6px;
-    background: #121212;
+    background: var(--chip-bg);
     border: 1.5px solid currentColor;
-    color: #ffffff;
+    color: var(--chip-fg);
     font-size: 9px;
     font-weight: 800;
     padding: 1px 4px;
     border-radius: 9999px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    box-shadow: var(--chip-shadow);
     line-height: 1;
 }
 
@@ -362,23 +499,77 @@ body, header, section, footer, .glass-player, .spotify-card {
     top: 50%;
     transform: translateY(-50%);
     white-space: nowrap;
-    background: rgba(18, 18, 18, 0.92);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
     padding: 2.5px 7.5px;
     border-radius: 6px;
     font-size: 10px;
     font-weight: 700;
-    color: #ffffff;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.6);
+    color: var(--chip-fg);
+    box-shadow: var(--chip-shadow);
     backdrop-filter: blur(8px);
     opacity: 0.95;
+}
+
+/* The share deck scrolls whenever the viewport is short. Reserving the gutter
+   up front means the scrollbar appearing can never reflow the deck under the
+   pointer — that reflow is what made the action buttons flicker: a hover that
+   grew a button overflowed the container, the scrollbar took width, the row
+   shifted out from under the cursor, the hover dropped, and it looped. The
+   buttons no longer resize on hover, and this keeps any future reflow (a
+   changing button label, a taller card) from bringing the flicker back. */
+.share-scroller {
+    scrollbar-gutter: stable both-edges;
+    overscroll-behavior: contain;
+}
+
+/* Native range inputs render with the UA accent (blue) unless fully restyled,
+   which made the scrubber the one control ignoring the design system in both
+   themes. This is also what --scrubber-knob was declared for. */
+.velocity-scrubber {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--grid-line-strong);
+    accent-color: rgb(var(--accent-rgb));
+}
+.velocity-scrubber::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: rgb(var(--accent-rgb));
+    border: 2px solid rgb(var(--scrubber-knob));
+    box-shadow: var(--pill-shadow);
+    cursor: pointer;
+}
+.velocity-scrubber::-moz-range-thumb {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: rgb(var(--accent-rgb));
+    border: 2px solid rgb(var(--scrubber-knob));
+    box-shadow: var(--pill-shadow);
+    cursor: pointer;
+}
+.velocity-scrubber::-moz-range-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--grid-line-strong);
+}
+.velocity-scrubber:focus-visible {
+    outline: 2px solid rgb(var(--color-primary));
+    outline-offset: 3px;
 }
 
 .pulse-ring {
     position: absolute;
     inset: -3px;
     border-radius: 50%;
-    border: 2px solid #53e076;
+    border: 2px solid rgb(var(--accent-rgb));
     animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     pointer-events: none;
 }
@@ -388,14 +579,8 @@ body, header, section, footer, .glass-player, .spotify-card {
     50% { opacity: 0.2; transform: scale(1.18); }
 }
 
-.glass-card {
-    background: rgba(28, 27, 27, 0.85);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
 .glass-card:fullscreen {
-    background: #121212;
+    background: var(--fullscreen-bg);
     padding: 1.5rem;
     width: 100vw;
     height: 100vh;
@@ -427,7 +612,7 @@ html { scroll-behavior: smooth; }
 .chapter-pill--active {
     background: rgb(var(--color-primary));
     color: rgb(var(--color-on-primary));
-    box-shadow: rgba(0, 0, 0, 0.3) 0px 4px 10px;
+    box-shadow: var(--pill-shadow);
 }
 .chapter-pill--active .num { opacity: 0.85; }
 .chapter-pill--soon { opacity: 0.4; }
@@ -471,10 +656,10 @@ html { scroll-behavior: smooth; }
     width: 288px;
     max-width: calc(100vw - 24px);
     background: rgb(var(--color-surface-container-high));
-    border: 1px solid rgb(255 255 255 / 0.1);
+    border: 1px solid var(--card-border);
     border-radius: 14px;
     padding: 14px 16px;
-    box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
+    box-shadow: var(--card-shadow-strong);
     color: rgb(var(--color-on-surface-variant));
     font-size: 13px;
     line-height: 1.55;
@@ -520,36 +705,36 @@ html { scroll-behavior: smooth; }
 
 /* rhythm chart hover interactivity */
 .clock-bar { transition: stroke 0.15s ease, stroke-opacity 0.15s ease, stroke-width 0.15s ease; }
-.clock-bar.is-hover { stroke: #ffffff; stroke-opacity: 1; stroke-width: 9; }
+.clock-bar.is-hover { stroke: var(--emphasis); stroke-opacity: 1; stroke-width: 9; }
 .clock-hit, .season-hit { cursor: pointer; }
 #season-dot, #season-vline { transition: opacity 0.15s ease; pointer-events: none; }
-.weekday-col:hover .weekday-bar { background: rgb(30, 215, 96); }
+.weekday-col:hover .weekday-bar { background: rgb(var(--accent-rgb)); }
 
 /* chapter 03 charts */
 .mood-dot { cursor: pointer; transition: fill 0.12s ease; }
-.mood-dot.is-hover { fill: #ffffff; }
+.mood-dot.is-hover { fill: var(--emphasis); }
 .mood-seg { cursor: pointer; transition: filter 0.12s ease; }
 .mood-seg:hover { filter: brightness(1.15); }
 
 /* chapter 04 taste */
 .genre-row .genre-bar-fill { transition: width 0.5s ease, filter 0.12s ease; }
 .genre-row:hover .genre-bar-fill { filter: brightness(1.15); }
-.genre-row:hover .genre-name { color: #ffffff; }
-.era-col:hover .era-bar { background: rgb(30, 215, 96); }
+.genre-row:hover .genre-name { color: var(--emphasis); }
+.era-col:hover .era-bar { background: rgb(var(--accent-rgb)); }
 .gem-row { transition: background 0.12s ease; }
-.gem-row:hover { background: rgba(255, 255, 255, 0.05); }
+.gem-row:hover { background: var(--hover-overlay-strong); }
 
 /* chapter 07 listening-life milestones */
 .life-milestone-line {
     height: 2px;
-    background: rgba(30, 215, 96, 0.28);
+    background: rgba(var(--accent-rgb), 0.28);
 }
 .life-milestone-dot {
     transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
 .life-milestone:hover .life-milestone-dot {
     transform: scale(1.22);
-    box-shadow: 0 0 0 5px rgba(30, 215, 96, 0.14);
+    box-shadow: 0 0 0 5px rgba(var(--accent-rgb), 0.14);
 }
 
 /* chapter 08 over-time */
@@ -573,7 +758,7 @@ html { scroll-behavior: smooth; }
 
 /* chapter 10 sound detail */
 .tempo-bar { transition: background 0.15s ease; }
-.tempo-col:hover .tempo-bar { background: rgb(30, 215, 96); }
+.tempo-col:hover .tempo-bar { background: rgb(var(--accent-rgb)); }
 
 .rhythm-tooltip {
     position: fixed;
@@ -581,10 +766,10 @@ html { scroll-behavior: smooth; }
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.12s ease;
-    background: #252525;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+    background: var(--tooltip-bg);
+    color: var(--tooltip-fg);
+    border: 1px solid var(--tooltip-border);
+    box-shadow: var(--tooltip-shadow);
     border-radius: 8px;
     padding: 7px 11px;
     font-size: 12px;
@@ -596,8 +781,7 @@ html { scroll-behavior: smooth; }
 }
 .rhythm-tooltip.visible { opacity: 1; }
 .rhythm-tooltip .rt-title { font-weight: 700; }
-.rhythm-tooltip .rt-val { color: #1ed760; font-size: 11px; font-weight: 600; }
-
+.rhythm-tooltip .rt-val { color: rgb(var(--accent-rgb)); font-size: 11px; font-weight: 600; }
 /* ── Charts page: numbered leaderboards ───────────────────────── */
 .chart-tab,
 .chart-sort,
@@ -616,13 +800,13 @@ html { scroll-behavior: smooth; }
 .range-tab.is-active {
     background: rgb(var(--color-primary));
     color: rgb(var(--color-on-primary));
-    box-shadow: rgba(0, 0, 0, 0.3) 0px 4px 10px;
+    box-shadow: var(--pill-shadow);
 }
 
 .chart-row { transition: background 0.12s ease; }
-.chart-row:hover { background: rgba(255, 255, 255, 0.04); }
+.chart-row:hover { background: var(--hover-overlay); }
 .chart-row--match {
-    background: rgba(30, 215, 96, 0.10);
-    box-shadow: inset 3px 0 0 0 rgb(30, 215, 96);
+    background: rgba(var(--accent-rgb), 0.10);
+    box-shadow: inset 3px 0 0 0 rgb(var(--accent-rgb));
 }
-.chart-row--match:hover { background: rgba(30, 215, 96, 0.14); }
+.chart-row--match:hover { background: rgba(var(--accent-rgb), 0.14); }

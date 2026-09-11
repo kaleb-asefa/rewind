@@ -32,8 +32,8 @@
         const bar = document.getElementById('shuffle-bar');
         if (bar) {
             bar.innerHTML =
-                '<div style="width:' + sh + '%;background:rgb(30,215,96)"></div>' +
-                '<div style="width:' + pk + '%;background:rgba(30,215,96,0.28)"></div>';
+                '<div style="width:' + sh + '%;background:rgb(var(--accent-rgb))"></div>' +
+                '<div style="width:' + pk + '%;background:rgba(var(--accent-rgb), 0.28)"></div>';
         }
     }
     function renderSkip(s) {
@@ -44,7 +44,7 @@
         setText('binge-value', fmtMins(min));
     }
 
-    const ATTENTION_SHADES = ['rgba(30,215,96,0.3)', 'rgba(30,215,96,0.6)', 'rgb(30,215,96)'];
+    const ATTENTION_SHADES = ['rgba(var(--accent-rgb), 0.3)', 'rgba(var(--accent-rgb), 0.6)', 'rgb(var(--accent-rgb))'];
     function renderAttention(a) {
         const segs = [
             { label: 'Under 30s', pct: Math.round((a.under30 || 0) * 100) },

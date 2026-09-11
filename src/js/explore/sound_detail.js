@@ -65,8 +65,8 @@
         const bar = document.getElementById('key-bar');
         if (bar) {
             bar.innerHTML =
-                '<div style="width:' + major + '%;background:rgb(30,215,96)"></div>' +
-                '<div style="width:' + (100 - major) + '%;background:rgba(30,215,96,0.28)"></div>';
+                '<div style="width:' + major + '%;background:rgb(var(--accent-rgb))"></div>' +
+                '<div style="width:' + (100 - major) + '%;background:rgba(var(--accent-rgb), 0.28)"></div>';
         }
     }
 
@@ -101,8 +101,8 @@
         const bar = document.getElementById('energy-split-bar');
         if (bar) {
             bar.innerHTML =
-                '<div style="width:' + workout + '%;background:rgb(30,215,96)"></div>' +
-                '<div style="width:' + (100 - workout) + '%;background:rgba(30,215,96,0.28)"></div>';
+                '<div style="width:' + workout + '%;background:rgb(var(--accent-rgb))"></div>' +
+                '<div style="width:' + (100 - workout) + '%;background:rgba(var(--accent-rgb), 0.28)"></div>';
         }
     }
 
