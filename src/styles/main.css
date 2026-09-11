@@ -511,6 +511,18 @@ body, header, section, footer, .glass-player, .spotify-card {
     opacity: 0.95;
 }
 
+/* The share deck scrolls whenever the viewport is short. Reserving the gutter
+   up front means the scrollbar appearing can never reflow the deck under the
+   pointer — that reflow is what made the action buttons flicker: a hover that
+   grew a button overflowed the container, the scrollbar took width, the row
+   shifted out from under the cursor, the hover dropped, and it looped. The
+   buttons no longer resize on hover, and this keeps any future reflow (a
+   changing button label, a taller card) from bringing the flicker back. */
+.share-scroller {
+    scrollbar-gutter: stable both-edges;
+    overscroll-behavior: contain;
+}
+
 /* Native range inputs render with the UA accent (blue) unless fully restyled,
    which made the scrubber the one control ignoring the design system in both
    themes. This is also what --scrubber-knob was declared for. */

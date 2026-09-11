@@ -206,7 +206,7 @@
 
     <!-- Share modal — Wrapped-style story deck, each card exported as an image -->
     <div id="share-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-        <div class="flex flex-col items-center gap-4 max-h-full overflow-y-auto">
+        <div class="share-scroller flex flex-col items-center gap-4 max-h-full overflow-y-auto">
             <!-- The current card is drawn to this canvas (these exact pixels get shared).
                  The size below is only the first-paint guess: charts_share.js measures the
                  modal and fits the card exactly, including the landscape year recap, whose
@@ -227,13 +227,13 @@
 
             <!-- Actions -->
             <div class="flex flex-wrap items-center justify-center gap-3">
-                <button type="button" id="share-download-btn" class="flex items-center gap-2 bg-primary text-on-primary px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
+                <button type="button" id="share-download-btn" class="flex items-center gap-2 bg-primary text-on-primary px-5 py-3 rounded-full font-bold hover:bg-primary-container hover:text-on-primary-container active:scale-95 transition">
                     <span class="material-symbols-outlined text-lg">download</span> Save this
                 </button>
-                <button type="button" id="share-download-all-btn" class="flex items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
+                <button type="button" id="share-download-all-btn" class="flex items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-full font-bold hover:bg-surface-container-highest active:scale-95 transition">
                     <span class="material-symbols-outlined text-lg">photo_library</span> <span data-count>Save all</span>
                 </button>
-                <button type="button" id="share-native-btn" class="hidden items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
+                <button type="button" id="share-native-btn" class="hidden items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-full font-bold hover:bg-surface-container-highest active:scale-95 transition">
                     <span class="material-symbols-outlined text-lg">ios_share</span> Share
                 </button>
                 <button type="button" id="share-close-btn" class="flex items-center gap-2 bg-surface-container text-on-surface-variant px-5 py-3 rounded-full font-bold hover:text-on-surface transition-all">
