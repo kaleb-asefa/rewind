@@ -4,9 +4,12 @@
 
 Rewind is a **Spotify listening data analytics and visualization tool**. Users either connect their Spotify account for quick insights or upload their full Spotify data export (Extended Streaming History) for deep, long-term analytics. This is a **data analysis project**, not a generic music app, a social platform, or a music player.
 
-Two pages exist right now:
-- **Landing page** — explains the product, offers "Quick Insights" (login) vs "Deep Dive" (upload data export), includes instructions for requesting Spotify data.
-- **Overview page** — the analytics dashboard itself.
+Five pages exist right now:
+- **Landing page** (`index.html`) — explains the product and how to request a Spotify data export.
+- **Upload page** (`upload.html`) — drag-and-drop ingest of the export files.
+- **Overview page** (`overview.html`) — "Your Rewind", the snapshot dashboard (fixed scope below).
+- **Explore page** (`explore.html`) — the scrollytelling deep dive (11 chapters + Wrapped finale).
+- **Charts page** (`charts.html`) — numbered leaderboards, superlative records and the share deck.
 
 ## Current Stage
 
@@ -91,49 +94,71 @@ The Overview page shows exactly these metrics. No more, no less, unless explicit
 
 Do not add sections like leaderboards, social/community features, "personality profile" style cards, sharing features, or any other metric not on this list — even if they seem like a natural fit for a music analytics dashboard. If something seems missing or would improve the page, suggest it and wait for confirmation before building it.
 
+This lock is about the **Overview page only**. The deep-dive metrics live on `explore.html`
+(chapters) and `charts.html` (leaderboards, superlatives, share deck), which are built out
+against `docs/CHARTS.md` and the analysis backlog — don't move their content onto Overview.
+
 ## Out of Scope (for now)
 
 These are common suggestions that are deliberately not being built yet. Do not implement any of these without explicit instruction, even if they seem like a natural addition:
 
-- User accounts, authentication, or authorization
-- Social/community features (leaderboards, sharing, comments, following)
+- User accounts, authentication, or authorization (the app is anonymous, one DuckDB file per
+  `X-Rewind-Session` ticket — see `docs/MULTI_USER.md`)
+- Social/community features (leaderboards across users, comments, following). The Charts page
+  is a **personal** leaderboard, and sharing is limited to the locally generated image cards
+  on `charts.html` — nothing is uploaded or published
 - Mobile app or native builds
-- Any page beyond the landing page and Overview page
+- Any page beyond the five listed above
 
 ## Project Structure
 
 - `index.html` — landing page
-- `upload.html` — standalone upload page (legacy fallback)
-- `overview.html` — analytics dashboard & single-page application host
+- `upload.html` — standalone upload page
+- `overview.html` — "Your Rewind" snapshot dashboard (scope locked below)
+- `explore.html` — scrollytelling deep dive (11 chapters + the Wrapped finale)
+- `charts.html` — numbered leaderboards, superlative records and the share deck
+- `explore_bento_sample.html` — private layout mockup; the **only** page that sets
+  `window.REWIND_ALLOW_SAMPLE` (and therefore the only page allowed to render `SAMPLE_*` data)
 - `docs/` — all project documentation
   - `design.md` — visual design system (source of truth for styling)
+  - `API_CONTRACT.md` — the frontend ↔ backend seam (endpoint shapes + conventions); change it first
   - `CODE_QUALITY.md` — code quality & engineering rules for all new code (backend + frontend); read before building
   - `UI_GUIDELINES.md` — UI copy & visual/clutter rules
-  - `CHARTS.md` — Charts feature spec + creative numbered-leaderboard idea catalog (planned)
+  - `CHARTS.md` — Charts feature spec + creative numbered-leaderboard idea catalog
   - `BACKEND.md` — backend architecture and data-handling decisions
+  - `MULTI_USER.md` — per-guest session model (`X-Rewind-Session` ticket, TTL cleanup, upload caps)
+  - `FRONTEND_YEAR_FILTER.md` — handoff for the Explore year filter (backend done, frontend pending)
   - `SCHEMA.md` — data schema and column-by-column storage decisions
+  - `analysis.md` / `ANALYSIS_IDEAS.md` — metric methodology + analysis backlog
   - `AGENTS.md` — this file
 - `src/` — Tailwind entry CSS and modular JavaScript source code
-  - `js/api.js` — centralized API client with timeout support and error handling
-  - `js/share.js` — builds the shareable "Your Rewind" snapshot card and exports it as a PNG
+  - `js/api.js` — centralized API client: `fetchWithTimeout` (attaches the session ticket) + the shared cover-art cache (`loadCoversBatch`, `primeCoverUrls`, `resolveCoverUrls`)
+  - `js/theme.js` — dark mode theme toggler & local storage persistence
+  - `js/landing.js` — landing-page cassette-deck hero interactions
+  - `js/upload.js` — multi-file upload drag-and-drop handler & status feedback
   - `js/total_time.js` — total listening time metric component & skeleton state handler
   - `js/top_card.js` — shared "Top X" card factory (`initTopCard`) rendering top artist/album/track
+  - `js/behavior.js` — overview bottom cards (unique songs, most active day)
   - `js/heatmap.js` — GitHub-style listening activity heatmap component
-  - `js/explore/` — Explore page chapter modules on a shared `window.RewindExplore` namespace: `core.js` (helpers, tooltip, reveal/scroll-spy, chapter registry) + one file per chapter (`rhythm`, `sound`, `taste`, `behavior`, `discovery`, `life`)
-  - `js/upload.js` — multi-file upload drag-and-drop handler & status feedback
-  - `js/theme.js` — dark mode theme toggler & local storage persistence
   - `js/spotlight.js` — spotlight search and keyboard shortcuts handler
+  - `js/velocity.js` + `js/bar_race.js` — Explore chapter 01 animations (rank velocity, bar race)
+  - `js/explore/` — Explore page chapter modules on a shared `window.RewindExplore` namespace: `core.js` (helpers, tooltip, reveal/scroll-spy, chapter registry, `chapterEmpty`) + one file per chapter (`rhythm`, `sound`, `taste`, `behavior`, `discovery`, `life`, `over_time`, `evolution`, `sound_detail`, `deep_cuts`, `wrapped`)
+  - `js/charts.js` — Charts leaderboard (entity/sort/depth/range controls, find-your-rank search)
+  - `js/charts_superlatives.js` — the superlative record cards on the Charts page
+  - `js/charts_share.js` — canvas-drawn Wrapped-style share deck (per-card + per-year recap cards)
 - `backend/` — FastAPI backend implementation
-  - `database.py` — Engine lifespan, TableRegistry, and `get_db` connection dependency
+  - `database.py` — per-ticket engine cache, `TableRegistry`, `get_db` dependency, session TTL cleanup
   - `main.py` — thin app entrypoint: middleware + `include_router` wiring only
   - `metrics.py` — framework-free computation helpers (ranking, bar-race, heatmap, streaks, chronotype, timezone, genre bucketing)
-  - `routers/upload.py` — `/api/upload` ingest + enrich and `/api/image` cover art (holds `MAPPING`)
+  - `catalog.py` / `images.py` — catalog enrichment on upload; cached Spotify oEmbed cover art
+  - `routers/upload.py` — `/api/upload` ingest + enrich (holds `MAPPING` and the upload caps) and `/api/image` + `/api/images` cover art
   - `routers/overview.py` — overview metrics (`total-time`, `top-*`, `total-songs`, `active-day`, `heatmap`)
-  - `routers/explore.py` — explore metrics (`artist-rank`, `track-rank`, `bar-race`, `rhythm`, `audio`, `taste`, `behavior`, `discovery`, `listening-life`)
+  - `routers/explore.py` — explore + charts metrics (`years`, `artist-rank`, `track-rank`, `bar-race`, `rhythm`, `audio`, `taste`, `behavior`, `discovery`, `listening-life`, `over-time`, `evolution`, `sound-detail`, `deep-cuts`, `wrapped`, `chart`, `superlatives`); every explore endpoint takes the optional `year` filter
   - `test_main.py` — Pytest test suite covering upload and metric endpoints
   - `pyproject.toml` — dependencies managed via `uv`
 - `data/` — persistent data storage
-  - `sessions/` — session-scoped DuckDB storage (.duckdb files)
+  - `sessions/` — one DuckDB file per session ticket (`<ticket>.duckdb`)
+  - `metadata/` — read-only 45M-track catalog parquet used for enrichment
 - `dist/` or `public/` — Vite build output
 
 Keep this structure flat and predictable. New files should have an obvious reason to exist and a clear location; don't introduce new top-level folders without asking.

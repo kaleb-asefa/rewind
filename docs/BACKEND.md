@@ -16,6 +16,11 @@ Implementation active in `backend/`. FastAPI + DuckDB + SQLAlchemy Core engine s
 ### Ingestion & Schema Normalization
 
 On upload (`POST /api/upload`), the backend ingests single or multiple Spotify Extended Streaming History JSON files (`files: list[UploadFile]`) into DuckDB:
+0. **Caps first.** At most `REWIND_MAX_UPLOAD_FILES` (default 50) `.json` files totalling
+   `REWIND_MAX_UPLOAD_MB` (default 512 MB) per request → otherwise `413`. Enforced twice because
+   `Content-Length` is client-supplied: the `enforce_upload_size_limit` middleware rejects an
+   oversized declared body before Starlette spools it to disk, and `_copy_within_budget` re-checks
+   the bytes actually received while streaming each file to its temp path.
 1. Uploaded files are written to temporary files and inspected via `read_json_auto(?, union_by_name=True)`.
 2. Existing JSON keys are matched against the defined schema mapping (`MAPPING` in `routers/upload.py`).
 3. Fields present in the export are safely converted via `TRY_CAST({col} AS {dtype})`, while missing schema fields default to `CAST(NULL AS {dtype})`.
@@ -32,7 +37,21 @@ Everything after ingestion — column selection, filters, dashboard queries — 
 - **`GET /api/metrics/top-artist`**: Aggregates streams and total listened minutes grouped by `artist_name`, returning top artist.
 - **`GET /api/metrics/top-album`**: Aggregates streams and total listened minutes grouped by `album_name` & `artist_name`, returning top album.
 - **`GET /api/metrics/top-track`**: Aggregates streams and total listened minutes grouped by `track_name` & `artist_name`, returning top track.
-- **`GET /api/image?kind=&id=`**: Returns a cached Spotify cover URL (oEmbed) for an `artist`/`album`/`track` id; fetches once and caches in the session `images` table. The `top-artist/album/track` endpoints also return the entity's Spotify id so the frontend can lazy-load covers.
+- **`GET /api/image?kind=&id=`**: Returns a cached Spotify cover URL (oEmbed) for an `artist`/`album`/`track` id; fetches once and caches in the session `images` table. `GET /api/images?kind=&ids=` is the batched form (≤200 ids, concurrent fetch, one bulk cache read/write) and is what the frontend uses. The `top-artist/album/track` endpoints also return the entity's Spotify id so the frontend can lazy-load covers.
+
+**Explore + Charts metrics** live in `routers/explore.py` and query the raw DuckDB connection
+(SQL-first, still via `run_in_threadpool`) rather than SQLAlchemy Core, because the window
+functions and gaps-and-islands queries they need have no clean Core expression.
+
+- **Year filter.** Every explore endpoint takes `year=all` (default) or a 4-digit year;
+  `_parse_year` validates it (anything else → `400`) and `_year_clause` appends
+  `AND EXTRACT(year FROM ts + to_minutes(<offset>)) = YYYY` — both values are validated ints,
+  inlined as literals so the expression stays byte-identical in `SELECT`/`GROUP BY`
+  (a `?` placeholder there breaks DuckDB's group-by expression matching). Year boundaries use
+  the same per-user local-time shift as the rest of the app. `GET /api/metrics/years` lists the
+  years the session has plays in, with `streams`/`minutes` per year, for the filter control.
+- **Charts** (`/api/metrics/chart`, `/api/metrics/superlatives`) keep their own
+  `range=all|YYYY|4w|6m` param instead — they are not part of the year filter.
 
 Example Endpoint Implementation:
 ```python
@@ -77,4 +96,7 @@ The frontend communicates with FastAPI endpoints via `src/js/api.js`:
 
 ## Open Items
 
-- Heatmap, most hated artist/track, active days, and unique songs metric endpoints
+- **Most hated artist / track** — still hardcoded placeholders on `overview.html`; the ranking
+  method is prototyped in `notebooks/` (completion ratio + intent-aware rejection), not wired up.
+- **Explore year filter — frontend half.** The API is live; the control and wiring are not built
+  yet (see `docs/FRONTEND_YEAR_FILTER.md`).

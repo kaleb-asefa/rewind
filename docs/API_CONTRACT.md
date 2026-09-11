@@ -49,8 +49,19 @@ neither needs to read the other's code.
   `window.REWIND_ALLOW_SAMPLE` is set (only `explore_bento_sample.html`).
 - **Params are whitelisted** server-side (e.g. `entity`, `sort`, `range`) → `400`
   on anything else. Never string-interpolate user input into SQL.
-- **Timezone:** rhythm/heatmap/active-day bucket by local time via a per-user
-  offset (`metrics._tz_offset_minutes`), inlined as a safe literal.
+- **Year filter (Explore only):** every endpoint in `routers/explore.py` takes
+  `year=all` (default, all time) or a 4-digit year. Anything else → `400`
+  (`{"detail": "Invalid year filter."}`). Every response echoes `"year": null|2024`.
+  Response **shapes never change** — only the numbers, plus the period labels of
+  `over-time.nostalgia[].period` and `evolution` (`genre_evolution.periods`,
+  `mood_trend[].period`, `mainstream_trend[].period`), which switch from years to
+  month labels (`"Jan"…"Dec"`) when a year is selected. A year with no plays is
+  **not** an error — it returns the normal empty shape. `/api/metrics/years` lists
+  the options. The Charts endpoints (`chart`, `superlatives`) are **not** part of
+  this — they keep their own `range=all|YYYY|4w|6m`. Full frontend handoff:
+  `docs/FRONTEND_YEAR_FILTER.md`.
+- **Timezone:** rhythm/heatmap/active-day/year-boundaries bucket by local time via a
+  per-user offset (`metrics._tz_offset_minutes`), inlined as a safe literal.
 
 ---
 
@@ -68,24 +79,30 @@ neither needs to read the other's code.
 | `/api/metrics/active-day` | — | `weekday`, `average_minutes`, `total_minutes` |
 | `/api/metrics/heatmap` | `year?` | `years[]`, `year`, `active_days`, `total_streams`, `total_minutes`, `max_streams`, `days[{date,streams,minutes,level,top_track,top_artist}]` |
 
+> The heatmap's `year` is its own integer calendar selector (out-of-range → falls back to the
+> newest year), **not** the Explore year filter in §2.
+
 ### Explore + Charts (`backend/routers/explore.py`)
+
+`year?` below is the shared Explore filter described in §2 (`all` default, or `YYYY`).
 
 | Endpoint | Params | Key response fields |
 |---|---|---|
-| `/api/metrics/artist-rank` | — | `months[]` (weekly keys), `data[{name,monthly_ranks[],image_url}]` |
-| `/api/metrics/track-rank` | — | `months[]`, `data[{name,monthly_ranks[],image_url}]` |
-| `/api/metrics/bar-race` | `entity`, `limit` | `months[]`, `featured[{name,id,cumulative_minutes[],image_url}]` |
-| `/api/metrics/rhythm` | — | `hourly[24]`, `peak_hour`, `weekday[7]`, `busiest_weekday`, `monthly[12]`, `chronotype{label,position}`, `streak{longest,current,active_days}`, `total_streams` |
-| `/api/metrics/audio` | — | `avg{energy,valence,danceability,acousticness,vocal}`, `tempo_avg`, `mode{major}`, `tracks[{name,valence,energy,plays}]`, `coverage`, `matched`, `total` |
-| `/api/metrics/taste` | — | `genres[{name,plays}]`, `mainstream`, `distinct_genres`, `eras[{decade,plays}]`, `avg_year`, `gems[{name,artist,id,plays}]` |
-| `/api/metrics/behavior` | — | `shuffle`, `skip_rate`, `longest_binge_min`, `attention{under30,partial,finished}`, `loops[{name,artist,id,count}]` |
-| `/api/metrics/discovery` | — | `new_artist_share`, `new_artists_monthly`, `one_off_share`, `rediscoveries[]`, `rising[]` |
-| `/api/metrics/listening-life` | — | `peaks[{label,minutes,period}]`, `typical_session_minutes`, `session_mix[]`, `milestones[]` |
-| `/api/metrics/over-time` | — | `years[]`, `music_age`, `time_machine`, `nostalgia[]` |
-| `/api/metrics/evolution` | — | `genre_evolution{periods,genres}`, `mood_trend[]`, `day_night`, `mainstream_trend[]` |
-| `/api/metrics/sound-detail` | — | `tempo{buckets[]}`, `key{major_share}`, `danceable[]`, `energy_split{workout,wind_down}` |
-| `/api/metrics/deep-cuts` | — | `concentration{top10_share}`, `album_commitment{deep_share}`, `top_day_track`, `no_skip` |
-| `/api/metrics/wrapped` | — | `personality[]`, `longest_track`, `shortest_track` |
+| `/api/metrics/years` | — | `years[{year,streams,minutes}]` (newest first; `[]` before any upload) |
+| `/api/metrics/artist-rank` | `limit`, `year?` | `months[]` (weekly keys), `data[{name,monthly_ranks[],image_url}]` |
+| `/api/metrics/track-rank` | `limit`, `year?` | `months[]`, `data[{name,monthly_ranks[],image_url}]` |
+| `/api/metrics/bar-race` | `entity`, `limit`, `year?` | `months[]`, `featured[{name,id,cumulative_minutes[],image_url}]` |
+| `/api/metrics/rhythm` | `year?` | `hourly[24]`, `peak_hour`, `weekday[7]`, `busiest_weekday`, `monthly[12]`, `chronotype{label,position}`, `streak{longest,current,active_days}`, `total_streams` |
+| `/api/metrics/audio` | `year?` | `avg{energy,valence,danceability,acousticness,vocal}`, `tempo_avg`, `mode{major}`, `tracks[{name,valence,energy,plays}]`, `coverage`, `matched`, `total` |
+| `/api/metrics/taste` | `year?` | `genres[{name,plays}]`, `mainstream`, `distinct_genres`, `eras[{decade,plays}]`, `avg_year`, `gems[{name,artist,id,plays}]` |
+| `/api/metrics/behavior` | `year?` | `shuffle`, `skip_rate`, `longest_binge_min`, `attention{under30,partial,finished}`, `loops[{name,artist,id,count}]` |
+| `/api/metrics/discovery` | `year?` | `new_artist_share`, `new_artists_monthly`, `one_off_share`, `rediscoveries[]`, `rising[]` |
+| `/api/metrics/listening-life` | `year?` | `peaks[{label,minutes,period}]`, `typical_session_minutes`, `session_mix[]`, `milestones[]` |
+| `/api/metrics/over-time` | `year?` | `years[]`, `music_age`, `time_machine`, `nostalgia[]` (periods → months when filtered) |
+| `/api/metrics/evolution` | `year?` | `genre_evolution{periods,genres}`, `mood_trend[]`, `day_night`, `mainstream_trend[]` (periods → months when filtered) |
+| `/api/metrics/sound-detail` | `year?` | `tempo{buckets[]}`, `key{major_share}`, `danceable[]`, `energy_split{workout,wind_down}` |
+| `/api/metrics/deep-cuts` | `year?` | `concentration{top10_share}`, `album_commitment{deep_share}`, `top_day_track`, `no_skip` |
+| `/api/metrics/wrapped` | `year?` | `personality[]`, `longest_track`, `shortest_track` |
 | `/api/metrics/chart` | `entity=artist\|track\|album\|genre`, `sort=minutes\|streams`, `limit`, `range=all\|YYYY\|4w\|6m` | `items[{rank,name,artist,id,minutes,streams,share,prev_rank,image_url}]`, `years[]` |
 | `/api/metrics/superlatives` | `range`, `limit` | `obsession[]`, `binges[]`, `most_skipped[]`, `never_skipped[]`, `longest[]`, `shortest[]`, `years[]` |
 
@@ -98,9 +115,15 @@ neither needs to read the other's code.
 
 | Endpoint | Params | Notes |
 |---|---|---|
-| `POST /api/upload` | JSON files | Ingest history + enrich; fires `rewind:data-updated` client-side on success. |
+| `POST /api/upload` | JSON files | Ingest history + enrich; fires `rewind:data-updated` client-side on success. Capped — see below. |
 | `GET /api/image` | `kind`, `id` | Single cover URL (oEmbed, cached). |
 | `GET /api/images` | `kind`, `ids` (csv, ≤200) | Batch → `{ images: { id: url } }`. Preferred. |
+
+> **Upload caps.** `POST /api/upload` accepts at most `REWIND_MAX_UPLOAD_FILES` (default 50)
+> `.json` files totalling `REWIND_MAX_UPLOAD_MB` (default 512 MB) — over either → `413`
+> (`{"detail": …}`), enforced both by a `Content-Length` middleware and again while streaming
+> the bytes actually received. A non-`.json` file or an empty request → `400`. The frontend
+> should surface the `detail` string as-is rather than a generic failure.
 
 > Client helpers (`src/js/api.js`) — all share one in-memory cache, chunk ids 8 at a time and
 > cap concurrency at 3. Use them; never call `/api/images` by hand.

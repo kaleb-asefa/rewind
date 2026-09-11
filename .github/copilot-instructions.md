@@ -68,7 +68,11 @@ DuckDB is single-writer: only run one backend server at a time (`make serve` han
   and caches Spotify oEmbed cover art per session.
 - **Frontend layering:** no ES modules (pages open via `file://`, which blocks module CORS).
   Explore chapters attach to a shared `window.RewindExplore` namespace (`src/js/explore/core.js`
-  first, then one file per chapter: `rhythm`, `sound`, `taste`, `behavior`, `discovery`, `life`).
+  first, then one file per chapter: `rhythm`, `sound`, `taste`, `behavior`, `discovery`, `life`,
+  `over_time`, `evolution`, `sound_detail`, `deep_cuts`, `wrapped`; chapter 01's animations live
+  outside that folder in `velocity.js` / `bar_race.js`). The Charts page is `charts.js` +
+  `charts_superlatives.js` + `charts_share.js` (the share deck is drawn on a raw `<canvas>` —
+  html-to-image hangs on this file:// + CDN-Tailwind setup).
   All API calls go through `window.fetchWithTimeout` from `src/js/api.js` — never hardcode the
   backend host elsewhere. `top_card.js`'s `initTopCard` factory renders top artist/album/track
   from one implementation, not three near-duplicates.
@@ -80,7 +84,14 @@ DuckDB is single-writer: only run one backend server at a time (`make serve` han
 ## Key conventions
 
 - Never string-interpolate request input into SQL; whitelist enum-like params
-  (`entity`/`sort`/`range`) and return `400` on anything else.
+  (`entity`/`sort`/`range`/`year`) and return `400` on anything else. Validated ints (the year,
+  the timezone offset) are inlined as literals on purpose — a `?` placeholder in an expression
+  that must also appear in `GROUP BY` breaks DuckDB's expression matching.
+- Every Explore metric endpoint takes `year=all|YYYY` and echoes `year` back; Charts endpoints
+  use `range=all|YYYY|4w|6m` instead. `/api/metrics/years` feeds the (not yet built) filter
+  control — see `docs/FRONTEND_YEAR_FILTER.md`.
+- `POST /api/upload` is capped (files + total bytes, env-tunable) and answers `413` when either
+  cap is exceeded; surface the server's `detail` string in the UI.
 - All blocking DuckDB/file/network work inside async routes runs via `run_in_threadpool`.
 - Escape data-derived strings with `esc()` before `innerHTML` on the frontend (uploaded
   track/artist names are untrusted).

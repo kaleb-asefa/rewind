@@ -88,17 +88,22 @@
   - function longer than ~40 lines,
   - file longer than ~400 lines,
   - 3+ near-identical blocks.
-  Current over-threshold files to split **when next touched:** `routers/explore.py` (~900) and
-  `src/js/velocity.js` (~560).
+  Current over-threshold files to split **when next touched:** `routers/explore.py` (~2200),
+  `src/js/charts_share.js` (~900), `src/js/velocity.js` and `src/js/charts.js` (~560 each).
 
 ---
 
 ## 5. Security (OWASP-aware)
 
 - **CORS:** `allow_origins=["*"]` together with `allow_credentials=True` is invalid per the CORS
-  spec and unsafe — Starlette reflects the caller's origin, so **any** site could make
-  credentialed calls once auth exists. Replace `"*"` with an explicit origin allowlist **before**
-  accounts/auth ship. Harmless today only because there are no credentials yet. (See §6.)
+  spec and unsafe — Starlette reflects the caller's origin. Resolved: `main.py` now takes an
+  explicit env-driven allowlist (`REWIND_ALLOWED_ORIGINS`, default `null` so `file://` dev works)
+  with `allow_credentials=False`, because the session ticket travels in the `X-Rewind-Session`
+  header, not a cookie. Keep it that way — don't reintroduce `"*"` + credentials.
+- **Session ticket:** the `X-Rewind-Session` UUID becomes part of a filename, so validate it
+  against the ticket regex **before** building any path (path traversal). See `docs/MULTI_USER.md` §11.
+- **Upload DoS:** `POST /api/upload` is capped by file count and total bytes (both env-tunable),
+  checked at the middleware *and* while streaming — don't remove either gate.
 - **No SQL injection:** parameterize or validate-then-inline (§2).
 - **No XSS:** escape data-derived HTML (§3).
 - **No secrets in source;** configuration comes from the environment (12-Factor III).
@@ -111,12 +116,14 @@ Fix each before the milestone in the "When" column. Update this table as items l
 
 | Item | Where | Type | When to fix |
 |---|---|---|---|
-| CORS `*` + credentials | `backend/main.py` | Security | **Before accounts/auth** |
 | API base `http://127.0.0.1:8000` hardcoded + fallback re-inlined | 8 files: `api.js`, `top_card.js`, `total_time.js`, `heatmap.js`, `behavior.js`, `bar_race.js`, `velocity.js`, `upload.js` | Duplication / config | Before any non-local deploy — centralize on one base const + route all fetches through `fetchWithTimeout` |
 | No Pydantic `response_model` on endpoints | all routers | Robustness / docs | When stabilizing the public API |
-| `run_in_threadpool` + per-query `try/except` boilerplate | ~20 endpoints | Duplication | Low priority — extract a small query-runner helper |
-| `routers/explore.py` ~900 lines | backend | Size | Split into sub-routers when it next grows |
+| `run_in_threadpool` + per-query `try/except` boilerplate | ~25 endpoints | Duplication | Low priority — extract a small query-runner helper |
+| `routers/explore.py` ~2.2k lines (explore + charts + superlatives in one file) | backend | Size | Split into sub-routers (explore / charts) — overdue |
+| `charts_share.js` ~900 lines, `velocity.js` / `charts.js` ~560 | frontend | Size | Split when next touched |
 | No linter/formatter | repo | Consistency | Adopt `ruff` (check + format) anytime |
+
+Paid down: CORS `*` + credentials (now an env allowlist with credentials off, §5).
 
 ---
 

@@ -204,13 +204,11 @@ curl -s -o /dev/null -w '%{http_code}\n' -H "$S" \
 
 ## 5. Contract bookkeeping
 
-`docs/API_CONTRACT.md` is a shared file and lands on `main` first, so it has **not** been
-edited on `work/backend`. When the human is ready, §3's "Explore + Charts" table needs:
-
-- a `year?` entry in the **Params** column of all 14 Explore rows,
-- a new row `| /api/metrics/years | — | years[{year,streams,minutes}] |`,
-- a note that every Explore response echoes `year` (int\|null) and that `over-time.nostalgia`
-  / `evolution.*` periods switch to month labels when a year is selected.
+`docs/API_CONTRACT.md` is **up to date** as of this doc's last edit — it carries the `year?`
+param on every Explore row, the `/api/metrics/years` row, and the §2 convention note (every
+Explore response echoes `year` (int|null); `over-time.nostalgia` / `evolution.*` periods switch
+to month labels when a year is selected). Read the contract for the shapes; read this doc for
+the UI work.
 
 Backend implementation lives in `backend/routers/explore.py` (`_parse_year`, `_year_clause`,
 `_available_years`) and is covered by `backend/test_main.py`

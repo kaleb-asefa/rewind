@@ -1,10 +1,14 @@
 # Rewind — Charts (Numbered Leaderboards)
 
 Spec + idea catalog for the **Charts** feature.
-Status: **core built** — `charts.html` + `src/js/charts.js` + `GET /api/metrics/chart`
-(Artists / Tracks / Albums / Genres, minutes/streams sort, all-time + per-year range,
-depth toggle, find-your-rank search, podium, movement arrows). Superlative and creative
-charts in §3.2–§3.7 are **not built yet**.
+Status: **core + superlatives + share deck built** — `charts.html` with `src/js/charts.js`
+(Artists / Tracks / Albums / Genres, minutes/streams sort, all-time + per-year range, depth
+toggle, find-your-rank search, podium, movement arrows) on `GET /api/metrics/chart`;
+`src/js/charts_superlatives.js` (6 record cards, own year selector) on
+`GET /api/metrics/superlatives`; `src/js/charts_share.js` — a Wrapped-style deck drawn on a
+raw `<canvas>` (intro, top artist/song heroes, top-5 lists, minutes, vibe, recap, plus one
+landscape recap card per recent year), saved per card or all at once. The creative charts in
+§3.3–§3.7 are **not built yet**.
 Follow `docs/UI_GUIDELINES.md` (copy/clutter) and `docs/CODE_QUALITY.md` (engineering) when building.
 
 ---
@@ -176,5 +180,7 @@ Frontend: one `charts.js` (or `charts/` namespace mirroring `explore/`) with a s
 3. ~~**Per-year time selector** (`range` param).~~ **Done** (all-time + real years; 4w/6m supported by the endpoint, not yet surfaced in the UI).
 4. **Superlative charts** (§3.2): ~~**Obsession of the Day**~~ + ~~**Biggest Binges**~~ + ~~**Most Skipped**~~ + ~~**Never Skipped**~~ + ~~**Longest / Shortest**~~ — **§3.2 complete** (6 cards in the "Superlatives" section, independent year selector). *(On Repeat was built then removed — too redundant with Obsession of the Day.)*
 5. Podium ~~+ ▲▼ movement~~ (**done**), expandable rows, then the remaining catalog (§3.3–3.7).
+6. ~~**Share deck**~~ **Done** — canvas-drawn Wrapped-style cards incl. a landscape recap per
+   recent year (`charts_share.js`).
 
-Steps 1–3 are live, plus the first superlative. Next: the rest of §3.2, then §3.3.
+Steps 1–4 and the share deck are live. Next: §3.3 (time-anchored charts), then expandable rows.
