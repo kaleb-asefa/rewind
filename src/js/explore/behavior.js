@@ -94,11 +94,12 @@
     }
 
     async function fetchBehavior() {
+        const tok = E.token();  // year at request time
         if (!document.getElementById('shuffle-bar')) return;
         let b = null;
         if (window.fetchWithTimeout) {
             try {
-                const res = await window.fetchWithTimeout('/api/metrics/behavior');
+                const res = await window.fetchWithTimeout(E.withYear('/api/metrics/behavior'));
                 if (res && res.ok && res.data && typeof res.data.shuffle === 'number') {
                     b = res.data;
                 }
@@ -106,6 +107,7 @@
                 /* no data */
             }
         }
+        if (E.stale(tok)) return;  // a newer year is already in flight
         if (!b) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('habits', false); renderBehavior(SAMPLE_BEHAVIOR); return; }
             E.chapterEmpty('habits', true);
@@ -115,5 +117,5 @@
         renderBehavior(b);
     }
 
-    E.chapters.push({ fetch: fetchBehavior });
+    E.chapters.push({ section: 'habits', fetch: fetchBehavior });
 })(window.RewindExplore);

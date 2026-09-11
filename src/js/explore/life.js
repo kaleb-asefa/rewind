@@ -76,11 +76,12 @@
         renderMilestones(data.milestones || []);
     }
     async function fetchListeningLife() {
+        const tok = E.token();  // year at request time
         if (!document.getElementById('life-peaks')) return;
         let data = null;
         if (window.fetchWithTimeout) {
             try {
-                const res = await window.fetchWithTimeout('/api/metrics/listening-life');
+                const res = await window.fetchWithTimeout(E.withYear('/api/metrics/listening-life'));
                 if (res && res.ok && res.data && Array.isArray(res.data.peaks) && res.data.peaks.length) {
                     data = res.data;
                 }
@@ -88,6 +89,7 @@
                 /* no data */
             }
         }
+        if (E.stale(tok)) return;  // a newer year is already in flight
         if (!data) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('listening-life', false); renderListeningLife(SAMPLE_LISTENING_LIFE); return; }
             E.chapterEmpty('listening-life', true);
@@ -117,5 +119,5 @@
         });
     }
 
-    E.chapters.push({ fetch: fetchListeningLife, hover: setupHover });
+    E.chapters.push({ section: 'listening-life', fetch: fetchListeningLife, hover: setupHover });
 })(window.RewindExplore);

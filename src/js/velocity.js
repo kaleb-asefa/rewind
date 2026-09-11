@@ -376,6 +376,13 @@
     }
 
     async function fetchRankData() {
+        // Chapter 01 lives outside src/js/explore/, so it reaches the shared year
+        // state through the namespace (and degrades to all-time without it).
+        const E = window.RewindExplore;
+        const withYear = (p) => (E && E.withYear ? E.withYear(p) : p);
+        const tok = E && E.token ? E.token() : 0;
+        if (E && E.chapterBusy) E.chapterBusy('climb', true, 'velocity');
+
         const fetcher = window.fetchWithTimeout || (async (ep) => {
             const res = await fetch(`http://127.0.0.1:8000${ep}`);
             const data = await res.json();
@@ -384,23 +391,29 @@
 
         try {
             const [tracksRes, artistsRes] = await Promise.all([
-                fetcher('/api/metrics/track-rank?limit=8', {}, 5000),
-                fetcher('/api/metrics/artist-rank?limit=8', {}, 5000)
+                fetcher(withYear('/api/metrics/track-rank?limit=8'), {}, 5000),
+                fetcher(withYear('/api/metrics/artist-rank?limit=8'), {}, 5000)
             ]);
+            if (E && E.stale && E.stale(tok)) return;  // a newer year is already in flight
 
             let activeMonths = [];
+            const tracksOk = tracksRes.ok && tracksRes.data && tracksRes.data.status === "ok";
+            const artistsOk = artistsRes.ok && artistsRes.data && artistsRes.data.status === "ok";
 
-            if (tracksRes.ok && tracksRes.data && tracksRes.data.status === "ok" && Array.isArray(tracksRes.data.months)) {
+            if (tracksOk && Array.isArray(tracksRes.data.months)) {
                 activeMonths = tracksRes.data.months;
-            } else if (artistsRes.ok && artistsRes.data && artistsRes.data.status === "ok" && Array.isArray(artistsRes.data.months)) {
+            } else if (artistsOk && Array.isArray(artistsRes.data.months)) {
                 activeMonths = artistsRes.data.months;
             }
 
-            if (activeMonths.length > 0) {
+            // A filtered year narrows (or empties) the timeline, so the frame list
+            // is replaced rather than merged — otherwise last year's months would
+            // still label this year's chart.
+            if (tracksOk || artistsOk) {
                 dynamicMonthsList = activeMonths;
-                const startY = activeMonths[0].slice(0, 4);
-                const endY = activeMonths[activeMonths.length - 1].slice(0, 4);
-                
+                const startY = activeMonths.length ? activeMonths[0].slice(0, 4) : '';
+                const endY = activeMonths.length ? activeMonths[activeMonths.length - 1].slice(0, 4) : '';
+
                 const startEl = document.getElementById('timeline-start-year');
                 const endEl = document.getElementById('timeline-end-year');
                 if (startEl) startEl.textContent = startY;
@@ -409,10 +422,11 @@
                 const scrubber = document.getElementById('timeline-scrubber');
                 if (scrubber) {
                     scrubber.max = Math.max(0, activeMonths.length - 1);
+                    if (progress > scrubber.max) progress = 0;
                 }
             }
 
-            if (tracksRes.ok && tracksRes.data && tracksRes.data.status === "ok" && Array.isArray(tracksRes.data.data) && tracksRes.data.data.length > 0) {
+            if (tracksOk && Array.isArray(tracksRes.data.data)) {
                 const mappedTracks = tracksRes.data.data.map((item, idx) => ({
                     id: `track-${idx + 1}`,
                     title: item.track_name || 'Unknown Track',
@@ -427,7 +441,7 @@
                 TRACKS_DATA.splice(0, TRACKS_DATA.length, ...mappedTracks);
             }
 
-            if (artistsRes.ok && artistsRes.data && artistsRes.data.status === "ok" && Array.isArray(artistsRes.data.data) && artistsRes.data.data.length > 0) {
+            if (artistsOk && Array.isArray(artistsRes.data.data)) {
                 const mappedArtists = artistsRes.data.data.map((item, idx) => ({
                     id: `artist-${idx + 1}`,
                     title: item.artist_name || 'Unknown Artist',
@@ -449,6 +463,8 @@
             updateDisplay();
         } catch (e) {
             console.warn("Could not load backend rank data, using default view.", e);
+        } finally {
+            if (E && E.chapterBusy && !(E.stale && E.stale(tok))) E.chapterBusy('climb', false, 'velocity');
         }
     }
 

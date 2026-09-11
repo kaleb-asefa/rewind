@@ -76,11 +76,12 @@
         renderRising(d.rising || []);
     }
     async function fetchDiscovery() {
+        const tok = E.token();  // year at request time
         if (!document.getElementById('discovery-bar')) return;
         let d = null;
         if (window.fetchWithTimeout) {
             try {
-                const res = await window.fetchWithTimeout('/api/metrics/discovery');
+                const res = await window.fetchWithTimeout(E.withYear('/api/metrics/discovery'));
                 if (res && res.ok && res.data && typeof res.data.new_artist_share === 'number') {
                     d = res.data;
                 }
@@ -88,6 +89,7 @@
                 /* no data */
             }
         }
+        if (E.stale(tok)) return;  // a newer year is already in flight
         if (!d) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('discovery', false); renderDiscovery(SAMPLE_DISCOVERY); return; }
             E.chapterEmpty('discovery', true);
@@ -97,5 +99,5 @@
         renderDiscovery(d);
     }
 
-    E.chapters.push({ fetch: fetchDiscovery });
+    E.chapters.push({ section: 'discovery', fetch: fetchDiscovery });
 })(window.RewindExplore);

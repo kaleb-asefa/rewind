@@ -172,11 +172,12 @@
         renderTrend({ points: data.mainstream_trend || [], accessor: (p) => p.popularity, wordId: 'mainstream-word', svgId: 'mainstream-svg', word: mainstreamWord, store: state.main });
     }
     async function fetchEvolution() {
+        const tok = E.token();  // year at request time
         if (!document.getElementById('genre-evo-svg')) return;
         let data = null;
         if (window.fetchWithTimeout) {
             try {
-                const res = await window.fetchWithTimeout('/api/metrics/evolution');
+                const res = await window.fetchWithTimeout(E.withYear('/api/metrics/evolution'));
                 if (res && res.ok && res.data && res.data.genre_evolution &&
                     Array.isArray(res.data.genre_evolution.genres) && res.data.genre_evolution.genres.length) {
                     data = res.data;
@@ -185,6 +186,7 @@
                 /* no data */
             }
         }
+        if (E.stale(tok)) return;  // a newer year is already in flight
         if (!data) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('evolution', false); renderEvolution(SAMPLE_EVOLUTION); return; }
             E.chapterEmpty('evolution', true);
@@ -251,5 +253,5 @@
         wireSparkline('mainstream-svg', () => state.main, (p) => Math.round(p.popularity * 100) + '% popular');
     }
 
-    E.chapters.push({ fetch: fetchEvolution, hover: setupHover });
+    E.chapters.push({ section: 'evolution', fetch: fetchEvolution, hover: setupHover });
 })(window.RewindExplore);

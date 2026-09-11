@@ -180,12 +180,13 @@
         Intense: 'dark, high-energy tracks',
     };
     async function fetchSound() {
+        const tok = E.token();  // year at request time
         if (!document.getElementById('mood-svg')) return;
         let s = null;
         let coverage = null;
         if (window.fetchWithTimeout) {
             try {
-                const res = await window.fetchWithTimeout('/api/metrics/audio');
+                const res = await window.fetchWithTimeout(E.withYear('/api/metrics/audio'));
                 if (res && res.ok && res.data && res.data.avg && res.data.tracks && res.data.tracks.length) {
                     s = res.data;
                     coverage = typeof res.data.coverage === 'number' ? res.data.coverage : null;
@@ -194,6 +195,7 @@
                 /* no data */
             }
         }
+        if (E.stale(tok)) return;  // a newer year is already in flight
         if (!s) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('sound', false); renderSound(SAMPLE_SOUND); setCoverageNote(null); return; }
             E.chapterEmpty('sound', true);
@@ -269,5 +271,5 @@
         }
     }
 
-    E.chapters.push({ fetch: fetchSound, hover: setupHover });
+    E.chapters.push({ section: 'sound', fetch: fetchSound, hover: setupHover });
 })(window.RewindExplore);

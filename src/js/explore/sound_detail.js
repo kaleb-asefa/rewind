@@ -113,11 +113,12 @@
         renderEnergySplit(data.energy_split || {});
     }
     async function fetchSoundDetail() {
+        const tok = E.token();  // year at request time
         if (!document.getElementById('tempo-bars')) return;
         let data = null;
         if (window.fetchWithTimeout) {
             try {
-                const res = await window.fetchWithTimeout('/api/metrics/sound-detail');
+                const res = await window.fetchWithTimeout(E.withYear('/api/metrics/sound-detail'));
                 if (res && res.ok && res.data && res.data.tempo &&
                     Array.isArray(res.data.tempo.buckets) && res.data.tempo.buckets.length) {
                     data = res.data;
@@ -126,6 +127,7 @@
                 /* no data */
             }
         }
+        if (E.stale(tok)) return;  // a newer year is already in flight
         if (!data) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('sound-detail', false); renderSoundDetail(SAMPLE_SOUND_DETAIL); return; }
             E.chapterEmpty('sound-detail', true);
@@ -154,5 +156,5 @@
         });
     }
 
-    E.chapters.push({ fetch: fetchSoundDetail, hover: setupHover });
+    E.chapters.push({ section: 'sound-detail', fetch: fetchSoundDetail, hover: setupHover });
 })(window.RewindExplore);

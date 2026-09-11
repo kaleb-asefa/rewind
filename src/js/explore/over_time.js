@@ -188,11 +188,12 @@
         renderNostalgia(data.nostalgia || []);
     }
     async function fetchOverTime() {
+        const tok = E.token();  // year at request time
         if (!document.getElementById('year-tabs')) return;
         let data = null;
         if (window.fetchWithTimeout) {
             try {
-                const res = await window.fetchWithTimeout('/api/metrics/over-time');
+                const res = await window.fetchWithTimeout(E.withYear('/api/metrics/over-time'));
                 if (res && res.ok && res.data && Array.isArray(res.data.years) && res.data.years.length) {
                     data = res.data;
                 }
@@ -200,6 +201,7 @@
                 /* no data */
             }
         }
+        if (E.stale(tok)) return;  // a newer year is already in flight
         if (!data) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('over-time', false); renderOverTime(SAMPLE_OVER_TIME); return; }
             E.chapterEmpty('over-time', true);
@@ -246,5 +248,5 @@
         }
     }
 
-    E.chapters.push({ fetch: fetchOverTime, hover: setupHover });
+    E.chapters.push({ section: 'over-time', fetch: fetchOverTime, hover: setupHover });
 })(window.RewindExplore);

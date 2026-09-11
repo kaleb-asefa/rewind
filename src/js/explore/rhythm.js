@@ -212,10 +212,11 @@
         setStreak(d.streak);
     }
     async function fetchRhythm() {
+        const tok = E.token();  // year at request time
         let d = null;
         if (window.fetchWithTimeout) {
             try {
-                const res = await window.fetchWithTimeout('/api/metrics/rhythm');
+                const res = await window.fetchWithTimeout(E.withYear('/api/metrics/rhythm'));
                 if (res && res.ok && res.data && res.data.total_streams > 0) {
                     d = res.data;
                 }
@@ -223,6 +224,7 @@
                 /* no data */
             }
         }
+        if (E.stale(tok)) return;  // a newer year is already in flight
         if (!d) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('rhythm', false); renderRhythm(SAMPLE); return; }
             E.chapterEmpty('rhythm', true);
@@ -299,5 +301,5 @@
         }
     }
 
-    E.chapters.push({ fetch: fetchRhythm, hover: setupHover });
+    E.chapters.push({ section: 'rhythm', fetch: fetchRhythm, hover: setupHover });
 })(window.RewindExplore);

@@ -74,11 +74,12 @@
         renderExtreme('shortest-track', data.shortest_track, 'Shortest song');
     }
     async function fetchWrapped() {
+        const tok = E.token();  // year at request time
         if (!document.getElementById('personality-badges')) return;
         let data = null;
         if (window.fetchWithTimeout) {
             try {
-                const res = await window.fetchWithTimeout('/api/metrics/wrapped');
+                const res = await window.fetchWithTimeout(E.withYear('/api/metrics/wrapped'));
                 if (res && res.ok && res.data && Array.isArray(res.data.personality) && res.data.personality.length) {
                     data = res.data;
                 }
@@ -86,6 +87,7 @@
                 /* no data */
             }
         }
+        if (E.stale(tok)) return;  // a newer year is already in flight
         if (!data) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('wrapped', false); renderWrapped(SAMPLE_WRAPPED); return; }
             E.chapterEmpty('wrapped', true);
@@ -95,5 +97,5 @@
         renderWrapped(data);
     }
 
-    E.chapters.push({ fetch: fetchWrapped });
+    E.chapters.push({ section: 'wrapped', fetch: fetchWrapped });
 })(window.RewindExplore);

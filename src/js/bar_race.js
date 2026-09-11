@@ -281,16 +281,29 @@
     }
 
     async function fetchRace() {
+        // Chapter 01 lives outside src/js/explore/, so it reaches the shared year
+        // state through the namespace (and degrades to all-time without it).
+        const E = window.RewindExplore;
+        const withYear = (p) => (E && E.withYear ? E.withYear(p) : p);
+        const tok = E && E.token ? E.token() : 0;
+        if (E && E.chapterBusy) E.chapterBusy("climb", true, "race");
+        const done = () => {
+            if (E && E.chapterBusy && !(E.stale && E.stale(tok))) E.chapterBusy("climb", false, "race");
+        };
+
         const fetcher = window.fetchWithTimeout || (async (ep) => {
             const res = await fetch(`http://127.0.0.1:8000${ep}`);
             return { ok: res.ok, data: await res.json() };
         });
 
-        const res = await fetcher(`/api/metrics/bar-race?entity=${entity}&limit=12`, {}, 6000);
+        const res = await fetcher(withYear(`/api/metrics/bar-race?entity=${entity}&limit=12`), {}, 6000);
+        if (E && E.stale && E.stale(tok)) return;  // a newer year is already in flight
+        setRaceTitle();
         if (!(res.ok && res.data && res.data.status === "ok")) {
             items = [];
             months = [];
             render();
+            done();
             return;
         }
 
@@ -310,11 +323,27 @@
 
         const startEl = document.getElementById("race-start-year");
         const endEl = document.getElementById("race-end-year");
-        if (startEl && months.length) startEl.textContent = months[0].slice(0, 4);
-        if (endEl && months.length) endEl.textContent = months[months.length - 1].slice(0, 4);
+        if (startEl) startEl.textContent = months.length ? months[0].slice(0, 4) : "";
+        if (endEl) endEl.textContent = months.length ? months[months.length - 1].slice(0, 4) : "";
 
         buildRows();
         render(null);
+        done();
+    }
+
+    // The race header names the period it is actually racing over, so a filtered
+    // year never sits under an "All-Time" title.
+    function setRaceTitle() {
+        const E = window.RewindExplore;
+        const year = E && E.year;
+        const title = document.getElementById("race-title");
+        const sub = document.getElementById("race-subtitle");
+        if (title) title.textContent = year ? `${year} Bar Race` : "All-Time Bar Race";
+        if (sub) {
+            sub.textContent = year
+                ? `Cumulative listening time — the final frame is your #1 of ${year}.`
+                : "Cumulative listening time — the final frame is your all-time #1.";
+        }
     }
 
     // ---- Exposed controls (wired from explore.html) ----

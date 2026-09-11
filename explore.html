@@ -69,9 +69,10 @@
             <h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface tracking-tight">A closer look at your listening.</h1>
         </div>
 
-        <!-- Sticky Chapter Rail (scroll-spy, auto-scrolls to the active section) -->
-        <nav id="chapter-rail" class="sticky top-[64px] z-30 flex justify-center py-1">
-            <div id="chapter-rail-track" class="chapter-rail-track relative flex items-center gap-1 p-1 bg-surface-container-high/80 backdrop-blur-md rounded-full border border-hairline overflow-x-auto max-w-full">
+        <!-- Sticky Chapter Rail (scroll-spy, auto-scrolls to the active section)
+             + the page-wide year filter (one selection drives every chapter). -->
+        <nav id="chapter-rail" class="sticky top-[64px] z-30 flex items-center justify-center gap-2 py-1">
+            <div id="chapter-rail-track" class="chapter-rail-track relative flex items-center gap-1 p-1 bg-surface-container-high/80 backdrop-blur-md rounded-full border border-hairline overflow-x-auto min-w-0">
                 <a data-chapter href="#climb" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="num font-mono">01</span> The Climb
                 </a>
@@ -108,6 +109,18 @@
                 <a data-chapter href="#wrapped" class="chapter-pill flex items-center gap-1.5 px-3.5 py-1 rounded-full text-label-bold font-label-bold whitespace-nowrap">
                     <span class="material-symbols-outlined text-sm">star</span> Wrapped
                 </a>
+            </div>
+
+            <!-- Year filter — hidden until /api/metrics/years reports a year to pick -->
+            <div id="year-filter" class="year-filter relative shrink-0 hidden">
+                <button id="year-filter-btn" type="button" aria-haspopup="listbox" aria-expanded="false"
+                        aria-label="Filter by year"
+                        class="year-pill flex items-center gap-1.5 px-3.5 py-[7px] rounded-full text-label-bold font-label-bold whitespace-nowrap bg-surface-container-high/80 backdrop-blur-md border border-hairline">
+                    <span class="material-symbols-outlined text-sm">calendar_month</span>
+                    <span id="year-filter-label">All time</span>
+                    <span class="material-symbols-outlined text-sm year-caret">expand_more</span>
+                </button>
+                <div id="year-filter-menu" class="year-menu" role="listbox" aria-label="Filter by year"></div>
             </div>
         </nav>
 
@@ -211,13 +224,13 @@
 
         </div>
 
-        <!-- All-Time Bar Race Header Row -->
+        <!-- Bar Race Header Row (title tracks the active year filter) -->
         <div id="bar-race" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 scroll-mt-40">
             <div>
-                <h2 class="text-headline-md font-headline-md font-bold tracking-tight text-on-surface">
+                <h2 id="race-title" class="text-headline-md font-headline-md font-bold tracking-tight text-on-surface">
                     All-Time Bar Race
                 </h2>
-                <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">
+                <p id="race-subtitle" class="font-body-sm text-body-sm text-on-surface-variant opacity-70">
                     Cumulative listening time — the final frame is your all-time #1.
                 </p>
             </div>

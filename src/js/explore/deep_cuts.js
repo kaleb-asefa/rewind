@@ -91,11 +91,12 @@
         renderNoSkip(data.no_skip || {});
     }
     async function fetchDeepCuts() {
+        const tok = E.token();  // year at request time
         if (!document.getElementById('concentration-bar')) return;
         let data = null;
         if (window.fetchWithTimeout) {
             try {
-                const res = await window.fetchWithTimeout('/api/metrics/deep-cuts');
+                const res = await window.fetchWithTimeout(E.withYear('/api/metrics/deep-cuts'));
                 if (res && res.ok && res.data && res.data.concentration &&
                     typeof res.data.concentration.top10_share === 'number') {
                     data = res.data;
@@ -104,6 +105,7 @@
                 /* no data */
             }
         }
+        if (E.stale(tok)) return;  // a newer year is already in flight
         if (!data) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('deep-cuts', false); renderDeepCuts(SAMPLE_DEEP_CUTS); return; }
             E.chapterEmpty('deep-cuts', true);
@@ -113,5 +115,5 @@
         renderDeepCuts(data);
     }
 
-    E.chapters.push({ fetch: fetchDeepCuts });
+    E.chapters.push({ section: 'deep-cuts', fetch: fetchDeepCuts });
 })(window.RewindExplore);

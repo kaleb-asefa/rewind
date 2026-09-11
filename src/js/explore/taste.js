@@ -119,11 +119,12 @@
     }
 
     async function fetchTaste() {
+        const tok = E.token();  // year at request time
         if (!document.getElementById('genre-bars')) return;
         let t = null;
         if (window.fetchWithTimeout) {
             try {
-                const res = await window.fetchWithTimeout('/api/metrics/taste');
+                const res = await window.fetchWithTimeout(E.withYear('/api/metrics/taste'));
                 if (res && res.ok && res.data && Array.isArray(res.data.genres) && res.data.genres.length) {
                     t = res.data;
                 }
@@ -131,6 +132,7 @@
                 /* no data */
             }
         }
+        if (E.stale(tok)) return;  // a newer year is already in flight
         if (!t) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('taste', false); renderTaste(SAMPLE_TASTE); return; }
             E.chapterEmpty('taste', true);
@@ -194,5 +196,5 @@
         }
     }
 
-    E.chapters.push({ fetch: fetchTaste, hover: setupHover });
+    E.chapters.push({ section: 'taste', fetch: fetchTaste, hover: setupHover });
 })(window.RewindExplore);

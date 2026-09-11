@@ -634,8 +634,83 @@ html { scroll-behavior: smooth; }
     .chapter-rail-track { scroll-behavior: auto; }
 }
 
-/* Inline "?" help buttons + click-to-open popover (explains derived categories) */
-.help { display: inline-flex; align-items: center; line-height: 0; }
+/* Year filter — one selection for the whole Explore page. Sits beside the
+   chapter rail and keeps its pill geometry; green marks the active year only. */
+.year-pill {
+    color: rgb(var(--color-on-surface-variant));
+    transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.year-pill:hover { color: rgb(var(--color-on-surface)); }
+.year-pill--active {
+    background: rgb(var(--color-primary));
+    color: rgb(var(--color-on-primary));
+    border-color: transparent;
+    box-shadow: var(--pill-shadow);
+}
+.year-caret { transition: transform 0.2s ease; }
+.year-filter.is-open .year-caret { transform: rotate(180deg); }
+
+.year-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 40;
+    display: none;
+    min-width: 160px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 6px;
+    border-radius: 16px;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+}
+.year-filter.is-open .year-menu { display: block; }
+.year-option {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 7px 12px;
+    border-radius: 999px;
+    color: rgb(var(--color-on-surface-variant));
+    text-align: left;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+.year-option:hover {
+    background: rgb(var(--color-surface-container-highest));
+    color: rgb(var(--color-on-surface));
+}
+.year-option-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+}
+.year-option-sub {
+    font-size: 10px;
+    opacity: 0.6;
+    font-variant-numeric: tabular-nums;
+}
+.year-option--active,
+.year-option--active:hover {
+    background: rgb(var(--color-primary));
+    color: rgb(var(--color-on-primary));
+}
+.year-option--active .year-option-sub { opacity: 0.8; }
+
+/* A chapter waiting on a year switch: dimmed and inert, so last year's numbers
+   are never mistaken for the year being loaded. */
+.chapter-busy {
+    opacity: 0.35;
+    filter: saturate(0.5);
+    pointer-events: none;
+    transition: opacity 0.18s ease, filter 0.18s ease;
+}
+
+/* Inline "?" help buttons + click-to-open popover (explains derived categories) */.help { display: inline-flex; align-items: center; line-height: 0; }
 .help-btn {
     display: inline-flex; align-items: center; justify-content: center;
     width: 20px; height: 20px; padding: 0; margin: 0; border: 0; cursor: pointer;

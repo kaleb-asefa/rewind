@@ -158,9 +158,10 @@
     }
 
     /* ---- Per-chapter empty state (same honesty as the overview cards) ---- */
-    // When a chapter has no real data — nothing uploaded yet, or the API is
-    // unreachable — hide its content and show one small "no data" card instead
-    // of inventing sample numbers the user might mistake for their own.
+    // When a chapter has no real data — nothing uploaded yet, the API is
+    // unreachable, or the selected year simply has no plays — hide its content
+    // and show one small "no data" card instead of inventing sample numbers the
+    // user might mistake for their own.
     function chapterEmpty(sectionId, isEmpty) {
         const section = document.getElementById(sectionId);
         if (!section) return;
@@ -174,12 +175,9 @@
             if (!msg) {
                 msg = document.createElement('div');
                 msg.className = 'chapter-empty glass-card rounded-2xl p-8 text-center';
-                msg.innerHTML =
-                    '<span class="material-symbols-outlined text-3xl text-on-surface-variant opacity-40">bar_chart</span>' +
-                    '<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Nothing to show yet — ' +
-                    '<a href="upload.html" class="text-primary hover:underline">upload your Spotify history</a>.</p>';
                 section.appendChild(msg);
             }
+            msg.innerHTML = emptyMarkup();
             msg.classList.remove('hidden');
         } else {
             if (msg) msg.classList.add('hidden');
@@ -188,6 +186,180 @@
                 c.classList.remove('hidden');
             });
         }
+    }
+
+    // A filtered year with nothing in it isn't an error and isn't an empty
+    // account — say so, and offer the way back to all time.
+    function emptyMarkup() {
+        if (E.year) {
+            return '<span class="material-symbols-outlined text-3xl text-on-surface-variant opacity-40">calendar_month</span>' +
+                '<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">No listening in ' + esc(E.year) + ' — ' +
+                '<button type="button" class="text-primary hover:underline" data-year-reset>see all time</button>.</p>';
+        }
+        return '<span class="material-symbols-outlined text-3xl text-on-surface-variant opacity-40">bar_chart</span>' +
+            '<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Nothing to show yet — ' +
+            '<a href="upload.html" class="text-primary hover:underline">upload your Spotify history</a>.</p>';
+    }
+
+    /* ---- Chapter busy state (while a year switch is in flight) ---- */
+    // Dims a chapter's body instead of leaving last year's numbers on screen
+    // looking like this year's. The header stays readable so the page keeps its
+    // shape while the new data lands. Owner-keyed because a chapter can have
+    // more than one loader (chapter 01 runs the velocity chart and the bar race
+    // independently) — the dim lifts only once every owner is done.
+    const busyOwners = new Map();
+    function chapterBusy(sectionId, isBusy, owner) {
+        const section = document.getElementById(sectionId);
+        if (!section) return;
+        let owners = busyOwners.get(sectionId);
+        if (!owners) { owners = new Set(); busyOwners.set(sectionId, owners); }
+        if (isBusy) owners.add(owner || 'chapter');
+        else owners.delete(owner || 'chapter');
+        const on = owners.size > 0;
+        Array.from(section.children).forEach((c, i) => {
+            if (i === 0) return; // keep the chapter header crisp
+            c.classList.toggle('chapter-busy', on);
+        });
+    }
+
+    /* ---- Year filter (one selection drives every chapter) ---- */
+    // `E.year` is the single source of truth: null = all time, otherwise an int.
+    // Every chapter builds its URL with withYear() and stamps its request with
+    // token(), so a response from a year the user has already moved off is
+    // dropped instead of painting the wrong numbers.
+    const YEAR_KEY = 'rewind_explore_year';
+    let yearSeq = 0;
+    let yearOptions = [];
+
+    function readStoredYear() {
+        try {
+            const raw = localStorage.getItem(YEAR_KEY);
+            return raw && /^\d{4}$/.test(raw) ? Number(raw) : null;
+        } catch (_e) {
+            return null;
+        }
+    }
+    function storeYear(y) {
+        try {
+            if (y == null) localStorage.removeItem(YEAR_KEY);
+            else localStorage.setItem(YEAR_KEY, String(y));
+        } catch (_e) {
+            /* private mode — the filter just won't persist */
+        }
+    }
+    function withYear(path) {
+        const y = E.year;
+        if (!y) return path; // all time → the URL you had before the filter existed
+        return path + (path.includes('?') ? '&' : '?') + 'year=' + encodeURIComponent(y);
+    }
+    function yearLabel() {
+        return E.year ? String(E.year) : 'All time';
+    }
+    function token() {
+        return yearSeq;
+    }
+    function stale(t) {
+        return t !== yearSeq;
+    }
+
+    function setYear(y) {
+        const next = y == null ? null : Number(y);
+        if (next === E.year) return;
+        E.year = next;
+        storeYear(next);
+        yearSeq++;  // anything still in flight for the old year is now stale
+        renderYearControl();
+        // Chapters listen on this already (it's the post-upload refresh hook), so
+        // one dispatch refetches the whole page — no per-chapter plumbing.
+        window.dispatchEvent(new Event('rewind:data-updated'));
+    }
+
+    function renderYearControl() {
+        const label = document.getElementById('year-filter-label');
+        if (label) label.textContent = yearLabel();
+        const btn = document.getElementById('year-filter-btn');
+        if (btn) btn.classList.toggle('year-pill--active', !!E.year);
+        const menu = document.getElementById('year-filter-menu');
+        if (!menu) return;
+        const opt = (value, text, sub) =>
+            '<button type="button" role="option" class="year-option' +
+            (String(value) === String(E.year == null ? 'all' : E.year) ? ' year-option--active' : '') +
+            '" data-year="' + esc(value) + '" aria-selected="' +
+            (String(value) === String(E.year == null ? 'all' : E.year)) + '">' +
+            '<span class="year-option-label">' + esc(text) + '</span>' +
+            (sub ? '<span class="year-option-sub">' + esc(sub) + '</span>' : '') +
+            '</button>';
+        menu.innerHTML =
+            opt('all', 'All time', '') +
+            yearOptions
+                .map((y) => opt(y.year, y.year, y.streams ? y.streams.toLocaleString() + ' plays' : ''))
+                .join('');
+    }
+
+    function closeYearMenu() {
+        const wrap = document.getElementById('year-filter');
+        const btn = document.getElementById('year-filter-btn');
+        if (wrap) wrap.classList.remove('is-open');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function initYearControl() {
+        const wrap = document.getElementById('year-filter');
+        const btn = document.getElementById('year-filter-btn');
+        if (!wrap || !btn) return;
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const open = wrap.classList.toggle('is-open');
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+        document.addEventListener('click', (e) => {
+            if (!wrap.contains(e.target)) closeYearMenu();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeYearMenu();
+        });
+        // Delegated so it survives the menu being re-rendered, and so the
+        // "see all time" link inside an empty chapter card works too.
+        document.addEventListener('click', (e) => {
+            const reset = e.target.closest && e.target.closest('[data-year-reset]');
+            if (reset) {
+                setYear(null);
+                return;
+            }
+            const optBtn = e.target.closest && e.target.closest('.year-option');
+            if (!optBtn) return;
+            const v = optBtn.getAttribute('data-year');
+            setYear(v === 'all' ? null : v);
+            closeYearMenu();
+        });
+
+        renderYearControl();
+        loadYearOptions();
+    }
+
+    async function loadYearOptions() {
+        const fetcher = window.fetchWithTimeout || (async (ep) => {
+            const res = await fetch(`http://127.0.0.1:8000${ep}`);
+            return { ok: res.ok, data: await res.json() };
+        });
+        let years = [];
+        try {
+            const res = await fetcher('/api/metrics/years', {}, 5000);
+            if (res && res.ok && res.data && Array.isArray(res.data.years)) years = res.data.years;
+        } catch (_e) {
+            /* offline → the control stays hidden and every chapter shows its empty card */
+        }
+        yearOptions = years;
+        const wrap = document.getElementById('year-filter');
+        if (wrap) wrap.classList.toggle('hidden', !years.length);
+        // A stored year that no longer exists (new upload, cleared history)
+        // must not strand the page on an empty view.
+        if (E.year != null && !years.some((y) => Number(y.year) === E.year)) {
+            setYear(null);
+            return;
+        }
+        renderYearControl();
     }
 
     /* ---- Inline "?" help popovers ---- */
@@ -261,18 +433,43 @@
         coverCell,
         loadCovers,
         chapterEmpty,
+        chapterBusy,
+        year: readStoredYear(),
+        withYear,
+        setYear,
+        token,
+        stale,
         chapters: [],
     };
     window.RewindExplore = E;
 
+    // Fetch a chapter with its loading state managed. A run that started before
+    // the current year selection never clears the busy state — otherwise a slow
+    // previous-year response would un-dim the chapter while the real data is
+    // still on the wire.
+    function runChapter(c) {
+        if (!c.fetch) return;
+        const t = yearSeq;
+        if (c.section) chapterBusy(c.section, true);
+        Promise.resolve()
+            .then(() => c.fetch())
+            .catch(() => {})
+            .then(() => {
+                if (t === yearSeq && c.section) chapterBusy(c.section, false);
+            });
+    }
+
     function init() {
         initReveal();
+        // The filter first: chapters must never be left unfilterable because a
+        // rail/scroll-spy hiccup threw on the way in.
+        initYearControl();
         initScrollSpy();
         initHelp();
         E.chapters.forEach((c) => { if (c.hover) c.hover(); });
-        E.chapters.forEach((c) => { if (c.fetch) c.fetch(); });
-        E.chapters.forEach((c) => {
-            if (c.fetch) window.addEventListener('rewind:data-updated', c.fetch);
+        E.chapters.forEach((c) => runChapter(c));
+        window.addEventListener('rewind:data-updated', () => {
+            E.chapters.forEach((c) => runChapter(c));
         });
     }
 
