@@ -12,10 +12,13 @@
     --color-surface-variant: 238 238 238;
     --color-on-background: 18 18 18;
     --color-on-surface: 18 18 18;
-    --color-on-surface-variant: 106 106 106;
+    --color-on-surface-variant: 95 95 95;
     --color-outline: 124 124 124;
     --color-outline-variant: 221 221 221;
-    --color-primary: 29 185 84;
+    /* Spotify Green is unreadable as text on white (2.6:1). Light mode deepens
+       the accent to keep the brand hue while clearing WCAG AA; the vivid
+       #1ed760 survives as --color-primary-container for large data fills. */
+    --color-primary: 16 124 57;
     --color-on-primary: 255 255 255;
     --color-primary-container: 30 215 96;
     --color-on-primary-container: 18 18 18;
@@ -27,7 +30,7 @@
     --color-on-tertiary: 255 255 255;
     --color-tertiary-container: 221 221 221;
     --color-on-tertiary-container: 18 18 18;
-    --color-error: 243 114 127;
+    --color-error: 198 33 56;
     --color-on-error: 255 255 255;
     --color-error-container: 255 218 220;
     --color-on-error-container: 120 20 30;
@@ -53,6 +56,66 @@
     --hero-glow: rgba(29, 185, 84, 0.12);
     --vinyl-opacity: 0.15;
     --heatmap-empty: #e5e5e5;
+
+    /* Component tokens — every hardcoded colour below lives here so that
+       cards, tooltips, hovers and chart chrome follow the active theme.
+       Light surfaces use soft, low-opacity shadows; the heavy 0.3–0.5 shadows
+       from docs/design.md are a dark-surface elevation device and turn muddy
+       on white. */
+    --card-bg: rgba(255, 255, 255, 0.88);
+    --card-bg-hover: #f2f2f2;
+    --card-border: rgba(0, 0, 0, 0.08);
+    --card-shadow: rgba(0, 0, 0, 0.08) 0px 6px 16px;
+    --card-shadow-strong: rgba(0, 0, 0, 0.12) 0px 8px 24px;
+    --fullscreen-bg: #ffffff;
+    --metric-gradient: linear-gradient(135deg, #ffffff 0%, #e8f6ed 100%);
+    --metric-gradient-border: rgba(29, 185, 84, 0.22);
+    /* Hover washes: tint toward the opposite end of the surface ramp. */
+    --hover-overlay: rgba(0, 0, 0, 0.045);
+    --hover-overlay-strong: rgba(0, 0, 0, 0.06);
+    /* Maximum-contrast text/stroke used to highlight a hovered data point. */
+    --emphasis: #121212;
+    --scrollbar-thumb: #d4d4d4;
+    --heatmap-outline: rgba(0, 0, 0, 0.45);
+    /* Floating chips stay dark in both themes: a high-contrast chip over the
+       page reads as a deliberate overlay and keeps the green accent legible. */
+    --tooltip-bg: #252525;
+    --tooltip-fg: #ffffff;
+    --tooltip-muted: rgba(255, 255, 255, 0.7);
+    --tooltip-border: rgba(255, 255, 255, 0.08);
+    --tooltip-shadow: rgba(0, 0, 0, 0.28) 0px 8px 24px;
+    --chip-bg: #ffffff;
+    --chip-fg: #121212;
+    --chip-border: rgba(0, 0, 0, 0.12);
+    --chip-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
+    --pill-shadow: rgba(0, 0, 0, 0.12) 0px 4px 10px;
+    --data-shadow: drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.18));
+    /* Chart chrome — gridlines, axis labels and text halos for the SVG/DOM
+       charts built in src/js/**. Referenced as var() from JS so a theme toggle
+       restyles an already-rendered chart without a re-render. */
+    --grid-line: rgba(0, 0, 0, 0.09);
+    --grid-line-strong: rgba(0, 0, 0, 0.13);
+    --axis-label: rgba(0, 0, 0, 0.5);
+    --text-halo: 0 1px 3px rgba(255, 255, 255, 0.85);
+    --bar-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+    /* Bar-race ramp: one fixed shade per racer. Light mode anchors darker so
+       every bar keeps contrast against a white surface. */
+    --race-1: #1db954;
+    --race-2: #15a247;
+    --race-3: #2ec566;
+    --race-4: #0f8b3b;
+    --race-5: #26b35b;
+    --race-6: #128f42;
+    --race-7: #0b7530;
+    --race-8: #1aa64e;
+    /* Sequential genre ramp (single hue, fading). Light mode fades a deeper
+       green toward white so the faintest band stays visible. */
+    --genre-1: #0f8b3b;
+    --genre-2: rgba(15, 139, 59, 0.8);
+    --genre-3: rgba(15, 139, 59, 0.62);
+    --genre-4: rgba(15, 139, 59, 0.46);
+    --genre-5: rgba(15, 139, 59, 0.32);
+    --genre-6: rgba(15, 139, 59, 0.2);
 }
 
 .dark {
@@ -74,7 +137,7 @@
     --color-primary: 30 215 96;
     --color-on-primary: 0 0 0;
     --color-primary-container: 29 185 84;
-    --color-on-primary-container: 255 255 255;
+    --color-on-primary-container: 18 18 18;
     --color-secondary: 179 179 179;
     --color-on-secondary: 18 18 18;
     --color-secondary-container: 31 31 31;
@@ -109,6 +172,50 @@
     --hero-glow: rgba(30, 215, 96, 0.08);
     --vinyl-opacity: 0.25;
     --heatmap-empty: #1f1f1f;
+
+    --card-bg: rgba(28, 27, 27, 0.85);
+    --card-bg-hover: #1f1f1f;
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-shadow: rgba(0, 0, 0, 0.3) 0px 8px 8px;
+    --card-shadow-strong: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+    --fullscreen-bg: #121212;
+    --metric-gradient: linear-gradient(135deg, #181818 0%, #1a2e1f 100%);
+    --metric-gradient-border: rgba(30, 215, 96, 0.12);
+    --hover-overlay: rgba(255, 255, 255, 0.04);
+    --hover-overlay-strong: rgba(255, 255, 255, 0.05);
+    --emphasis: #ffffff;
+    --scrollbar-thumb: #353535;
+    --heatmap-outline: rgba(255, 255, 255, 0.55);
+    --tooltip-bg: #252525;
+    --tooltip-fg: #ffffff;
+    --tooltip-muted: rgba(255, 255, 255, 0.7);
+    --tooltip-border: rgba(255, 255, 255, 0.08);
+    --tooltip-shadow: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+    --chip-bg: #121212;
+    --chip-fg: #ffffff;
+    --chip-border: rgba(255, 255, 255, 0.15);
+    --chip-shadow: 0 3px 10px rgba(0, 0, 0, 0.6);
+    --pill-shadow: rgba(0, 0, 0, 0.3) 0px 4px 10px;
+    --data-shadow: drop-shadow(0px 2px 6px rgba(0, 0, 0, 0.6));
+    --grid-line: rgba(255, 255, 255, 0.06);
+    --grid-line-strong: rgba(255, 255, 255, 0.1);
+    --axis-label: rgba(255, 255, 255, 0.45);
+    --text-halo: 0 1px 3px rgba(0, 0, 0, 0.7);
+    --bar-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+    --race-1: #6ef58e;
+    --race-2: #53e076;
+    --race-3: #3fce68;
+    --race-4: #1db954;
+    --race-5: #2bbf63;
+    --race-6: #57cf7e;
+    --race-7: #149c46;
+    --race-8: #39d06e;
+    --genre-1: #1ed760;
+    --genre-2: rgba(30, 215, 96, 0.78);
+    --genre-3: rgba(30, 215, 96, 0.6);
+    --genre-4: rgba(30, 215, 96, 0.44);
+    --genre-5: rgba(30, 215, 96, 0.3);
+    --genre-6: rgba(30, 215, 96, 0.18);
 }
 
 html {
@@ -170,6 +277,9 @@ body, header, section, footer, .glass-player, .spotify-card {
 .dark .spotify-card:hover {
     background-color: rgb(var(--color-surface-container-high));
 }
+.light .spotify-card:hover {
+    background-color: rgb(var(--color-surface-container));
+}
 .theme-icon {
     transition: transform 0.35s ease, opacity 0.2s ease;
 }
@@ -177,18 +287,25 @@ body, header, section, footer, .glass-player, .spotify-card {
     transform: rotate(30deg) scale(0.9);
 }
 
+/* Hairline divider/border that stays visible on both themes — `border-white/5`
+   is invisible on a white surface. */
+.border-hairline {
+    border-color: var(--card-border);
+}
+
 .glass-card {
-    background: #181818;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: rgba(0, 0, 0, 0.3) 0px 8px 8px;
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .glass-card:hover {
-    background: #1f1f1f;
+    background: var(--card-bg-hover);
 }
 .metric-gradient {
-    background: linear-gradient(135deg, #181818 0%, #1a2e1f 100%);
-    border-color: rgba(30, 215, 96, 0.12);
+    background: var(--metric-gradient);
+    border-color: var(--metric-gradient-border);
 }
 
 /* GitHub-Style Listening Activity Heatmap */
@@ -217,7 +334,7 @@ body, header, section, footer, .glass-player, .spotify-card {
 }
 .heatmap-cell:hover,
 .heatmap-cell:focus-visible {
-    outline: 1px solid rgba(255, 255, 255, 0.55);
+    outline: 1px solid var(--heatmap-outline);
     outline-offset: 1px;
     transform: scale(1.2);
     z-index: 10;
@@ -244,7 +361,7 @@ body, header, section, footer, .glass-player, .spotify-card {
 }
 .heatmap-month {
     grid-row: 1;
-    color: #b3b3b3;
+    color: rgb(var(--color-on-surface-variant));
     font-size: 10px;
     white-space: nowrap;
     align-self: end;
@@ -263,7 +380,7 @@ body, header, section, footer, .glass-player, .spotify-card {
     flex-shrink: 0;
 }
 .heatmap-day {
-    color: #b3b3b3;
+    color: rgb(var(--color-on-surface-variant));
     font-size: 10px;
     display: flex;
     align-items: center;
@@ -275,13 +392,13 @@ body, header, section, footer, .glass-player, .spotify-card {
     overflow-y: hidden;
     padding-bottom: 4px;
     scrollbar-width: thin;
-    scrollbar-color: #353535 transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 .heatmap-scroll::-webkit-scrollbar {
     height: 6px;
 }
 .heatmap-scroll::-webkit-scrollbar-thumb {
-    background: #353535;
+    background: var(--scrollbar-thumb);
     border-radius: 9999px;
 }
 #heatmap-tooltip {
@@ -290,10 +407,10 @@ body, header, section, footer, .glass-player, .spotify-card {
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.12s ease;
-    background: #252525;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+    background: var(--tooltip-bg);
+    color: var(--tooltip-fg);
+    border: 1px solid var(--tooltip-border);
+    box-shadow: var(--tooltip-shadow);
     border-radius: 6px;
     padding: 6px 10px;
     font-size: 11px;
@@ -307,7 +424,7 @@ body, header, section, footer, .glass-player, .spotify-card {
     font-weight: 700;
 }
 #heatmap-tooltip .top {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--tooltip-muted);
     font-size: 10px;
 }
 
@@ -318,7 +435,7 @@ body, header, section, footer, .glass-player, .spotify-card {
     stroke-linecap: round;
     stroke-linejoin: round;
     opacity: 0.95;
-    filter: drop-shadow(0px 2px 6px rgba(0, 0, 0, 0.6));
+    filter: var(--data-shadow);
 }
 
 .tip-container {
@@ -336,8 +453,8 @@ body, header, section, footer, .glass-player, .spotify-card {
     height: 38px;
     border-radius: 50%;
     padding: 2px;
-    background: #1c1b1b;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+    background: var(--chip-bg);
+    box-shadow: var(--card-shadow-strong);
     position: relative;
 }
 
@@ -345,14 +462,14 @@ body, header, section, footer, .glass-player, .spotify-card {
     position: absolute;
     top: -4px;
     right: -6px;
-    background: #121212;
+    background: var(--chip-bg);
     border: 1.5px solid currentColor;
-    color: #ffffff;
+    color: var(--chip-fg);
     font-size: 9px;
     font-weight: 800;
     padding: 1px 4px;
     border-radius: 9999px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    box-shadow: var(--chip-shadow);
     line-height: 1;
 }
 
@@ -362,14 +479,14 @@ body, header, section, footer, .glass-player, .spotify-card {
     top: 50%;
     transform: translateY(-50%);
     white-space: nowrap;
-    background: rgba(18, 18, 18, 0.92);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
     padding: 2.5px 7.5px;
     border-radius: 6px;
     font-size: 10px;
     font-weight: 700;
-    color: #ffffff;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.6);
+    color: var(--chip-fg);
+    box-shadow: var(--chip-shadow);
     backdrop-filter: blur(8px);
     opacity: 0.95;
 }
@@ -378,7 +495,7 @@ body, header, section, footer, .glass-player, .spotify-card {
     position: absolute;
     inset: -3px;
     border-radius: 50%;
-    border: 2px solid #53e076;
+    border: 2px solid rgb(30, 215, 96);
     animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     pointer-events: none;
 }
@@ -388,14 +505,8 @@ body, header, section, footer, .glass-player, .spotify-card {
     50% { opacity: 0.2; transform: scale(1.18); }
 }
 
-.glass-card {
-    background: rgba(28, 27, 27, 0.85);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
 .glass-card:fullscreen {
-    background: #121212;
+    background: var(--fullscreen-bg);
     padding: 1.5rem;
     width: 100vw;
     height: 100vh;
@@ -427,7 +538,7 @@ html { scroll-behavior: smooth; }
 .chapter-pill--active {
     background: rgb(var(--color-primary));
     color: rgb(var(--color-on-primary));
-    box-shadow: rgba(0, 0, 0, 0.3) 0px 4px 10px;
+    box-shadow: var(--pill-shadow);
 }
 .chapter-pill--active .num { opacity: 0.85; }
 .chapter-pill--soon { opacity: 0.4; }
@@ -471,10 +582,10 @@ html { scroll-behavior: smooth; }
     width: 288px;
     max-width: calc(100vw - 24px);
     background: rgb(var(--color-surface-container-high));
-    border: 1px solid rgb(255 255 255 / 0.1);
+    border: 1px solid var(--card-border);
     border-radius: 14px;
     padding: 14px 16px;
-    box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
+    box-shadow: var(--card-shadow-strong);
     color: rgb(var(--color-on-surface-variant));
     font-size: 13px;
     line-height: 1.55;
@@ -520,24 +631,24 @@ html { scroll-behavior: smooth; }
 
 /* rhythm chart hover interactivity */
 .clock-bar { transition: stroke 0.15s ease, stroke-opacity 0.15s ease, stroke-width 0.15s ease; }
-.clock-bar.is-hover { stroke: #ffffff; stroke-opacity: 1; stroke-width: 9; }
+.clock-bar.is-hover { stroke: var(--emphasis); stroke-opacity: 1; stroke-width: 9; }
 .clock-hit, .season-hit { cursor: pointer; }
 #season-dot, #season-vline { transition: opacity 0.15s ease; pointer-events: none; }
 .weekday-col:hover .weekday-bar { background: rgb(30, 215, 96); }
 
 /* chapter 03 charts */
 .mood-dot { cursor: pointer; transition: fill 0.12s ease; }
-.mood-dot.is-hover { fill: #ffffff; }
+.mood-dot.is-hover { fill: var(--emphasis); }
 .mood-seg { cursor: pointer; transition: filter 0.12s ease; }
 .mood-seg:hover { filter: brightness(1.15); }
 
 /* chapter 04 taste */
 .genre-row .genre-bar-fill { transition: width 0.5s ease, filter 0.12s ease; }
 .genre-row:hover .genre-bar-fill { filter: brightness(1.15); }
-.genre-row:hover .genre-name { color: #ffffff; }
+.genre-row:hover .genre-name { color: var(--emphasis); }
 .era-col:hover .era-bar { background: rgb(30, 215, 96); }
 .gem-row { transition: background 0.12s ease; }
-.gem-row:hover { background: rgba(255, 255, 255, 0.05); }
+.gem-row:hover { background: var(--hover-overlay-strong); }
 
 /* chapter 07 listening-life milestones */
 .life-milestone-line {
@@ -581,10 +692,10 @@ html { scroll-behavior: smooth; }
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.12s ease;
-    background: #252525;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+    background: var(--tooltip-bg);
+    color: var(--tooltip-fg);
+    border: 1px solid var(--tooltip-border);
+    box-shadow: var(--tooltip-shadow);
     border-radius: 8px;
     padding: 7px 11px;
     font-size: 12px;
@@ -597,7 +708,6 @@ html { scroll-behavior: smooth; }
 .rhythm-tooltip.visible { opacity: 1; }
 .rhythm-tooltip .rt-title { font-weight: 700; }
 .rhythm-tooltip .rt-val { color: #1ed760; font-size: 11px; font-weight: 600; }
-
 /* ── Charts page: numbered leaderboards ───────────────────────── */
 .chart-tab,
 .chart-sort,
@@ -616,11 +726,11 @@ html { scroll-behavior: smooth; }
 .range-tab.is-active {
     background: rgb(var(--color-primary));
     color: rgb(var(--color-on-primary));
-    box-shadow: rgba(0, 0, 0, 0.3) 0px 4px 10px;
+    box-shadow: var(--pill-shadow);
 }
 
 .chart-row { transition: background 0.12s ease; }
-.chart-row:hover { background: rgba(255, 255, 255, 0.04); }
+.chart-row:hover { background: var(--hover-overlay); }
 .chart-row--match {
     background: rgba(30, 215, 96, 0.10);
     box-shadow: inset 3px 0 0 0 rgb(30, 215, 96);

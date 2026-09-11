@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -11,95 +11,7 @@
 
     <!-- Tailwind CSS with Overview Design System Tokens -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
-        try {
-            tailwind.config = {
-                darkMode: "class",
-                theme: {
-                    extend: {
-                        colors: {
-                            "surface-variant": "#353534",
-                            "error-container": "#93000a",
-                            "tertiary-container": "#ff767b",
-                            "surface-container-lowest": "#0e0e0e",
-                            "surface-container-low": "#1c1b1b",
-                            "secondary-container": "#474746",
-                            "on-tertiary-container": "#730a1b",
-                            "on-primary": "#003914",
-                            "on-error": "#690005",
-                            "inverse-surface": "#e5e2e1",
-                            "on-secondary-container": "#b7b4b4",
-                            "on-tertiary": "#680114",
-                            "error": "#ffb4ab",
-                            "primary": "#53e076",
-                            "secondary-fixed": "#e5e2e1",
-                            "inverse-primary": "#006e2d",
-                            "on-tertiary-fixed-variant": "#881d28",
-                            "outline": "#869585",
-                            "on-secondary-fixed-variant": "#474746",
-                            "tertiary-fixed-dim": "#ffb3b3",
-                            "primary-fixed": "#72fe8f",
-                            "on-surface": "#e5e2e1",
-                            "on-primary-fixed-variant": "#005320",
-                            "on-surface-variant": "#bccbb9",
-                            "inverse-on-surface": "#313030",
-                            "surface-container-high": "#2a2a2a",
-                            "surface": "#131313",
-                            "on-primary-container": "#004118",
-                            "surface-tint": "#53e076",
-                            "tertiary": "#ffb3b3",
-                            "primary-fixed-dim": "#53e076",
-                            "surface-bright": "#393939",
-                            "surface-container": "#201f1f",
-                            "on-secondary-fixed": "#1c1b1b",
-                            "on-background": "#e5e2e1",
-                            "secondary": "#c8c6c5",
-                            "on-secondary": "#313030",
-                            "surface-dim": "#131313",
-                            "secondary-fixed-dim": "#c8c6c5",
-                            "on-primary-fixed": "#002108",
-                            "on-error-container": "#ffdad6",
-                            "surface-container-highest": "#353534",
-                            "primary-container": "#1db954",
-                            "background": "#121212",
-                            "outline-variant": "#3d4a3d"
-                        },
-                        borderRadius: {
-                            "DEFAULT": "1rem",
-                            "lg": "2rem",
-                            "xl": "3rem",
-                            "full": "9999px"
-                        },
-                        spacing: {
-                            "container-padding-desktop": "32px",
-                            "section-gap": "48px",
-                            "gutter": "24px",
-                            "container-padding-mobile": "16px",
-                            "base": "8px"
-                        },
-                        fontFamily: {
-                            "sans": ["Plus Jakarta Sans", "sans-serif"],
-                            "body-lg": ["Plus Jakarta Sans", "sans-serif"],
-                            "display-lg-mobile": ["Plus Jakarta Sans", "sans-serif"],
-                            "label-bold": ["Plus Jakarta Sans", "sans-serif"],
-                            "body-sm": ["Plus Jakarta Sans", "sans-serif"],
-                            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
-                            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
-                            "mono": ["Space Mono", "monospace"]
-                        },
-                        fontSize: {
-                            "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "500"}],
-                            "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
-                            "label-bold": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
-                            "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
-                            "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
-                            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
-                        }
-                    }
-                }
-            };
-        } catch(_e) {}
-    </script>
+    <script>try{var t=localStorage.getItem("rewind-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.classList.toggle("dark",t==="dark");document.documentElement.classList.toggle("light",t!=="dark");}catch(_e){}</script><script src="src/js/tailwind_config.js"></script>
 
     <!-- Modular Custom CSS & Scripts -->
     <link href="src/styles/main.css" rel="stylesheet"/>
@@ -150,7 +62,7 @@
 
         <!-- Entity tabs + search -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            <div id="chart-entity-tabs" class="flex items-center p-1 bg-surface-container-high rounded-full border border-white/5 self-start w-max">
+            <div id="chart-entity-tabs" class="flex items-center p-1 bg-surface-container-high rounded-full border border-hairline self-start w-max">
                 <button data-entity="artist" class="chart-tab flex items-center gap-1.5 px-4 py-1.5 rounded-full text-label-bold font-label-bold transition-all">
                     <span class="material-symbols-outlined text-sm">artist</span> Artists
                 </button>
@@ -168,7 +80,7 @@
             <div class="relative self-start lg:self-auto w-full sm:w-72">
                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none">search</span>
                 <input id="chart-search" type="text" autocomplete="off" placeholder="Find your rank…"
-                    class="w-full bg-surface-container-high border border-white/5 rounded-full pl-10 pr-9 py-2 text-body-sm font-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary/50 transition-colors"/>
+                    class="w-full bg-surface-container-high border border-hairline rounded-full pl-10 pr-9 py-2 text-body-sm font-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary/50 transition-colors"/>
                 <button id="chart-search-clear" type="button" aria-label="Clear search" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface">
                     <span class="material-symbols-outlined text-lg">close</span>
                 </button>
@@ -180,13 +92,13 @@
             <div id="range-tabs" class="flex items-center gap-1 p-1 bg-surface-container-high rounded-full overflow-x-auto max-w-full"></div>
 
             <div class="flex items-center gap-3 flex-wrap">
-                <div id="sort-tabs" class="flex items-center p-1 bg-surface-container-high rounded-full border border-white/5">
+                <div id="sort-tabs" class="flex items-center p-1 bg-surface-container-high rounded-full border border-hairline">
                     <button data-sort="minutes" class="chart-sort px-3.5 py-1.5 rounded-full text-label-bold font-label-bold transition-all">Minutes</button>
                     <button data-sort="streams" class="chart-sort px-3.5 py-1.5 rounded-full text-label-bold font-label-bold transition-all">Streams</button>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <span class="text-label-bold font-label-bold uppercase tracking-wider text-on-surface-variant opacity-60">Top</span>
-                    <div id="depth-tabs" class="flex items-center p-1 bg-surface-container-high rounded-full border border-white/5"></div>
+                    <div id="depth-tabs" class="flex items-center p-1 bg-surface-container-high rounded-full border border-hairline"></div>
                 </div>
             </div>
         </div>
@@ -332,7 +244,7 @@
     </div>
 
     <!-- Footer -->
-    <footer class="w-full py-section-gap bg-surface-container-lowest dark:bg-surface-container-lowest border-t border-white/5 mt-auto">
+    <footer class="w-full py-section-gap bg-surface-container-lowest dark:bg-surface-container-lowest border-t border-hairline mt-auto">
         <div class="flex flex-col md:flex-row justify-between items-center px-container-padding-desktop gap-8 md:gap-0 max-w-[1440px] mx-auto">
             <div class="flex flex-col gap-2">
                 <div class="text-label-bold font-label-bold text-on-surface-variant uppercase tracking-widest flex items-center gap-2">

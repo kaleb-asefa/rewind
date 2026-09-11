@@ -151,7 +151,7 @@
             '<path d="' + area + '" fill="url(#nostalgia-fill)"/>' +
             '<path d="' + line + '" fill="none" stroke="rgb(30,215,96)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
             '<line id="nostalgia-vline" x1="0" y1="0" x2="0" y2="' + H + '" stroke="rgb(30,215,96)" stroke-opacity="0.3" stroke-width="1" style="opacity:0" />' +
-            '<circle id="nostalgia-dot" r="4.5" fill="#fff" stroke="rgb(30,215,96)" stroke-width="2.5" style="opacity:0" />' +
+            '<circle id="nostalgia-dot" r="4.5" fill="var(--emphasis)" stroke="rgb(30,215,96)" stroke-width="2.5" style="opacity:0" />' +
             hits;
     }
     function showNostalgiaPoint(i) {

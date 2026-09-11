@@ -27,10 +27,12 @@
     const AXIS_EASE_TAU = 0.5;   // axis-rescale glide time constant (s)
 
     // Fixed green shade per category (stable for the whole race, so a bar keeps its
-    // colour as it moves — never recoloured between frames).
+    // colour as it moves — never recoloured between frames). The shades resolve
+    // from CSS vars in src/styles/main.css so a theme toggle restyles a running
+    // race without re-rendering it.
     const GREENS = [
-        "#6ef58e", "#53e076", "#3fce68", "#1db954",
-        "#2bbf63", "#57cf7e", "#149c46", "#39d06e",
+        "var(--race-1)", "var(--race-2)", "var(--race-3)", "var(--race-4)",
+        "var(--race-5)", "var(--race-6)", "var(--race-7)", "var(--race-8)",
     ];
     function greenFor(index) {
         return GREENS[index % GREENS.length];
@@ -84,9 +86,9 @@
         gridEls = [];
         for (let i = 0; i < 10; i++) {
             const line = document.createElement("div");
-            line.style.cssText = "position:absolute;width:1px;background:rgba(255,255,255,.06);";
+            line.style.cssText = "position:absolute;width:1px;background:var(--grid-line);";
             const label = document.createElement("div");
-            label.style.cssText = "position:absolute;top:0;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:10px;color:#7f8d7f;white-space:nowrap;";
+            label.style.cssText = "position:absolute;top:0;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:10px;color:var(--axis-label);white-space:nowrap;";
             grid.appendChild(line);
             grid.appendChild(label);
             gridEls.push({ line, label });
@@ -148,14 +150,14 @@
                 : "";
             const initial = (item.name || "?").trim().charAt(0).toUpperCase() || "?";
             row.innerHTML = `
-                <div class="race-rank" style="position:absolute;left:0;top:0;width:${LEFT_PAD - 6}px;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#7f8d7f;"></div>
-                <div class="race-bar" style="position:absolute;left:${LEFT_PAD}px;top:${(LANE - BAR_H) / 2}px;height:${BAR_H}px;width:0;border-radius:9999px;background:${greenFor(idx)};box-shadow:0 2px 5px rgba(0,0,0,.35);"></div>
-                <div class="race-name" style="position:absolute;left:${LEFT_PAD}px;top:0;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-shadow:0 1px 3px rgba(0,0,0,.7);">${item.name}${sub}</div>
-                <div class="race-avatar" style="position:absolute;top:${(LANE - AVATAR) / 2}px;width:${AVATAR}px;height:${AVATAR}px;border-radius:9999px;overflow:hidden;border:2px solid rgba(255,255,255,.18);background:linear-gradient(135deg,#2f6b43,#1db954);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.4);">
+                <div class="race-rank" style="position:absolute;left:0;top:0;width:${LEFT_PAD - 6}px;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--axis-label);"></div>
+                <div class="race-bar" style="position:absolute;left:${LEFT_PAD}px;top:${(LANE - BAR_H) / 2}px;height:${BAR_H}px;width:0;border-radius:9999px;background:${greenFor(idx)};box-shadow:var(--bar-shadow);"></div>
+                <div class="race-name" style="position:absolute;left:${LEFT_PAD}px;top:0;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:13px;font-weight:700;color:var(--emphasis);white-space:nowrap;overflow:hidden;text-shadow:var(--text-halo);">${item.name}${sub}</div>
+                <div class="race-avatar" style="position:absolute;top:${(LANE - AVATAR) / 2}px;width:${AVATAR}px;height:${AVATAR}px;border-radius:9999px;overflow:hidden;border:2px solid var(--card-border);background:linear-gradient(135deg,#2f6b43,#1db954);display:flex;align-items:center;justify-content:center;box-shadow:var(--pill-shadow);">
                     <span style="font-size:15px;font-weight:800;color:#eafff0;">${initial}</span>
                     <img class="race-cover cover-img hidden" data-cover-kind="${entity}" data-cover-id="${item.id || ''}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt=""/>
                 </div>
-                <div class="race-value" style="position:absolute;top:0;height:${LANE}px;display:flex;align-items:center;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#e5e2e1;white-space:nowrap;"></div>`;
+                <div class="race-value" style="position:absolute;top:0;height:${LANE}px;display:flex;align-items:center;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:rgb(var(--color-on-surface));white-space:nowrap;"></div>`;
             container.appendChild(row);
             rowEls.push(row);
             curY.push(VISIBLE_N * LANE + AXIS_TOP);
@@ -355,7 +357,7 @@
         });
         const id = `race-speed-${spd === 0.25 ? "025" : spd === 0.5 ? "05" : "10"}`;
         const active = document.getElementById(id);
-        if (active) active.className = "px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold";
+        if (active) active.className = "px-2 py-0.5 rounded-full bg-primary text-on-primary font-bold";
     };
 
     window.toggleRaceFullscreen = function () {

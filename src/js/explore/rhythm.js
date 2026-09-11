@@ -41,7 +41,7 @@
             const x2 = cx + cos * (inner + len);
             const y2 = cy + sin * (inner + len);
             const isPeak = hasData && i === peak;
-            const stroke = isPeak ? '#ffffff' : 'rgb(30,215,96)';
+            const stroke = isPeak ? 'var(--emphasis)' : 'rgb(30,215,96)';
             const op = isPeak ? 1 : (0.25 + v * 0.7).toFixed(2);
             const w = isPeak ? 8 : 6;
             bars += '<line class="clock-bar" data-h="' + i + '" x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
@@ -114,7 +114,7 @@
             'stroke-linecap="round" stroke-linejoin="round"/>' +
             '<line id="season-vline" x1="0" y1="0" x2="0" y2="' + H + '" stroke="rgb(30,215,96)" ' +
             'stroke-opacity="0.3" stroke-width="1" style="opacity:0" />' +
-            '<circle id="season-dot" r="4.5" fill="#fff" stroke="rgb(30,215,96)" stroke-width="2.5" style="opacity:0" />' +
+            '<circle id="season-dot" r="4.5" fill="var(--emphasis)" stroke="rgb(30,215,96)" stroke-width="2.5" style="opacity:0" />' +
             hits;
     }
 
