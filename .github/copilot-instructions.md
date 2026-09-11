@@ -11,11 +11,11 @@ Development runs as two scoped agents in **separate git worktrees** of the same 
 Always confirm which worktree/branch you are in (`git rev-parse --show-toplevel`,
 `git branch --show-current`) and edit only the paths you own.
 
-| Worktree | Branch | Agent | Owns (may edit) |
-|---|---|---|---|
-| `../rewind` | `main` | — | integration + live-data checkout; shared docs land here first |
-| `../rewind-backend` | `work/backend` | `.github/agents/backend.agent.md` | `backend/**` only |
-| `../rewind-frontend` | `work/frontend` | `.github/agents/frontend.agent.md` | `src/**`, `src/styles/**`, `*.html` only |
+| Worktree             | Branch          | Agent                              | Owns (may edit)                                               |
+| -------------------- | --------------- | ---------------------------------- | ------------------------------------------------------------- |
+| `../rewind`          | `main`          | —                                  | integration + live-data checkout; shared docs land here first |
+| `../rewind-backend`  | `work/backend`  | `.github/agents/backend.agent.md`  | `backend/**` only                                             |
+| `../rewind-frontend` | `work/frontend` | `.github/agents/frontend.agent.md` | `src/**`, `src/styles/**`, `*.html` only                      |
 
 - **Never edit outside your worktree's scope**, even if the fix is trivial and you technically
   can. Hand it to the owning agent instead.
@@ -24,7 +24,7 @@ Always confirm which worktree/branch you are in (`git rev-parse --show-toplevel`
   caching problem, or presentation-only fields bent into the API, are both violations.
   Only genuinely presentational fixes (rendering, reveal timing, layout) stay with frontend.
 - `docs/API_CONTRACT.md` is the frontend↔backend seam and the handoff mechanism. Update it
-  *first* when a response shape changes; additive fields are safe, renames/removals are breaking.
+  _first_ when a response shape changes; additive fields are safe, renames/removals are breaking.
 - **Shared files** (`docs/API_CONTRACT.md`, `docs/AGENTS.md`, `docs/SCHEMA.md`) are edited in
   `main` **first**, before branches diverge — not on a work branch.
 - **Commit each self-testable chunk; never merge.** As soon as a piece of work stands on its
@@ -50,6 +50,7 @@ cd backend && uv run pytest -q                          # full suite only
 cd backend && uv run pytest -q -k test_top_artist_endpoint   # single test by name
 npm install && npm run dev                              # frontend Vite dev server (Tailwind build), :5173
 ```
+
 There is no bundler/build step for the JS itself — `src/js/**` files are loaded directly as
 ordered `<script defer>` tags in the HTML pages (see below); Vite only compiles Tailwind CSS.
 DuckDB is single-writer: only run one backend server at a time (`make serve` handles this).
