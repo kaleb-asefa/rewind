@@ -325,7 +325,10 @@
 <!-- Share Modal -->
 <div id="share-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
 <div class="flex flex-col items-center gap-5 max-h-full">
-<!-- Shareable Card (rendered to image) -->
+<!-- Shareable Card (rendered to image). The frame scales on short viewports so the
+     whole card stays visible; the transform is on the frame, never on the card, so
+     the exported PNG is unaffected. -->
+<div id="share-card-frame" class="shrink-0" style="transform-origin:top center;">
 <div id="share-card" class="relative overflow-hidden rounded-2xl bg-[#0e0e0e] text-white" style="width:360px;height:640px;">
 <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-primary/20 blur-[80px]"></div>
 <div class="absolute -bottom-32 -left-20 w-72 h-72 rounded-full bg-primary/10 blur-[90px]"></div>
@@ -361,6 +364,7 @@
 <div class="text-right">
 <div id="share-streams" class="font-display-lg text-3xl font-extrabold">--</div>
 <div class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-label-bold">streams</div>
+</div>
 </div>
 </div>
 </div>

@@ -1,10 +1,16 @@
 /**
  * Rewind — Wrapped-style share deck.
- * A carousel of 10 Spotify-Wrapped-style story cards (Top 5 artists, tracks,
- * albums, genres, hero cards, minutes, vibe, recap) drawn onto a 1080×1920
- * canvas and exported as PNGs. Cover art is loaded crossOrigin="anonymous"
- * (Spotify's CDN sends Access-Control-Allow-Origin: *), so drawing it does not
- * taint the canvas and the preview IS exactly the shared image.
+ * A carousel of 7 story cards (intro, top artists / songs / albums / genres,
+ * minutes, vibe) drawn onto a 1080×1920 canvas and exported as PNGs.
+ * One idea per card and every fact shown exactly once (docs/UI_GUIDELINES.md):
+ * the #1 item is the hero of its own list card, so there is no separate hero
+ * card, no kicker restating the title, and no recap repeating all of it.
+ * Cover art is loaded crossOrigin="anonymous" (Spotify's CDN sends
+ * Access-Control-Allow-Origin: *), so drawing it does not taint the canvas and
+ * the preview IS exactly the shared image. Covers never gate the deck: the urls
+ * that ship inline with the chart rows paint immediately, anything still
+ * unresolved arrives through the shared cover cache and repaints the card, and
+ * exports wait for that to settle.
  */
 (function () {
     "use strict";
@@ -53,6 +59,7 @@
         let index = 0;
         let built = false;
         let building = false;
+        let coversPending = null;
 
         /* ─────────────────────── canvas helpers ─────────────────────── */
         function ls(px) { if ("letterSpacing" in ctx) ctx.letterSpacing = px + "px"; }
@@ -107,29 +114,6 @@
             ctx.fillText("Rewind", P + 42, y);
         }
 
-        function footer() {
-            const y = H - P + 6;
-            ls(5);
-            ctx.font = "700 24px " + FONT;
-            ctx.textAlign = "left";
-            ctx.fillStyle = GRAY;
-            ctx.fillText("MY REWIND", P, y);
-            ctx.textAlign = "right";
-            ctx.fillStyle = GREEN;
-            ctx.fillText("REWIND.APP", W - P, y);
-            ctx.textAlign = "left";
-            ls(0);
-        }
-
-        function kicker(text, x, y) {
-            ls(6);
-            ctx.font = "700 28px " + FONT;
-            ctx.fillStyle = GREEN;
-            ctx.textAlign = "left";
-            ctx.fillText(String(text).toUpperCase(), x, y);
-            ls(0);
-        }
-
         // object-fit: cover into a rounded/circular box, with a lettered fallback.
         function cover(img, x, y, w, h, radius, fallbackChar) {
             ctx.save();
@@ -175,134 +159,139 @@
 
         /* ─────────────────────── card renderers ─────────────────────── */
 
+        // Each card is wordmark + one title + one idea. No kicker restating the
+        // title, no footer strap repeating the wordmark.
+        function headline(text, y) {
+            ctx.textAlign = "left";
+            ctx.fillStyle = WHITE;
+            fitFont(text, W - P * 2, 100, 64, "800");
+            ctx.fillText(text, P, y);
+        }
+
+        function emptyNote(y) {
+            ctx.textAlign = "left";
+            ctx.fillStyle = GRAY;
+            ctx.font = "500 40px " + FONT;
+            ctx.fillText("No data yet \u2014 upload your history.", P, y);
+        }
+
+        function minutesLabel(it, long) {
+            if (!it || it.minutes == null) return "";
+            return fmtInt(it.minutes) + (long ? " minutes" : " min");
+        }
+
         function cardIntro(d) {
             background();
             wordmark(P + 46);
             const pics = (d.artists.length ? d.artists : d.albums).slice(0, 4);
-            const cellW = 300, cellH = 300, gap = 24;
-            const gridW = cellW * 2 + gap, gridX = (W - gridW) / 2, gridY = 300;
+            const cell = 380, gap = 28;
+            // Collage + title read as one block, centred in the space under the
+            // wordmark so the card doesn't sit top-heavy over dead space.
+            const gridX = (W - (cell * 2 + gap)) / 2, gridY = 520;
             pics.forEach((it, i) => {
-                const cx = gridX + (i % 2) * (cellW + gap);
-                const cy = gridY + Math.floor(i / 2) * (cellH + gap);
-                cover(it.img, cx, cy, cellW, cellH, 28, initial(it.name));
+                cover(it.img, gridX + (i % 2) * (cell + gap), gridY + Math.floor(i / 2) * (cell + gap),
+                    cell, cell, 28, initial(it.name));
             });
-            let y = gridY + cellH * 2 + gap + 150;
+            let y = gridY + cell * 2 + gap + 156;
             ctx.textAlign = "center";
-            ls(6);
-            ctx.font = "700 30px " + FONT;
-            ctx.fillStyle = GREEN;
-            ctx.fillText("MY MUSIC, WRAPPED", W / 2, y);
-            ls(0);
-            y += 130;
             ctx.font = "800 130px " + FONT;
             ctx.fillStyle = WHITE;
             ctx.fillText("Your Rewind", W / 2, y);
-            y += 90;
-            ctx.font = "500 40px " + FONT;
+            y += 84;
+            ls(6);
+            ctx.font = "700 32px " + FONT;
             ctx.fillStyle = GRAY;
-            ctx.fillText(fmtInt(d.totalMinutes) + " minutes of music", W / 2, y);
+            ctx.fillText("ALL-TIME LISTENING", W / 2, y);
+            ls(0);
             ctx.textAlign = "left";
-            footer();
         }
 
-        function cardHero(kickerText, item, subtitle, circle) {
-            background();
-            wordmark(P + 46);
-            kicker(kickerText, P, P + 150);
-            const size = 620, x = (W - size) / 2, y = 460;
-            cover(item.img, x, y, size, size, circle ? size / 2 : 40, initial(item.name));
-            let ty = y + size + 130;
-            ctx.textAlign = "center";
-            fitFont(item.name, W - P * 2, 96, 48, "800");
-            ctx.fillStyle = WHITE;
-            ctx.fillText(item.name, W / 2, ty);
-            if (subtitle) {
-                ty += 66;
-                ctx.font = "500 42px " + FONT;
-                ctx.fillStyle = GREEN;
-                ctx.fillText(ellipsize(subtitle, W - P * 2), W / 2, ty);
-            }
-            ctx.textAlign = "left";
-            footer();
-        }
-
-        function cardList(kickerText, title, items, opts) {
+        // One card per dimension: #1 is the hero of its own list, 2–5 follow.
+        function cardTop(title, items, opts) {
             opts = opts || {};
             background();
             wordmark(P + 46);
-            kicker(kickerText, P, P + 150);
-            ctx.textAlign = "left";
-            ctx.fillStyle = WHITE;
-            ctx.font = "800 108px " + FONT;
-            ctx.fillText(ellipsize(title, W - P * 2), P, P + 250);
-
-            const rows = items.slice(0, 5);
-            const top = 560, bottom = H - 180;
-            const rowH = rows.length ? (bottom - top) / rows.length : 0;
-            const thumb = Math.min(150, rowH - 40);
-            const rankW = 66, gap = 26;
-            const coverX = P + rankW + gap;
-            const nameX = coverX + thumb + 34;
-            const maxW = W - nameX - P;
-
-            if (!rows.length) {
-                ctx.fillStyle = GRAY;
-                ctx.font = "500 36px " + FONT;
-                ctx.fillText("No data yet \u2014 upload your history.", P, top + 60);
+            headline(title, P + 216);
+            if (!items.length) {
+                emptyNote(P + 360);
+                return;
             }
 
+            const hero = items[0];
+            const size = 420, hy = 380;
+            cover(hero.img, (W - size) / 2, hy, size, size, opts.circle ? size / 2 : 40, initial(hero.name));
+            ctx.textAlign = "center";
+            fitFont(hero.name, W - P * 2, 88, 46, "800");
+            ctx.fillStyle = WHITE;
+            ctx.fillText(hero.name, W / 2, hy + size + 100);
+            const heroSub = opts.showArtist ? hero.artist : minutesLabel(hero, true);
+            if (heroSub) {
+                ctx.font = "500 40px " + FONT;
+                ctx.fillStyle = GREEN;
+                ctx.fillText(ellipsize(heroSub, W - P * 2), W / 2, hy + size + 158);
+            }
+            ctx.textAlign = "left";
+
+            const rows = items.slice(1, 5);
+            if (!rows.length) return;
+            ctx.strokeStyle = "rgba(255,255,255,0.10)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(P, 1024);
+            ctx.lineTo(W - P, 1024);
+            ctx.stroke();
+
+            const top = 1090, bottom = H - 150;
+            const rowH = (bottom - top) / rows.length;
+            const thumb = Math.min(124, rowH - 46);
+            const coverX = P + 84;
+            const nameX = coverX + thumb + 32;
+            const maxW = W - nameX - P;
             rows.forEach((it, i) => {
                 const cy = top + i * rowH + rowH / 2;
+                ctx.textBaseline = "middle";
                 ctx.fillStyle = GREEN;
-                ctx.font = "800 60px " + FONT;
-                ctx.textAlign = "left";
-                ctx.textBaseline = "middle";
-                ctx.fillText(String(i + 1), P, cy);
-                ctx.textBaseline = "alphabetic";
+                ctx.font = "800 48px " + FONT;
+                ctx.fillText(String(i + 2), P, cy);
                 cover(it.img, coverX, cy - thumb / 2, thumb, thumb, opts.circle ? thumb / 2 : 20, initial(it.name));
-                const sub = opts.showArtist ? it.artist : (it.minutes != null ? fmtInt(it.minutes) + " min" : "");
-                ctx.textBaseline = "middle";
+                const sub = opts.showArtist ? it.artist : minutesLabel(it, false);
                 ctx.fillStyle = WHITE;
-                ctx.font = "700 50px " + FONT;
-                ctx.fillText(ellipsize(it.name, maxW), nameX, sub ? cy - 22 : cy);
+                ctx.font = "700 46px " + FONT;
+                ctx.fillText(ellipsize(it.name, maxW), nameX, sub ? cy - 20 : cy);
                 if (sub) {
                     ctx.fillStyle = GRAY;
-                    ctx.font = "500 36px " + FONT;
-                    ctx.fillText(ellipsize(sub, maxW), nameX, cy + 30);
+                    ctx.font = "500 32px " + FONT;
+                    ctx.fillText(ellipsize(sub, maxW), nameX, cy + 26);
                 }
                 ctx.textBaseline = "alphabetic";
             });
-            ctx.textAlign = "left";
-            footer();
         }
 
         function cardGenres(d) {
             background();
             wordmark(P + 46);
-            kicker("MY TOP GENRES", P, P + 150);
-            ctx.fillStyle = WHITE;
-            ctx.font = "800 108px " + FONT;
-            ctx.fillText("Top genres", P, P + 250);
-
+            headline("Top genres", P + 216);
             const rows = d.genres.slice(0, 5);
-            const top = 560, bottom = H - 180;
-            const rowH = rows.length ? (bottom - top) / rows.length : 0;
+            if (!rows.length) {
+                emptyNote(P + 360);
+                return;
+            }
+            const top = 500, bottom = H - 180;
+            const rowH = (bottom - top) / rows.length;
             const barH = Math.min(150, rowH - 34);
             rows.forEach((it, i) => {
                 const y = top + i * rowH + (rowH - barH) / 2;
-                const shade = 60 - i * 8;
                 roundRectPath(P, y, W - P * 2, barH, barH / 2);
-                ctx.fillStyle = "hsl(146,63%," + shade + "%)";
+                ctx.fillStyle = "hsl(146,63%," + (60 - i * 8) + "%)";
                 ctx.fill();
                 ctx.fillStyle = i < 2 ? "#0b1f13" : "rgba(255,255,255,0.92)";
                 ctx.font = "800 52px " + FONT;
                 ctx.textAlign = "left";
                 ctx.textBaseline = "middle";
-                ctx.fillText("#" + (i + 1), P + 44, y + barH / 2);
-                ctx.fillText(ellipsize(it.name, W - P * 2 - 220), P + 170, y + barH / 2);
+                ctx.fillText(String(i + 1), P + 52, y + barH / 2);
+                ctx.fillText(ellipsize(it.name, W - P * 2 - 220), P + 160, y + barH / 2);
                 ctx.textBaseline = "alphabetic";
             });
-            footer();
         }
 
         function cardMinutes(d) {
@@ -310,29 +299,20 @@
             wordmark(P + 46);
             ctx.textAlign = "center";
             ls(6);
-            ctx.font = "700 32px " + FONT;
+            ctx.font = "700 34px " + FONT;
             ctx.fillStyle = GREEN;
-            ctx.fillText("YOU LISTENED FOR", W / 2, 520);
+            ctx.fillText("YOU LISTENED FOR", W / 2, H / 2 - 190);
             ls(0);
-            ctx.font = "800 240px " + FONT;
+            const total = fmtInt(d.totalMinutes);
+            fitFont(total, W - P * 2, 250, 110, "800");
             ctx.fillStyle = WHITE;
-            ctx.fillText(fmtInt(d.totalMinutes), W / 2, 760);
-            ctx.font = "700 54px " + FONT;
+            ctx.fillText(total, W / 2, H / 2 + 40);
+            ls(8);
+            ctx.font = "700 34px " + FONT;
             ctx.fillStyle = GRAY;
-            ctx.fillText("minutes of music", W / 2, 850);
-            ctx.font = "500 40px " + FONT;
-            ctx.fillStyle = GREEN;
-            ctx.fillText("that's about " + fmtInt(d.totalMinutes / 60) + " hours", W / 2, 930);
-            const strip = (d.tracks.length ? d.tracks : d.albums).slice(0, 4);
-            const size = 200, gap = 24, totalW = strip.length * size + (strip.length - 1) * gap;
-            let sx = (W - totalW) / 2;
-            const sy = 1180;
-            strip.forEach((it) => {
-                cover(it.img, sx, sy, size, size, 24, initial(it.name));
-                sx += size + gap;
-            });
+            ctx.fillText("MINUTES OF MUSIC", W / 2, H / 2 + 150);
+            ls(0);
             ctx.textAlign = "left";
-            footer();
         }
 
         function vibeWord(audio) {
@@ -372,50 +352,6 @@
             ctx.fillStyle = GRAY;
             ctx.fillText("You lean toward " + vibe.phrase + ".", W / 2, H / 2 + 110);
             ctx.textAlign = "left";
-            footer();
-        }
-
-        function cardRecap(d) {
-            background();
-            wordmark(P + 46);
-            kicker("THE RECAP", P, P + 150);
-            ctx.fillStyle = WHITE;
-            ctx.font = "800 104px " + FONT;
-            ctx.fillText("Your Rewind", P, P + 250);
-
-            const rows = [
-                { label: "Top artist", it: d.artists[0], circle: true },
-                { label: "Top song", it: d.tracks[0], circle: false },
-                { label: "Top album", it: d.albums[0], circle: false },
-            ];
-            const top = 560, rowH = 300, thumb = 200;
-            rows.forEach((r, i) => {
-                if (!r.it) return;
-                const y = top + i * rowH;
-                cover(r.it.img, P, y, thumb, thumb, r.circle ? thumb / 2 : 24, initial(r.it.name));
-                const tx = P + thumb + 40;
-                ls(4);
-                ctx.font = "700 30px " + FONT;
-                ctx.fillStyle = GREEN;
-                ctx.fillText(r.label.toUpperCase(), tx, y + 70);
-                ls(0);
-                ctx.font = "800 64px " + FONT;
-                ctx.fillStyle = WHITE;
-                ctx.fillText(ellipsize(r.it.name, W - tx - P), tx, y + 140);
-                if (r.it.artist) {
-                    ctx.font = "500 40px " + FONT;
-                    ctx.fillStyle = GRAY;
-                    ctx.fillText(ellipsize(r.it.artist, W - tx - P), tx, y + 195);
-                }
-            });
-            const gy = top + rows.length * rowH + 40;
-            ctx.font = "800 90px " + FONT;
-            ctx.fillStyle = GREEN;
-            ctx.fillText(fmtInt(d.totalMinutes), P, gy + 70);
-            ctx.font = "500 40px " + FONT;
-            ctx.fillStyle = GRAY;
-            ctx.fillText("minutes listened", P, gy + 125);
-            footer();
         }
 
         /* ─────────────────────── data + build ─────────────────────── */
@@ -431,18 +367,37 @@
             });
         }
 
-        async function attachCovers(kind, items) {
-            const ids = items.map((it) => it.id).filter(Boolean);
-            if (!ids.length || !window.fetchWithTimeout) return;
-            let map = {};
-            try {
-                const res = await window.fetchWithTimeout(
-                    "/api/images?kind=" + kind + "&ids=" + encodeURIComponent(ids.join(",")), {}, 15000);
-                map = (res.ok && res.data && res.data.images) || {};
-            } catch (_e) { /* covers optional */ }
-            await Promise.all(items.map(async (it) => {
-                if (it.id && map[it.id]) it.img = await loadImage(map[it.id]);
+        async function attachCovers(kind, items, onUpdate) {
+            if (!items.length) return;
+            // Chart rows ship their own `image_url`, so those paint straight
+            // away; seed the shared cache with them too, so the page's other
+            // components never re-resolve the same ids.
+            if (window.primeCoverUrls) window.primeCoverUrls(kind, items);
+            const inline = items.filter((it) => it.image_url);
+            await Promise.all(inline.map(async (it) => { it.img = await loadImage(it.image_url); }));
+            if (inline.length) onUpdate();
+
+            // Anything the backend hasn't cached yet costs a cold Spotify
+            // lookup (seconds per id), so it is resolved after the deck is
+            // already on screen — never in front of it.
+            const missing = items.filter((it) => !it.img && it.id);
+            if (!missing.length || !window.resolveCoverUrls) return;
+            const map = await window.resolveCoverUrls(kind, missing.map((it) => it.id));
+            await Promise.all(missing.map(async (it) => {
+                const url = map[it.id];
+                if (!url) return;
+                it.image_url = url;
+                it.img = await loadImage(url);
             }));
+            onUpdate();
+        }
+
+        function loadCovers(d, onUpdate) {
+            return Promise.all([
+                attachCovers("artist", d.artists, onUpdate),
+                attachCovers("track", d.tracks, onUpdate),
+                attachCovers("album", d.albums, onUpdate),
+            ]);
         }
 
         async function loadData() {
@@ -469,11 +424,6 @@
                 if (au.ok && au.data) audio = au.data;
             } catch (_e) { /* ignore */ }
 
-            await Promise.all([
-                attachCovers("artist", artists),
-                attachCovers("track", tracks),
-                attachCovers("album", albums),
-            ]);
             return { artists, tracks, albums, genres, totalMinutes, audio };
         }
 
@@ -488,7 +438,6 @@
             ctx.font = "500 42px " + FONT;
             ctx.fillText("Upload your Spotify history first.", W / 2, H / 2 + 54);
             ctx.textAlign = "left";
-            footer();
         }
 
         function buildDeck(d) {
@@ -496,19 +445,14 @@
                 deck = [{ title: "Rewind", render: cardNoData }];
                 return;
             }
-            const topArtist = d.artists[0] || { name: "\u2014" };
-            const topTrack = d.tracks[0] || { name: "\u2014" };
             deck = [
                 { title: "Intro", render: () => cardIntro(d) },
-                { title: "Top artist", render: () => cardHero("My #1 artist", topArtist, topArtist.minutes != null ? fmtInt(topArtist.minutes) + " minutes" : "", true) },
-                { title: "Top 5 artists", render: () => cardList("My top artists", "Top artists", d.artists, { circle: true }) },
-                { title: "Top song", render: () => cardHero("My #1 song", topTrack, topTrack.artist || "", false) },
-                { title: "Top 5 songs", render: () => cardList("My top songs", "Top songs", d.tracks, { showArtist: true }) },
-                { title: "Top 5 albums", render: () => cardList("My top albums", "Top albums", d.albums, { showArtist: true }) },
-                { title: "Top 5 genres", render: () => cardGenres(d) },
+                { title: "Top artists", render: () => cardTop("Top artists", d.artists, { circle: true }) },
+                { title: "Top songs", render: () => cardTop("Top songs", d.tracks, { showArtist: true }) },
+                { title: "Top albums", render: () => cardTop("Top albums", d.albums, { showArtist: true }) },
+                { title: "Top genres", render: () => cardGenres(d) },
                 { title: "Minutes", render: () => cardMinutes(d) },
                 { title: "Your vibe", render: () => cardVibe(d) },
-                { title: "Recap", render: () => cardRecap(d) },
             ];
         }
 
@@ -524,6 +468,10 @@
         }
 
         function buildDots() {
+            if (downloadAllBtn) {
+                const label = downloadAllBtn.querySelector("[data-count]");
+                if (label) label.textContent = "Save all " + deck.length;
+            }
             if (!dotsEl) return;
             dotsEl.innerHTML = deck
                 .map((_c, i) => '<button data-dot="' + i + '" class="share-dot w-2 h-2 rounded-full transition-all"></button>')
@@ -537,7 +485,9 @@
             if (!deck.length) return;
             index = (index % deck.length + deck.length) % deck.length;
             deck[index].render();
-            if (captionEl) captionEl.textContent = deck[index].title + "  ·  " + (index + 1) + " / " + deck.length;
+            // The card already carries its own headline, so the counter is the
+            // only thing worth repeating outside it (docs/UI_GUIDELINES.md §1).
+            if (captionEl) captionEl.textContent = (index + 1) + " / " + deck.length;
             if (dotsEl) {
                 dotsEl.querySelectorAll(".share-dot").forEach((dot, i) => {
                     dot.classList.toggle("bg-primary", i === index);
@@ -548,6 +498,29 @@
         }
 
         function go(delta) { index += delta; renderCurrent(); }
+
+        /**
+         * Size the preview to the space the modal actually has.
+         *
+         * The card is 9:16, and the controls under it wrap on narrow screens,
+         * so a fixed "viewport minus N" guess either crops the card or pushes
+         * the buttons off-screen. Measuring the chrome keeps the whole card
+         * visible at any size. Only the CSS box changes — the canvas bitmap
+         * stays 1080×1920, so exports are unaffected.
+         */
+        function fitCanvas() {
+            const frame = canvas.parentElement;
+            const stack = frame && frame.parentElement;
+            if (!frame || !stack || modal.classList.contains("hidden")) return;
+            // scrollHeight, not offsetHeight: the stack scrolls, so once it
+            // overflows its own height stops growing and would under-report the
+            // chrome — leaving the buttons cut off at the bottom.
+            const chrome = stack.scrollHeight - frame.offsetHeight;  // caption + dots + actions + gaps
+            const avail = modal.clientHeight - 32 - chrome - 8;      // modal p-4 + a little slack
+            const height = Math.max(240, Math.min(720, avail));
+            canvas.style.height = height + "px";
+            canvas.style.width = Math.round(height * W / H) + "px";
+        }
 
         async function ensureBuilt() {
             if (built || building) return;
@@ -561,6 +534,19 @@
             buildDots();
             built = true;
             building = false;
+            // Deliberately not awaited: the deck is usable immediately and each
+            // batch of covers repaints the card on screen as it arrives.
+            if (data) coversPending = loadCovers(data, () => { if (built) renderCurrent(); });
+        }
+
+        // Exports wait for the covers (bounded), so a saved PNG never loses art
+        // the preview was about to show.
+        function coversSettled() {
+            if (!coversPending) return Promise.resolve();
+            return Promise.race([
+                coversPending,
+                new Promise((r) => setTimeout(r, 12000)),
+            ]);
         }
 
         /* ─────────────────────── open / close / export ─────────────────────── */
@@ -571,8 +557,10 @@
                 nativeBtn.classList.remove("hidden");
                 nativeBtn.classList.add("flex");
             }
+            fitCanvas();
             await ensureBuilt();
             renderCurrent();
+            fitCanvas();  // the dots row only exists once the deck is built
         }
         function closeModal() { modal.classList.add("hidden"); }
 
@@ -596,6 +584,7 @@
         if (prevBtn) prevBtn.addEventListener("click", () => go(-1));
         if (nextBtn) nextBtn.addEventListener("click", () => go(1));
         modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+        window.addEventListener("resize", fitCanvas);
         document.addEventListener("keydown", (e) => {
             if (modal.classList.contains("hidden")) return;
             if (e.key === "Escape") closeModal();
@@ -605,6 +594,8 @@
 
         if (downloadBtn) {
             downloadBtn.addEventListener("click", async () => {
+                await coversSettled();
+                renderCurrent();
                 const blob = await toBlob();
                 if (blob) downloadBlob(blob, "rewind-" + slugTitle() + ".png");
             });
@@ -612,6 +603,7 @@
 
         if (downloadAllBtn) {
             downloadAllBtn.addEventListener("click", async () => {
+                await coversSettled();
                 const start = index;
                 for (let i = 0; i < deck.length; i++) {
                     index = i;
@@ -627,6 +619,8 @@
 
         if (nativeBtn) {
             nativeBtn.addEventListener("click", async () => {
+                await coversSettled();
+                renderCurrent();
                 const blob = await toBlob();
                 if (!blob) return;
                 const file = new File([blob], "rewind-" + slugTitle() + ".png", { type: "image/png" });

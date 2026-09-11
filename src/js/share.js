@@ -7,6 +7,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     const modal = document.getElementById("share-modal");
     const card = document.getElementById("share-card");
+    const frame = document.getElementById("share-card-frame");
     const openBtn = document.getElementById("share-open-btn");
     const closeBtn = document.getElementById("share-close-btn");
     const downloadBtn = document.getElementById("share-download-btn");
@@ -28,9 +29,27 @@
       document.getElementById("share-streams").textContent = readText("heatmap-total");
     }
 
+    // Scale the 360×640 card down to whatever the viewport can show, measuring
+    // the action row (it wraps on narrow screens) instead of guessing at it.
+    // The transform lives on the frame, so html-to-image still captures the
+    // card at full size.
+    function fitCard() {
+      if (!frame) return;
+      const actions = document.getElementById("share-actions");
+      const chrome = (actions ? actions.offsetHeight : 54) + 20;  // + gap-5
+      const scale = Math.max(0.3, Math.min(
+        1,
+        (modal.clientHeight - 32 - chrome - 8) / 640,
+        (modal.clientWidth - 32) / 360,
+      ));
+      frame.style.transform = "scale(" + scale + ")";
+      frame.style.marginBottom = -Math.round(640 * (1 - scale)) + "px";
+    }
+
     function openModal() {
       populate();
       modal.classList.remove("hidden");
+      fitCard();
       if (nativeBtn && navigator.canShare) {
         nativeBtn.classList.remove("hidden");
         nativeBtn.classList.add("flex");
@@ -48,6 +67,9 @@
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && !modal.classList.contains("hidden")) closeModal();
+    });
+    window.addEventListener("resize", () => {
+      if (!modal.classList.contains("hidden")) fitCard();
     });
 
     async function renderBlob() {
