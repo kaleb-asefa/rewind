@@ -73,7 +73,7 @@ neither needs to read the other's code.
 |---|---|---|
 | `/api/metrics/total-time` | — | `total_minutes` |
 | `/api/metrics/top-artist` | — | `artist_name`, `artist_id`, `total_streams` |
-| `/api/metrics/top-album` | — | `album_name`, `album_id`, `artist_name`, `total_minutes` |
+| `/api/metrics/top-album` | — | `album_name`, `album_id`, `artist_name`, `total_minutes`, `cover_kind`, `cover_id` |
 | `/api/metrics/top-track` | — | `track_name`, `track_id`, `artist_name`, `total_streams` |
 | `/api/metrics/total-songs` | — | `total_songs` |
 | `/api/metrics/active-day` | — | `weekday`, `average_minutes`, `total_minutes` |
@@ -103,8 +103,20 @@ neither needs to read the other's code.
 | `/api/metrics/sound-detail` | `year?` | `tempo{buckets[]}`, `key{major_share}`, `danceable[]`, `energy_split{workout,wind_down}` |
 | `/api/metrics/deep-cuts` | `year?` | `concentration{top10_share}`, `album_commitment{deep_share}`, `top_day_track`, `no_skip` |
 | `/api/metrics/wrapped` | `year?` | `personality[]`, `longest_track`, `shortest_track` |
-| `/api/metrics/chart` | `entity=artist\|track\|album\|genre`, `sort=minutes\|streams`, `limit`, `range=all\|YYYY\|4w\|6m` | `items[{rank,name,artist,id,minutes,streams,share,prev_rank,image_url}]`, `years[]` |
+| `/api/metrics/chart` | `entity=artist\|track\|album\|genre`, `sort=minutes\|streams`, `limit`, `range=all\|YYYY\|4w\|6m` | `items[{rank,name,artist,id,cover_kind,cover_id,minutes,streams,share,prev_rank,image_url}]`, `years[]` |
 | `/api/metrics/superlatives` | `range`, `limit` | `obsession[]`, `binges[]`, `most_skipped[]`, `never_skipped[]`, `longest[]`, `shortest[]`, `years[]` |
+
+> **Album cover ids (`cover_kind` / `cover_id`, additive).** Album items (`top-album`,
+> `chart?entity=album`, `bar-race?entity=album`) carry them alongside `id`. `id` still means
+> the real Spotify **album** id and is now resolved by identity
+> (`track_uri → track_features.track_id → album_id`, most-played edition wins) instead of by
+> matching album/artist name strings, which disagreed between the export and the catalog
+> ("Take Care" vs "Take Care (Deluxe)", "Giveon" vs "GIVĒON") and silently produced `null`.
+> For an album the catalog doesn't know (released after the catalog snapshot) `id` is `null`
+> and `cover_kind: "track"` + `cover_id` point at one of the album's own tracks — a track's
+> oEmbed thumbnail *is* its album cover, so the art is identical. **Clients that resolve art
+> themselves should prefer `cover_id`/`cover_kind` over `id`**; `image_url` already accounts
+> for it. Other entities don't set these fields (fall back to `id` + the endpoint's kind).
 
 > `image_url` (string\|null, additive): each item's cached cover URL, read-only from the `images`
 > table by `(kind, spotify_id)`. `null` when the id is missing, not yet warmed, or a genuine

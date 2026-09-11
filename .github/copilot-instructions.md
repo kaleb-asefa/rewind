@@ -65,8 +65,9 @@ DuckDB is single-writer: only run one backend server at a time (`make serve` han
   `routers/{upload,overview,explore}.py` (endpoints, one router per domain) →
   `metrics.py` (framework-free computation: ranking, bar-race, heatmap, streaks, chronotype,
   timezone, genre bucketing — no FastAPI imports, unit-testable alone). `catalog.py` enriches
-  uploaded history against a read-only 45M-track parquet catalog; `images.py` lazily fetches
-  and caches Spotify oEmbed cover art per session.
+  uploaded history against a read-only 45M-track parquet catalog; `covers.py` resolves *which*
+  Spotify id carries an album's art (id join, representative-track fallback — never name
+  matching); `images.py` lazily fetches and caches Spotify oEmbed cover art per session.
 - **Frontend layering:** no ES modules (pages open via `file://`, which blocks module CORS).
   Explore chapters attach to a shared `window.RewindExplore` namespace (`src/js/explore/core.js`
   first, then one file per chapter: `rhythm`, `sound`, `taste`, `behavior`, `discovery`, `life`,
@@ -77,6 +78,12 @@ DuckDB is single-writer: only run one backend server at a time (`make serve` han
   All API calls go through `window.fetchWithTimeout` from `src/js/api.js` — never hardcode the
   backend host elsewhere. `top_card.js`'s `initTopCard` factory renders top artist/album/track
   from one implementation, not three near-duplicates.
+- **Theming:** light and dark come from one token set in `src/styles/main.css` (`:root` =
+  light, `.dark` = dark), wired to Tailwind by the shared `src/js/tailwind_config.js` (loaded
+  after the CDN script, **no `defer`**, no per-page config). Colours in JS/SVG renderers use
+  `var(--token)` / `rgb(var(--accent-rgb))` — no hex or `rgb(30,215,96)` literals. Adding a
+  token means adding it to *both* blocks. Rules and the light-mode elevation model:
+  `docs/design.md` §2A.
 - **Empty-state contract:** metric endpoints never 500 on missing data — they return
   `{"status": "ok", ...}` with empty arrays / `null` scalars. The frontend renders the honest
   empty state (`chapterEmpty`, `#chart-empty`) and never shows fake data on real pages;

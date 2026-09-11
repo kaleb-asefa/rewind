@@ -47,6 +47,12 @@
 - **Never block the event loop.** All DuckDB / file / network work runs inside
   `run_in_threadpool(...)` within an `async` route (DuckDB's driver is sync).
 - **SQL-first.** Let DuckDB do the aggregation and joins; Python only shapes the result.
+- **Join on identity, never on names.** Ids (`track_id`, `album_id`, `artist_id`) are exact;
+  names produced by two different sources are not — the export and the catalog disagree over
+  edition suffixes, casing and diacritics, and a name join fails *silently* (a `NULL` id, no
+  error). Where a name must be the grouping key anyway (the artist chart), canonicalize it
+  (`strip_accents(upper(trim(…)))`) and pick the display spelling with `arg_max(name, plays)`.
+  See `backend/covers.py` and `_canonical_artist_rows`.
 - **Never interpolate user input into SQL.** Use parameters (`?`), or — when a value must appear
   identically in `SELECT`/`GROUP BY` (a DuckDB constraint) — an **internally-validated** literal
   (e.g. a timezone offset resolved from a whitelist). Whitelist enum-like params (see the
@@ -73,8 +79,14 @@
   names come from user uploads — treat them as untrusted.
 - **Guard by element existence** (`const el = ...; if (!el) return;`) so a shared script safely
   no-ops on pages that don't have that DOM.
-- **Sample-fallback pattern:** fetch real data, fall back to a `SAMPLE_*` constant when the API
-  is offline/empty, and only swap to real data when the response *shape* is present.
+- **Colours come from tokens.** Use Tailwind's token utilities or `var(--token)` /
+  `rgb(var(--accent-rgb))` in SVG/canvas renderers — never a hex or `rgb(30,215,96)` literal,
+  which silently breaks the light theme. New token → add it to **both** `:root` and `.dark`
+  in `main.css`. Tailwind config is shared (`src/js/tailwind_config.js`), not per page.
+- **Never fake data on a real page.** Fetch, and on empty/offline render the honest empty
+  state (`chapterEmpty`, `#chart-empty`, the superlatives/share empty cards). `SAMPLE_*`
+  constants may only render when `window.REWIND_ALLOW_SAMPLE` is set — which only the
+  `explore_bento_sample.html` mockup does.
 
 ---
 
@@ -130,7 +142,8 @@ Paid down: CORS `*` + credentials (now an env allowlist with credentials off, §
 ## 7. Pre-merge checklist
 
 - [ ] Backend tests green (`uv run pytest -q`) and `get_errors` clean on changed files.
-- [ ] No new hardcoded host, secret, or user-input-in-SQL; data-derived HTML escaped.
+- [ ] No new hardcoded host, secret, colour literal, or user-input-in-SQL; data-derived HTML escaped.
+- [ ] UI changes checked in **both** themes (toggle light/dark) and in the empty state.
 - [ ] New/changed behavior has a test.
 - [ ] Functions/files within the size smells (§4), or a good reason not.
 - [ ] Comments explain *why*; no dead/speculative code added.

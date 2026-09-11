@@ -52,6 +52,49 @@ What distinguishes Spotify is its pill-and-circle geometry. Primary buttons use 
 - **Medium** (`rgba(0,0,0,0.3) 0px 8px 8px`): Cards, dropdowns
 - **Inset Border** (`rgb(18,18,18) 0px 1px 0px, rgb(124,124,124) 0px 0px 0px 1px inset`): Input border-shadow combo
 
+## 2A. Theming — one token set, two themes
+
+The palette above is the **dark** theme. Both themes ship from one token set, so
+**nothing in the app hardcodes a colour** — not in CSS, not in a JS chart renderer.
+
+- **Where the tokens live:** `src/styles/main.css` — `:root` holds the light values,
+  `.dark` the dark ones. `src/js/theme.js` toggles `.dark`/`.light` on `<html>`
+  (persisted in `localStorage`, defaults to the OS preference).
+- **Two families:**
+  - `--color-*` — the Material-style roles (`surface`, `surface-container-*`,
+    `on-surface`, `outline`, `primary`, `error`, …), stored as **space-separated RGB
+    channels** so Tailwind can apply opacity.
+  - Component tokens — `--card-bg`, `--card-shadow`, `--glass-bg`, `--tooltip-*`,
+    `--chip-*`, `--grid-line`, `--axis-label`, `--emphasis`, `--heatmap-empty`,
+    `--hover-overlay`, `--accent-rgb`, … for everything a Tailwind utility can't express.
+  Both blocks stay **symmetric**: a token added to one theme must be added to the other.
+- **Tailwind:** `src/js/tailwind_config.js` is the single shared CDN config (`darkMode:
+  'class'`) mapping every colour utility to `rgb(var(--color-<token>) / <alpha-value>)`.
+  Load it **after** the Tailwind CDN script and **without `defer`**, before the page's own
+  scripts. Pages must not re-declare their own inline config.
+- **In JS/SVG renderers:** use `var(--token)` — and `rgb(var(--accent-rgb))` for data fills
+  (bars, spokes, gradients) so charts follow the theme. No `#1ed760` / `rgb(30,215,96)`
+  literals in `src/js/**`.
+
+### Light theme — a canvas, not a lightbox
+
+Light mode is **not** an inverted dark mode; copying dark's rules makes it glare and makes
+cards read as sunken. Its own rules:
+
+- **Elevation runs the other way.** The page canvas is the *darkest* light surface
+  (`#e8e7e3`) and each level lifts **toward** white: cards `#f4f3f0`, only the top level
+  (dialogs, tooltips) reaches `#fcfcfa`. A card must be brighter than what it sits on.
+- **Nothing is pure white, no text is pure black.** A `#fff` canvas under `#121212` text is
+  ~18.9:1 — far past AA, and the glare is what tires the eye. Surfaces carry a faint warm
+  tint so large areas read as paper. Muted text deepens to `69 69 64` (opacity-blended
+  secondary text loses contrast much faster on a pale canvas than on a black one).
+- **Shadows are soft** (0.07–0.10 opacity). The heavy 0.3–0.5 shadows in §6 are a
+  dark-surface device and turn muddy on paper; they register here only because the canvas
+  is tinted rather than white.
+- **The accent moves opposite the background.** Green text deepens to `#0e6b31` (AA on
+  every surface in the ramp) and filled controls use `#1db954`, while dark mode keeps the
+  neon `#1ed760`. Data fills only owe 3:1, so they use `--accent-rgb`.
+
 ## 3. Typography Rules
 
 ### Font Families
@@ -199,6 +242,10 @@ What distinguishes Spotify is its pill-and-circle geometry. Primary buttons use 
 - Don't add additional brand colors — green + achromatic grays is the complete palette
 - Don't use relaxed line-heights — Spotify's typography is compact and dense
 - Don't expose raw gray borders — use shadow-based or inset borders instead
+- Don't hardcode a colour anywhere — add/reuse a token (§2A); a literal hex in CSS or a
+  chart renderer is a light-theme bug waiting to happen
+- Don't mirror dark mode's values into light mode — light has its own elevation and
+  accent rules (§2A)
 
 ## 8. Responsive Behavior
 

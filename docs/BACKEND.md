@@ -39,6 +39,27 @@ Everything after ingestion — column selection, filters, dashboard queries — 
 - **`GET /api/metrics/top-track`**: Aggregates streams and total listened minutes grouped by `track_name` & `artist_name`, returning top track.
 - **`GET /api/image?kind=&id=`**: Returns a cached Spotify cover URL (oEmbed) for an `artist`/`album`/`track` id; fetches once and caches in the session `images` table. `GET /api/images?kind=&ids=` is the batched form (≤200 ids, concurrent fetch, one bulk cache read/write) and is what the frontend uses. The `top-artist/album/track` endpoints also return the entity's Spotify id so the frontend can lazy-load covers.
 
+### Cover identity (`covers.py`)
+
+`images.py` answers *"what is the art for this `(kind, id)`"*; `covers.py` answers the step
+before it — *"which id represents this entity's art"* — for entities whose id isn't in the
+upload. Tracks are trivial (`history.track_uri`). Albums are not, and used to be matched by
+comparing two independently-produced name strings (`history.album_name/artist_name` vs the
+catalog's), which disagree over edition suffixes, casing and diacritics — every disagreement
+yielded a `NULL` id and no cover was ever requested. Resolution is now identity-based:
+
+1. `history.track_uri` → `track_features.track_id` → `album_id` — an exact key join, no names
+   involved. When a title maps to several catalog albums the **most-played edition** wins
+   (`arg_max` on listening time) rather than an arbitrary `MAX()`.
+2. No catalog row for any of the album's tracks (a release newer than the catalog snapshot, or
+   enrichment skipped entirely) → fall back to a representative `track_id` from that album.
+   A track's oEmbed thumbnail *is* its album cover, so only the id kind differs.
+
+Callers get `(album_id, cover_kind, cover_id)`; `attach_album_cover_refs` writes them onto
+items in place. `_attach_image_urls` batches its cached lookups **per `cover_kind`**, and the
+upload pre-warm seeds the tier-2 track ids alongside the album ids. Everything is best-effort
+(empty dict on failure) so a missing `track_features` table never breaks a response.
+
 **Explore + Charts metrics** live in `routers/explore.py` and query the raw DuckDB connection
 (SQL-first, still via `run_in_threadpool`) rather than SQLAlchemy Core, because the window
 functions and gaps-and-islands queries they need have no clean Core expression.

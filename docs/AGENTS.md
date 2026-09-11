@@ -37,6 +37,10 @@ All visual design must follow the Spotify-inspired design system in `docs/design
 - Uppercase button labels with wide letter-spacing
 - Heavy shadows for elevation on dark surfaces
 - Compact, dense typography (10px–24px range)
+- **Both themes ship from one token set** (`src/styles/main.css`: `:root` = light, `.dark` = dark,
+  wired to Tailwind through `src/js/tailwind_config.js`). Never hardcode a colour — in CSS or in
+  a JS chart renderer — and never mirror dark values into light: light mode inverts the elevation
+  direction and deepens the accent. See `docs/design.md` §2A.
 
 **Reference designs (Behance, Dribbble, or similar) may only be used to inform visual style** — spacing, color treatment, component shape, micro-interactions. **They must never be used to change scope, add sections, or restructure the project.** If a reference design suggests a different layout or new feature, treat that as inspiration to note and ask about — not something to implement automatically. This is the single most important rule in this document: a project has drifted into being rebuilt as a different product before because an agent adapted a reference design's *content*, not just its *style*.
 
@@ -133,7 +137,8 @@ These are common suggestions that are deliberately not being built yet. Do not i
   - `AGENTS.md` — this file
 - `src/` — Tailwind entry CSS and modular JavaScript source code
   - `js/api.js` — centralized API client: `fetchWithTimeout` (attaches the session ticket) + the shared cover-art cache (`loadCoversBatch`, `primeCoverUrls`, `resolveCoverUrls`)
-  - `js/theme.js` — dark mode theme toggler & local storage persistence
+  - `js/tailwind_config.js` — the single shared Tailwind CDN config; every colour utility maps to a CSS custom property so both themes work. Load after the CDN script, **without `defer`**; pages must not re-declare their own config
+  - `js/theme.js` — light/dark theme toggler & local storage persistence
   - `js/landing.js` — landing-page cassette-deck hero interactions
   - `js/upload.js` — multi-file upload drag-and-drop handler & status feedback
   - `js/total_time.js` — total listening time metric component & skeleton state handler
@@ -151,6 +156,7 @@ These are common suggestions that are deliberately not being built yet. Do not i
   - `main.py` — thin app entrypoint: middleware + `include_router` wiring only
   - `metrics.py` — framework-free computation helpers (ranking, bar-race, heatmap, streaks, chronotype, timezone, genre bucketing)
   - `catalog.py` / `images.py` — catalog enrichment on upload; cached Spotify oEmbed cover art
+  - `covers.py` — cover **identity**: which Spotify id represents an album's art (id join, with a representative-track fallback)
   - `routers/upload.py` — `/api/upload` ingest + enrich (holds `MAPPING` and the upload caps) and `/api/image` + `/api/images` cover art
   - `routers/overview.py` — overview metrics (`total-time`, `top-*`, `total-songs`, `active-day`, `heatmap`)
   - `routers/explore.py` — explore + charts metrics (`years`, `artist-rank`, `track-rank`, `bar-race`, `rhythm`, `audio`, `taste`, `behavior`, `discovery`, `listening-life`, `over-time`, `evolution`, `sound-detail`, `deep-cuts`, `wrapped`, `chart`, `superlatives`); every explore endpoint takes the optional `year` filter
