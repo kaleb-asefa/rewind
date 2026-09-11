@@ -1,5 +1,6 @@
 """Overview-page metrics: totals, top artist/album/track, songs, active day, heatmap."""
 
+import covers
 from database import get_db, table_registry
 from fastapi import APIRouter, Depends, Request
 from metrics import (
@@ -118,17 +119,17 @@ async def get_top_album(
             .limit(1)
         )
         row = conn.execute(stmt).first()
-        album_id = None
+        album_id = cover_kind = cover_id = None
         if row and row.album_name:
-            album_id = _lookup_scalar(
-                conn,
-                "SELECT album_id FROM track_features "
-                "WHERE album_name = ? AND artist_name = ? AND album_id IS NOT NULL LIMIT 1",
-                [row.album_name, row.artist_name],
+            # Identity-based: history.track_uri → track_features.album_id, with a
+            # representative track id as the fallback cover (see covers.py).
+            refs = covers.album_cover_refs(conn.connection.driver_connection)
+            album_id, cover_kind, cover_id = refs.get(
+                (row.album_name, row.artist_name), (None, None, None)
             )
-        return row, album_id
+        return row, album_id, cover_kind, cover_id
 
-    row, album_id = await run_in_threadpool(query)
+    row, album_id, cover_kind, cover_id = await run_in_threadpool(query)
 
     if not row:
         return {
@@ -138,6 +139,8 @@ async def get_top_album(
             "total_streams": 0,
             "total_minutes": 0,
             "album_id": None,
+            "cover_kind": None,
+            "cover_id": None,
         }
 
     return {
@@ -147,6 +150,8 @@ async def get_top_album(
         "total_streams": row.total_streams,
         "total_minutes": round(row.total_ms / (1000 * 60), 2),
         "album_id": album_id,
+        "cover_kind": cover_kind,
+        "cover_id": cover_id,
     }
 
 

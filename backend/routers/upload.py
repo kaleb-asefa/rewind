@@ -6,6 +6,7 @@ import os
 import tempfile
 
 import catalog
+import covers
 import images
 from database import get_db, table_registry
 from fastapi import (
@@ -174,7 +175,8 @@ def _collect_prewarm_sets(conn: Connection) -> dict[str, list[str]]:
 
     Tracks come straight from ``track_uri``; artist/album ids come from the
     enriched ``track_features`` slice (absent when the catalog is missing, in
-    which case those kinds are simply skipped).
+    which case those kinds are simply skipped). Albums the catalog doesn't know
+    fall back to a representative track id, so those go in the track set too.
     """
     raw_con = conn.connection.driver_connection
     sets: dict[str, list[str]] = {}
@@ -205,6 +207,12 @@ def _collect_prewarm_sets(conn: Connection) -> dict[str, list[str]]:
             ]
         except Exception:
             sets[kind] = []  # track_features missing (no catalog) — skip this kind
+
+    # Tier-2 album covers: a top album released after the catalog snapshot has no
+    # album_id, so its art is warmed through one of its own tracks instead.
+    fallbacks = covers.album_fallback_track_ids(raw_con, _PREWARM_LIMIT)
+    if fallbacks:
+        sets["track"] = list(dict.fromkeys(sets["track"] + fallbacks))
 
     return sets
 
