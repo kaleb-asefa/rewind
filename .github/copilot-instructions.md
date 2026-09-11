@@ -27,8 +27,14 @@ Always confirm which worktree/branch you are in (`git rev-parse --show-toplevel`
   *first* when a response shape changes; additive fields are safe, renames/removals are breaking.
 - **Shared files** (`docs/API_CONTRACT.md`, `docs/AGENTS.md`, `docs/SCHEMA.md`) are edited in
   `main` **first**, before branches diverge — not on a work branch.
+- **Commit each self-testable chunk; never merge.** As soon as a piece of work stands on its
+  own (it builds, renders, or passes its tests independently), commit it to your work branch
+  with a descriptive message — don't leave finished work sitting uncommitted, and don't batch
+  unrelated changes into one commit. **The human does all merging and integration**: never run
+  `make integrate`, `git merge`, `git rebase`, or push/commit to `main` from a work branch.
 - Worktree commands: `make sync` (rebase a work branch onto main), `make integrate` (from
   `main`: merge both work branches + run tests), `make serve` (the single :8000 server).
+  `sync`/`integrate` are human-run — an agent may suggest them, not execute them.
 - **One server, one DB.** DuckDB is single-writer and `data/` is gitignored, so exactly one
   backend server runs (from `../rewind-backend`, where `data/` is symlinked). The frontend
   agent never starts its own server — it opens its pages via `file://` against `:8000`.

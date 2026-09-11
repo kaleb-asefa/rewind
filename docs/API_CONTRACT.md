@@ -100,7 +100,14 @@ neither needs to read the other's code.
 |---|---|---|
 | `POST /api/upload` | JSON files | Ingest history + enrich; fires `rewind:data-updated` client-side on success. |
 | `GET /api/image` | `kind`, `id` | Single cover URL (oEmbed, cached). |
-| `GET /api/images` | `kind`, `ids` (csv, ≤200) | Batch → `{ images: { id: url } }`. Preferred (use `loadCoversBatch`). |
+| `GET /api/images` | `kind`, `ids` (csv, ≤200) | Batch → `{ images: { id: url } }`. Preferred. |
+
+> Client helpers (`src/js/api.js`) — all share one in-memory cache, chunk ids 8 at a time and
+> cap concurrency at 3. Use them; never call `/api/images` by hand.
+> `loadCoversBatch(kind, nodes)` paints `<img>`/background nodes directly.
+> `primeCoverUrls(kind, items)` seeds the cache from inline `image_url` values (no request).
+> `resolveCoverUrls(kind, ids) → Promise<{id: url}>` returns raw URLs for non-DOM consumers
+> (canvas share deck, prefetchers).
 
 ---
 

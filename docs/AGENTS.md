@@ -58,6 +58,12 @@ Development can run in two scoped agents working in separate git worktrees:
   Shared files (`docs/API_CONTRACT.md`, this file) are edited in `main` first, before branches diverge.
 - **One server, one DB:** DuckDB is single-writer and `data/` is gitignored — run exactly one
   backend server (`:8000`); the frontend opens its own pages via `file://`.
+- **Commit per testable chunk — the human merges.** Commit to your work branch as soon as a
+  chunk stands on its own (builds / renders / passes its own tests), with a message that says
+  what broke and why the fix works. Don't leave finished work uncommitted and don't bundle
+  unrelated changes together. Merging and integration are the human's job: an agent never runs
+  `make integrate`, `git merge`/`rebase`, or commits to `main` from a work branch. Shared-doc
+  edits still land on `main` first, but only when the human asks for them.
 - **Fix problems at their source — never stitch a cross-worktree workaround.** If the root
   cause, or the *most efficient* fix, lives in the other worktree's domain, do **not** patch
   around it in your own scope just because you technically can. Stop, say so, and hand the work
