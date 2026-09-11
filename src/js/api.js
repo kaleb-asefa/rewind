@@ -375,7 +375,26 @@ function primeCoverUrls(kind, items) {
     }
 }
 
+/**
+ * Resolve cover urls for consumers that don't render <img> elements (canvas
+ * decks, chart point images). Returns `{ id: url }` for everything that could
+ * be resolved — unresolved ids are simply absent — and goes through the same
+ * shared cache, chunking and concurrency limits as loadCoversBatch, so ids a
+ * page already resolved cost no request at all.
+ */
+async function resolveCoverUrls(kind, ids) {
+    const out = {};
+    if (!kind || !Array.isArray(ids) || !ids.length) return out;
+    await _resolveCovers(kind, ids.filter(Boolean));
+    for (const id of ids) {
+        const url = id && _coverCache.get(kind + ":" + id);
+        if (url) out[id] = url;
+    }
+    return out;
+}
+
 window.loadCover = loadCover;
 window.loadCoversBatch = loadCoversBatch;
 window.preloadCovers = preloadCovers;
 window.primeCoverUrls = primeCoverUrls;
+window.resolveCoverUrls = resolveCoverUrls;
