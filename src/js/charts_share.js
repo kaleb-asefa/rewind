@@ -1,7 +1,9 @@
 /**
  * Rewind — Wrapped-style share deck.
- * A carousel of 7 story cards (intro, top artists / songs / albums / genres,
- * minutes, vibe) drawn onto a 1080×1920 canvas and exported as PNGs.
+ * A carousel of 8 cards exported as PNGs: seven 1080×1920 portrait story cards
+ * (intro, top artists / songs / albums / genres, minutes, vibe) and one
+ * 1920×1080 landscape year recap — the Overview page as a single image, eight
+ * metrics around the activity heatmap, scoped to the most recent year.
  * One idea per card and every fact shown exactly once (docs/UI_GUIDELINES.md):
  * the #1 item is the hero of its own list card, so there is no separate hero
  * card, no kicker restating the title, and no recap repeating all of it.
@@ -20,7 +22,21 @@
     const GRAY = "rgba(255,255,255,0.5)";
     const DARK = "#0e0e0e";
     const FONT = "'Plus Jakarta Sans', system-ui, sans-serif";
-    const W = 1080, H = 1920, P = 84;
+    const W = 1080, H = 1920, P = 84;        // portrait story card
+    const LW = 1920, LH = 1080, LP = 72;     // landscape recap card
+    // Same ramp as .heatmap-cell[data-level] in src/styles/main.css.
+    const HEAT = ["#1f1f1f", "rgba(30,215,96,0.22)", "rgba(30,215,96,0.45)", "rgba(30,215,96,0.68)", GREEN];
+    const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+    // Synthetic year of activity so the offline mockup still shows a heatmap.
+    function sampleDays(year) {
+        const out = [];
+        for (let i = 0; i < 365; i += 1) {
+            if (i % 7 === 3 || i % 11 === 0) continue;
+            out.push({ date: new Date(Date.UTC(year, 0, 1 + i)).toISOString().slice(0, 10), level: (i * 7) % 5 });
+        }
+        return out;
+    }
 
     // Offline fallback so the deck still previews without a backend.
     const SAMPLE = {
@@ -38,6 +54,15 @@
         genres: [{ name: "Hip-Hop" }, { name: "R&B" }, { name: "Pop" }, { name: "Afrobeats" }, { name: "Indie" }],
         totalMinutes: 41267,
         audio: { avg: { energy: 0.47, valence: 0.42 } },
+        recap: {
+            year: 2026,
+            heat: { year: 2026, active_days: 311, total_streams: 5632, total_minutes: 18840, days: sampleDays(2026) },
+            artist: { name: "SZA", streams: 852 },
+            track: { name: "Nobody Gets Me", artist: "SZA" },
+            album: { name: "SOS", artist: "SZA" },
+            genre: { name: "R&B", streams: 1946 },
+            skipped: { name: "Baby Shark", artist: "Pinkfong", skip_pct: 98 },
+        },
     };
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -60,6 +85,18 @@
         let built = false;
         let building = false;
         let coversPending = null;
+        // Size of the card being drawn. Cards are portrait unless they declare
+        // otherwise, so every existing renderer keeps using W/H.
+        let CW = W, CH = H;
+
+        function setCardSize(w, h) {
+            CW = w;
+            CH = h;
+            if (canvas.width === w && canvas.height === h) return;
+            canvas.width = w;      // resizing also clears the canvas
+            canvas.height = h;
+            fitCanvas();           // the aspect changed, so the preview box must too
+        }
 
         /* ─────────────────────── canvas helpers ─────────────────────── */
         function ls(px) { if ("letterSpacing" in ctx) ctx.letterSpacing = px + "px"; }
@@ -89,29 +126,33 @@
             g.addColorStop(0, "rgba(30,215,96," + alpha + ")");
             g.addColorStop(1, "rgba(30,215,96,0)");
             ctx.fillStyle = g;
-            ctx.fillRect(0, 0, W, H);
+            ctx.fillRect(0, 0, CW, CH);
         }
 
         function background() {
             ctx.fillStyle = DARK;
-            ctx.fillRect(0, 0, W, H);
-            glow(W * 0.92, H * 0.06, W * 0.8, 0.22);
-            glow(W * 0.06, H * 0.97, W * 0.85, 0.12);
+            ctx.fillRect(0, 0, CW, CH);
+            // Radius off the shorter side, so a landscape card doesn't end up
+            // washed green edge to edge.
+            const r = Math.min(CW, CH);
+            glow(CW * 0.92, CH * 0.06, r * 0.8, 0.22);
+            glow(CW * 0.06, CH * 0.97, r * 0.85, 0.12);
         }
 
-        function wordmark(y) {
+        function wordmark(y, x) {
+            x = x == null ? P : x;
             ctx.fillStyle = GREEN;
             ctx.beginPath();
-            ctx.moveTo(P, y - 30);
-            ctx.lineTo(P, y - 2);
-            ctx.lineTo(P + 26, y - 16);
+            ctx.moveTo(x, y - 30);
+            ctx.lineTo(x, y - 2);
+            ctx.lineTo(x + 26, y - 16);
             ctx.closePath();
             ctx.fill();
             ctx.textAlign = "left";
             ls(0);
             ctx.font = "800 42px " + FONT;
             ctx.fillStyle = WHITE;
-            ctx.fillText("Rewind", P + 42, y);
+            ctx.fillText("Rewind", x + 42, y);
         }
 
         // object-fit: cover into a rounded/circular box, with a lettered fallback.
@@ -354,6 +395,140 @@
             ctx.textAlign = "left";
         }
 
+        /* ──────────────── landscape year recap ──────────────── */
+
+        function daysInYear(y) {
+            return ((y % 4 === 0 && y % 100 !== 0) || y % 400 === 0) ? 366 : 365;
+        }
+
+        // One Overview-style metric tile: label, value, optional cover + sub-line.
+        function tile(x, y, w, h, t) {
+            roundRectPath(x, y, w, h, 24);
+            ctx.fillStyle = "rgba(255,255,255,0.045)";
+            ctx.fill();
+            ctx.strokeStyle = "rgba(255,255,255,0.07)";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.textAlign = "left";
+            ls(3);
+            ctx.font = "700 22px " + FONT;
+            ctx.fillStyle = GRAY;
+            ctx.fillText(t.label, x + 30, y + 52);
+            ls(0);
+
+            let tx = x + 30;
+            if ("img" in t) {
+                const s = 76;
+                cover(t.img, x + 30, y + 84, s, s, t.circle ? s / 2 : 14, initial(t.value));
+                tx += s + 20;
+            }
+            const maxW = w - (tx - x) - 30;
+            ctx.fillStyle = WHITE;
+            fitFont(t.value, maxW, 46, 28, "800");
+            ctx.fillText(ellipsize(t.value, maxW), tx, y + 136);
+            if (t.sub) {
+                ctx.fillStyle = t.accent ? GREEN : GRAY;
+                ctx.font = "500 26px " + FONT;
+                ctx.fillText(ellipsize(t.sub, maxW), tx, y + 176);
+            }
+        }
+
+        // GitHub-style year grid: one column per week, Sunday at the top.
+        // Returns the height it drew so the caller can place the legend.
+        function heatGrid(x, y, w, heat) {
+            const year = heat.year;
+            const offset = new Date(Date.UTC(year, 0, 1)).getUTCDay();
+            const total = offset + daysInYear(year);
+            const gutter = 54;  // weekday labels
+            const step = (w - gutter) / Math.ceil(total / 7);
+            const cell = step - 5;
+            const gx = x + gutter;
+            const level = {};
+            (heat.days || []).forEach((d) => { level[d.date] = d.level; });
+
+            ctx.textAlign = "left";
+            ls(2);
+            ctx.font = "600 22px " + FONT;
+            ctx.fillStyle = GRAY;
+            for (let m = 0; m < 12; m += 1) {
+                const day = offset + Math.round((Date.UTC(year, m, 1) - Date.UTC(year, 0, 1)) / 86400000);
+                ctx.fillText(MONTHS[m], gx + Math.floor(day / 7) * step, y - 16);
+            }
+            ls(0);
+
+            ctx.textAlign = "right";
+            ctx.font = "500 20px " + FONT;
+            ["", "Mon", "", "Wed", "", "Fri", ""].forEach((lab, row) => {
+                if (lab) ctx.fillText(lab, gx - 16, y + row * step + cell * 0.8);
+            });
+            ctx.textAlign = "left";
+
+            for (let i = offset; i < total; i += 1) {
+                const day = new Date(Date.UTC(year, 0, 1 + i - offset)).toISOString().slice(0, 10);
+                roundRectPath(gx + Math.floor(i / 7) * step, y + (i % 7) * step, cell, cell, 4);
+                ctx.fillStyle = HEAT[level[day] || 0];
+                ctx.fill();
+            }
+            return 7 * step;
+        }
+
+        function heatLegend(right, y) {
+            ctx.textAlign = "left";
+            ctx.font = "500 20px " + FONT;
+            let x = right - 212;
+            ctx.fillStyle = GRAY;
+            ctx.fillText("Less", x, y);
+            x += 46;
+            for (let i = 0; i < 5; i += 1) {
+                roundRectPath(x, y - 14, 16, 16, 4);
+                ctx.fillStyle = HEAT[i];
+                ctx.fill();
+                x += 22;
+            }
+            ctx.fillStyle = GRAY;
+            ctx.fillText("More", x + 8, y);
+        }
+
+        // The Overview page as one landscape image: its eight metrics wrapped
+        // around the activity heatmap, for the most recent year only.
+        function cardRecap(d) {
+            const r = d.recap;
+            const heat = r.heat || {};
+            background();
+            wordmark(LP + 46, LP);
+            ctx.textAlign = "right";
+            ctx.font = "800 62px " + FONT;
+            ctx.fillStyle = GREEN;
+            ctx.fillText(String(r.year), LW - LP, LP + 50);
+            ctx.textAlign = "left";
+
+            const gap = 24;
+            const tw = (LW - LP * 2 - gap * 3) / 4;
+            const th = 214;
+            const streams = (it) => (it && it.streams != null ? fmtInt(it.streams) + " streams" : "");
+            const num = (v) => (v == null ? "\u2014" : fmtInt(v));
+
+            [
+                { label: "TOP ARTIST", value: r.artist ? r.artist.name : "\u2014", sub: streams(r.artist), img: (r.artist && r.artist.img) || null, circle: true },
+                { label: "TOP SONG", value: r.track ? r.track.name : "\u2014", sub: (r.track && r.track.artist) || "", img: (r.track && r.track.img) || null },
+                { label: "TOP ALBUM", value: r.album ? r.album.name : "\u2014", sub: (r.album && r.album.artist) || "", img: (r.album && r.album.img) || null },
+                { label: "TOP GENRE", value: r.genre ? r.genre.name : "\u2014", sub: streams(r.genre) },
+            ].forEach((t, i) => tile(LP + i * (tw + gap), 170, tw, th, t));
+
+            const gridY = 480;
+            const gridH = heat.days ? heatGrid(LP, gridY, LW - LP * 2, heat) : 0;
+            if (gridH) heatLegend(LW - LP, gridY + gridH + 34);
+
+            const skip = r.skipped;
+            [
+                { label: "MINUTES", value: num(heat.total_minutes), sub: fmtInt((heat.total_minutes || 0) / 60) + " hours", accent: true },
+                { label: "STREAMS", value: num(heat.total_streams), sub: "songs played" },
+                { label: "ACTIVE DAYS", value: num(heat.active_days), sub: "of " + daysInYear(r.year) },
+                { label: "MOST SKIPPED", value: skip ? skip.name : "\u2014", sub: skip ? skip.artist + " \u00b7 skipped " + skip.skip_pct + "%" : "", img: (skip && skip.img) || null },
+            ].forEach((t, i) => tile(LP + i * (tw + gap), 768, tw, th, t));
+        }
+
         /* ─────────────────────── data + build ─────────────────────── */
 
         function loadImage(url) {
@@ -393,11 +568,45 @@
         }
 
         function loadCovers(d, onUpdate) {
+            // The recap card reuses the same objects the cache is keyed on, so
+            // its covers cost nothing extra when they duplicate the top lists.
+            const r = d.recap || {};
+            const some = (...xs) => xs.filter(Boolean);
             return Promise.all([
-                attachCovers("artist", d.artists, onUpdate),
-                attachCovers("track", d.tracks, onUpdate),
-                attachCovers("album", d.albums, onUpdate),
+                attachCovers("artist", d.artists.concat(some(r.artist)), onUpdate),
+                attachCovers("track", d.tracks.concat(some(r.track, r.skipped)), onUpdate),
+                attachCovers("album", d.albums.concat(some(r.album)), onUpdate),
             ]);
+        }
+
+        // The Overview metrics for the most recent year. The heatmap endpoint
+        // already defaults to that year and carries its own totals, so it picks
+        // the year the rest of the card is then scoped to.
+        async function loadRecap(f) {
+            let heat = null;
+            try {
+                const res = await f("/api/metrics/heatmap", {}, 8000);
+                if (res.ok && res.data && Array.isArray(res.data.days) && res.data.days.length) heat = res.data;
+            } catch (_e) { /* ignore */ }
+            if (!heat) return null;
+
+            const year = heat.year;
+            const top = async (entity) => {
+                try {
+                    const res = await f("/api/metrics/chart?entity=" + entity + "&sort=minutes&limit=1&range=" + year);
+                    return (res.ok && res.data && res.data.items && res.data.items[0]) || null;
+                } catch (_e) { return null; }
+            };
+            const worst = async () => {
+                try {
+                    const res = await f("/api/metrics/superlatives?range=" + year + "&limit=1");
+                    return (res.ok && res.data && res.data.most_skipped && res.data.most_skipped[0]) || null;
+                } catch (_e) { return null; }
+            };
+            const [artist, track, album, genre, skipped] = await Promise.all([
+                top("artist"), top("track"), top("album"), top("genre"), worst(),
+            ]);
+            return { year, heat, artist, track, album, genre, skipped };
         }
 
         async function loadData() {
@@ -423,8 +632,9 @@
                 const au = await f("/api/metrics/audio");
                 if (au.ok && au.data) audio = au.data;
             } catch (_e) { /* ignore */ }
+            const recap = await loadRecap(f);
 
-            return { artists, tracks, albums, genres, totalMinutes, audio };
+            return { artists, tracks, albums, genres, totalMinutes, audio, recap };
         }
 
         function cardNoData() {
@@ -454,6 +664,8 @@
                 { title: "Minutes", render: () => cardMinutes(d) },
                 { title: "Your vibe", render: () => cardVibe(d) },
             ];
+            // Landscape, and only when there is a year to recap.
+            if (d.recap) deck.push({ title: String(d.recap.year), w: LW, h: LH, render: () => cardRecap(d) });
         }
 
         /* ─────────────────────── carousel ─────────────────────── */
@@ -484,7 +696,9 @@
         function renderCurrent() {
             if (!deck.length) return;
             index = (index % deck.length + deck.length) % deck.length;
-            deck[index].render();
+            const card = deck[index];
+            setCardSize(card.w || W, card.h || H);
+            card.render();
             // The card already carries its own headline, so the counter is the
             // only thing worth repeating outside it (docs/UI_GUIDELINES.md §1).
             if (captionEl) captionEl.textContent = (index + 1) + " / " + deck.length;
@@ -502,11 +716,12 @@
         /**
          * Size the preview to the space the modal actually has.
          *
-         * The card is 9:16, and the controls under it wrap on narrow screens,
-         * so a fixed "viewport minus N" guess either crops the card or pushes
-         * the buttons off-screen. Measuring the chrome keeps the whole card
-         * visible at any size. Only the CSS box changes — the canvas bitmap
-         * stays 1080×1920, so exports are unaffected.
+         * Cards are 9:16 except the landscape recap, and the controls under
+         * them wrap on narrow screens, so a fixed "viewport minus N" guess
+         * either crops the card or pushes the buttons off-screen. Measuring the
+         * chrome and honouring the current card's aspect keeps the whole card
+         * visible at any size. Only the CSS box changes — the canvas bitmap is
+         * the exported one, so exports are unaffected.
          */
         function fitCanvas() {
             const frame = canvas.parentElement;
@@ -517,9 +732,17 @@
             // chrome — leaving the buttons cut off at the bottom.
             const chrome = stack.scrollHeight - frame.offsetHeight;  // caption + dots + actions + gaps
             const avail = modal.clientHeight - 32 - chrome - 8;      // modal p-4 + a little slack
-            const height = Math.max(240, Math.min(720, avail));
-            canvas.style.height = height + "px";
-            canvas.style.width = Math.round(height * W / H) + "px";
+            const aspect = canvas.width / canvas.height;
+            let height = Math.max(240, Math.min(720, avail));
+            let width = height * aspect;
+            const maxW = modal.clientWidth - 32;
+            if (width > maxW) {                                      // landscape on a narrow screen
+                width = maxW;
+                height = width / aspect;
+            }
+            canvas.style.aspectRatio = canvas.width + " / " + canvas.height;
+            canvas.style.height = Math.round(height) + "px";
+            canvas.style.width = Math.round(width) + "px";
         }
 
         async function ensureBuilt() {

@@ -296,8 +296,9 @@
     <div id="share-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="flex flex-col items-center gap-4 max-h-full overflow-y-auto">
             <!-- The current card is drawn to this canvas (these exact pixels get shared).
-                 The height below is the first-paint guess; charts_share.js measures the
-                 modal and fits the card exactly, so the whole 9:16 card always fits. -->
+                 The size below is only the first-paint guess: charts_share.js measures the
+                 modal and fits the card exactly, including the landscape year recap, whose
+                 aspect differs from the portrait story cards. -->
             <div class="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/50 shrink-0">
                 <canvas id="share-canvas" width="1080" height="1920" style="display:block;width:auto;aspect-ratio:1080/1920;height:clamp(240px,calc(100vh - 260px),720px);height:clamp(240px,calc(100dvh - 260px),720px);"></canvas>
                 <button type="button" id="share-prev" aria-label="Previous card" class="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition">
@@ -309,7 +310,7 @@
             </div>
 
             <!-- Position only — each card already carries its own title -->
-            <div id="share-caption" class="text-white/70 text-body-sm font-label-bold">1 / 7</div>
+            <div id="share-caption" class="text-white/70 text-body-sm font-label-bold">1 / 8</div>
             <div id="share-dots" class="flex items-center gap-1.5"></div>
 
             <!-- Actions -->
