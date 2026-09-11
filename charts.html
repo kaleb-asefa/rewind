@@ -292,12 +292,15 @@
 
     </main>
 
-    <!-- Share modal — Wrapped-style story deck (10 cards), each exported as an image -->
+    <!-- Share modal — Wrapped-style story deck, each card exported as an image -->
     <div id="share-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-        <div class="flex flex-col items-center gap-4 max-h-full">
-            <!-- The current card is drawn to this canvas (these exact pixels get shared) -->
-            <div class="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
-                <canvas id="share-canvas" width="1080" height="1920" style="width:330px;height:586px;display:block;"></canvas>
+        <div class="flex flex-col items-center gap-4 max-h-full overflow-y-auto">
+            <!-- The current card is drawn to this canvas (these exact pixels get shared).
+                 The size below is only the first-paint guess: charts_share.js measures the
+                 modal and fits the card exactly, including the landscape year recap, whose
+                 aspect differs from the portrait story cards. -->
+            <div class="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/50 shrink-0">
+                <canvas id="share-canvas" width="1080" height="1920" style="display:block;width:auto;aspect-ratio:1080/1920;height:clamp(240px,calc(100vh - 260px),720px);height:clamp(240px,calc(100dvh - 260px),720px);"></canvas>
                 <button type="button" id="share-prev" aria-label="Previous card" class="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition">
                     <span class="material-symbols-outlined">chevron_left</span>
                 </button>
@@ -306,8 +309,8 @@
                 </button>
             </div>
 
-            <!-- Which card + dot indicators -->
-            <div id="share-caption" class="text-white/70 text-body-sm font-label-bold">Intro · 1 / 10</div>
+            <!-- Position only — each card already carries its own title -->
+            <div id="share-caption" class="text-white/70 text-body-sm font-label-bold">1 / 10</div>
             <div id="share-dots" class="flex items-center gap-1.5"></div>
 
             <!-- Actions -->
@@ -316,7 +319,7 @@
                     <span class="material-symbols-outlined text-lg">download</span> Save this
                 </button>
                 <button type="button" id="share-download-all-btn" class="flex items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
-                    <span class="material-symbols-outlined text-lg">photo_library</span> Save all 10
+                    <span class="material-symbols-outlined text-lg">photo_library</span> <span data-count>Save all</span>
                 </button>
                 <button type="button" id="share-native-btn" class="hidden items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
                     <span class="material-symbols-outlined text-lg">ios_share</span> Share

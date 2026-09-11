@@ -93,8 +93,6 @@
     <script src="src/js/total_time.js" defer></script>
     <script src="src/js/top_card.js" defer></script>
     <script src="src/js/behavior.js" defer></script>
-    <script src="https://unpkg.com/html-to-image@1.11.13/dist/html-to-image.js"></script>
-    <script src="src/js/share.js" defer></script>
 </head><body class="bg-background text-on-background antialiased">
 <!-- TopNavBar -->
 <header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-lg shadow-sm">
@@ -112,10 +110,6 @@
 </div>
 </div>
 <div class="flex items-center gap-3">
-<button type="button" id="share-open-btn" class="flex items-center gap-1.5 bg-primary text-on-primary px-4 py-1.5 rounded-full text-body-sm font-bold hover:scale-105 active:scale-95 transition-all" title="Share your Rewind">
-<span class="material-symbols-outlined text-base">ios_share</span>
-<span class="hidden sm:inline">Share</span>
-</button>
 <button id="theme-toggle" type="button" aria-label="Switch to dark mode" class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" title="Toggle theme">
 <span id="theme-icon" class="theme-icon material-symbols-outlined text-lg">dark_mode</span>
 </button>
@@ -322,63 +316,6 @@
 </div>
 </section>
 </main>
-<!-- Share Modal -->
-<div id="share-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-<div class="flex flex-col items-center gap-5 max-h-full">
-<!-- Shareable Card (rendered to image) -->
-<div id="share-card" class="relative overflow-hidden rounded-2xl bg-[#0e0e0e] text-white" style="width:360px;height:640px;">
-<div class="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-primary/20 blur-[80px]"></div>
-<div class="absolute -bottom-32 -left-20 w-72 h-72 rounded-full bg-primary/10 blur-[90px]"></div>
-<div class="relative z-10 flex flex-col h-full p-7">
-<div class="flex items-center gap-2 text-primary">
-<span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">fast_rewind</span>
-<span class="font-display-lg text-title-md font-extrabold tracking-tight">Rewind</span>
-</div>
-<div class="mt-1 text-[11px] uppercase tracking-[0.25em] text-white/40 font-label-bold">My all-time listening</div>
-<div class="mt-8">
-<div class="text-[11px] uppercase tracking-[0.2em] text-primary font-label-bold">Total time</div>
-<div id="share-total-time" class="font-display-lg text-[44px] leading-none font-extrabold mt-1">--</div>
-</div>
-<div class="mt-8 space-y-5">
-<div>
-<div class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-label-bold">Top Artist</div>
-<div id="share-top-artist" class="font-display-lg text-2xl font-bold mt-0.5 truncate">--</div>
-</div>
-<div>
-<div class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-label-bold">Top Track</div>
-<div id="share-top-track" class="font-display-lg text-2xl font-bold mt-0.5 truncate">--</div>
-</div>
-<div>
-<div class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-label-bold">Top Album</div>
-<div id="share-top-album" class="font-display-lg text-2xl font-bold mt-0.5 truncate">--</div>
-</div>
-</div>
-<div class="mt-auto flex items-end justify-between">
-<div>
-<div id="share-days" class="font-display-lg text-3xl font-extrabold text-primary">--</div>
-<div class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-label-bold">active days</div>
-</div>
-<div class="text-right">
-<div id="share-streams" class="font-display-lg text-3xl font-extrabold">--</div>
-<div class="text-[11px] uppercase tracking-[0.2em] text-white/40 font-label-bold">streams</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Actions (excluded from the exported image) -->
-<div id="share-actions" class="flex items-center gap-3">
-<button type="button" id="share-download-btn" class="flex items-center gap-2 bg-primary text-on-primary px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
-<span class="material-symbols-outlined text-lg">download</span> Download
-</button>
-<button type="button" id="share-native-btn" class="hidden items-center gap-2 bg-surface-container-high text-on-surface px-5 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all">
-<span class="material-symbols-outlined text-lg">ios_share</span> Share
-</button>
-<button type="button" id="share-close-btn" class="flex items-center gap-2 bg-surface-container text-on-surface-variant px-5 py-3 rounded-full font-bold hover:text-on-surface transition-all">
-Close
-</button>
-</div>
-</div>
-</div>
 <!-- Footer -->
 <footer class="w-full py-section-gap bg-surface-container-lowest dark:bg-surface-container-lowest border-t border-white/5">
 <div class="flex flex-col md:flex-row justify-between items-center px-container-padding-desktop gap-8 md:gap-0">

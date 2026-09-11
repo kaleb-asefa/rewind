@@ -354,19 +354,16 @@
     let coversFetched = { tracks: false, artists: false };
 
     async function prefetchCovers(list, kind) {
-        if (!window.fetchWithTimeout) return;
         // Only fetch covers the backend didn't already return inline (image_url).
         const targets = list.filter((it) => it.spotifyId && !it.image_url);
-        if (!targets.length) return;
+        if (!targets.length || !window.resolveCoverUrls) return;
         const ids = Array.from(new Set(targets.map((t) => t.spotifyId)));
-        try {
-            const res = await window.fetchWithTimeout(
-                `/api/images?kind=${kind}&ids=${encodeURIComponent(ids.join(","))}`, {}, 15000);
-            const map = (res.ok && res.data && res.data.images) || {};
-            for (const item of targets) {
-                if (map[item.spotifyId]) { item.image = map[item.spotifyId]; item.image_url = map[item.spotifyId]; }
-            }
-        } catch (_) { /* covers are non-critical */ }
+        // Shared cover cache: ids another component already resolved cost nothing,
+        // and cold ones are chunked so one slow lookup can't sink the rest.
+        const map = await window.resolveCoverUrls(kind, ids);
+        for (const item of targets) {
+            if (map[item.spotifyId]) { item.image = map[item.spotifyId]; item.image_url = map[item.spotifyId]; }
+        }
         renderChart();
     }
 
