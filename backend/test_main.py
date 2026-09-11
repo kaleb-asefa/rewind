@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select, func
 import catalog
+import covers
 import database
 import images
 import main
@@ -1672,6 +1673,115 @@ def test_canonical_artist_rows_merge_name_variants():
     assert len(rows) == 2                        # one row per week
     assert sum(r[3] for r in rows) == 3          # streams counted across spellings
     assert sum(r[2] for r in rows) == 300000     # ms merged
+
+
+def _album_refs_con(with_features=True):
+    """Raw DuckDB with a synthetic history (+ optional catalog slice) for cover tests."""
+    con = duckdb.connect()
+    con.execute(
+        "CREATE TABLE history (track_uri VARCHAR, album_name VARCHAR, "
+        "artist_name VARCHAR, ms_played BIGINT)"
+    )
+    if with_features:
+        con.execute(
+            "CREATE TABLE track_features (track_id VARCHAR, album_name VARCHAR, "
+            "artist_name VARCHAR, album_id VARCHAR)"
+        )
+    return con
+
+
+def test_album_cover_refs_survive_name_divergence():
+    # Spotify's export and the catalog name the same album differently
+    # ("Take Care" vs "Take Care (Deluxe)", "Giveon" vs "GIVĒON"). Resolution
+    # goes through track_uri, so the names never have to agree.
+    con = _album_refs_con()
+    con.execute(
+        "INSERT INTO history VALUES "
+        "('spotify:track:t1', 'Take Care', 'Drake', 100000),"
+        "('spotify:track:t2', 'TAKE TIME', 'Giveon', 50000)"
+    )
+    con.execute(
+        "INSERT INTO track_features VALUES "
+        "('t1', 'Take Care (Deluxe)', 'Drake', 'alb_takecare'),"
+        "('t2', 'TAKE TIME', 'GIV\u0112ON', 'alb_taketime')"
+    )
+    refs = covers.album_cover_refs(con)
+    con.close()
+
+    assert refs[("Take Care", "Drake")] == ("alb_takecare", "album", "alb_takecare")
+    assert refs[("TAKE TIME", "Giveon")] == ("alb_taketime", "album", "alb_taketime")
+
+
+def test_album_cover_refs_pick_most_played_edition():
+    # One history album mapping to several catalog album ids must resolve to the
+    # edition actually listened to, not an arbitrary MAX().
+    con = _album_refs_con()
+    con.execute(
+        "INSERT INTO history VALUES "
+        "('spotify:track:t1', 'TAKE TIME', 'Giveon', 10000),"
+        "('spotify:track:t2', 'TAKE TIME', 'Giveon', 900000)"
+    )
+    con.execute(
+        "INSERT INTO track_features VALUES "
+        "('t1', 'TAKE TIME', 'Giveon', 'zzz_rarely_played'),"
+        "('t2', 'TAKE TIME', 'Giveon', 'aaa_most_played')"
+    )
+    refs = covers.album_cover_refs(con)
+    con.close()
+
+    assert refs[("TAKE TIME", "Giveon")][0] == "aaa_most_played"
+
+
+def test_album_cover_refs_fall_back_to_track_when_catalog_lacks_release():
+    # An album newer than the catalog snapshot has no album_id at all. Its art is
+    # still reachable through one of its own tracks (a track's oEmbed thumbnail
+    # *is* the album cover), so the cover ref switches kind instead of going null.
+    con = _album_refs_con()
+    con.execute(
+        "INSERT INTO history VALUES "
+        "('spotify:track:t1', 'BELOVED', 'GIV\u0112ON', 10000),"
+        "('spotify:track:t2', 'BELOVED', 'GIV\u0112ON', 800000)"
+    )
+    refs = covers.album_cover_refs(con)
+    con.close()
+
+    album_id, kind, cover_id = refs[("BELOVED", "GIVĒON")]
+    assert album_id is None      # honest: the catalog really has no album id
+    assert kind == "track"
+    assert cover_id == "t2"      # most-played track represents the album
+
+    # …and that fallback is what gets pre-warmed.
+    con = _album_refs_con()
+    con.execute("INSERT INTO history VALUES ('spotify:track:t2', 'BELOVED', 'G', 1)")
+    assert covers.album_fallback_track_ids(con) == ["t2"]
+    con.close()
+
+
+def test_album_cover_refs_work_without_any_catalog():
+    # No track_features table (catalog missing entirely): albums still get covers
+    # through their tracks rather than silently losing all artwork.
+    con = _album_refs_con(with_features=False)
+    con.execute(
+        "INSERT INTO history VALUES ('spotify:track:t9', 'Some Album', 'Artist', 5000)"
+    )
+    refs = covers.album_cover_refs(con)
+    con.close()
+
+    assert refs[("Some Album", "Artist")] == (None, "track", "t9")
+
+
+def test_top_album_exposes_cover_ref():
+    with TestClient(app) as client:
+        sample_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json")
+        with open(sample_json_path, "rb") as f:
+            client.post("/api/upload", files={"file": ("h.json", f, "application/json")})
+
+        data = client.get("/api/metrics/top-album").json()
+        assert data["status"] == "ok"
+        # Unenriched (no catalog in this test) → no album_id, but the cover ref
+        # still points at a real track so the frontend can render artwork.
+        assert data["cover_kind"] == "track"
+        assert data["cover_id"]
 
 
 def test_superlative_obsession_counts_peak_day_and_ignores_skips():

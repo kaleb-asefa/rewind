@@ -9,6 +9,7 @@ session actually has data for.
 import unicodedata
 from datetime import timedelta
 
+import covers
 import images
 from database import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -156,13 +157,22 @@ def _canonical_artist_id_map(raw_con):
 def _attach_image_urls(raw_con, kind, items):
     """Add a read-only, cached ``image_url`` to each item carrying a Spotify
     ``id``. None when the id is missing, un-warmed, or a genuine art-less miss.
-    One batch cache read; never fetches oEmbed.
+    One batch cache read per kind; never fetches oEmbed.
+
+    An item may override the endpoint's ``kind`` via ``cover_kind``/``cover_id``
+    — an album with no catalog id borrows one of its tracks, whose thumbnail is
+    the same artwork (see :mod:`covers`).
     """
-    url_map = images.cached_urls(
-        raw_con, kind, [it["id"] for it in items if it.get("id")]
-    )
+    by_kind: dict[str, list[str]] = {}
     for it in items:
-        it["image_url"] = url_map.get(it["id"]) if it.get("id") else None
+        cover_id = it.get("cover_id") or it.get("id")
+        if cover_id:
+            by_kind.setdefault(it.get("cover_kind") or kind, []).append(cover_id)
+    url_maps = {k: images.cached_urls(raw_con, k, ids) for k, ids in by_kind.items()}
+    for it in items:
+        cover_id = it.get("cover_id") or it.get("id")
+        url_map = url_maps.get(it.get("cover_kind") or kind, {})
+        it["image_url"] = url_map.get(cover_id) if cover_id else None
 
 
 @router.get("/api/metrics/artist-rank")
@@ -336,17 +346,13 @@ async def get_bar_race(
         full_months, featured = _compute_bar_race(rows, key_len, limit)
 
         # Best-effort id lookup so the frontend can lazy-load cover art.
+        # Albums resolve separately (identity-based, with a track fallback) once
+        # the items exist — see :mod:`covers`.
         id_map: dict = {}
         try:
             if entity == "artist":
                 id_map = _canonical_artist_id_map(raw_con)
-            elif entity == "album":
-                for r in raw_con.execute(
-                    "SELECT album_name, artist_name, MAX(album_id) FROM track_features "
-                    "WHERE album_id IS NOT NULL GROUP BY album_name, artist_name"
-                ).fetchall():
-                    id_map[(r[0], r[1])] = r[2]
-            else:  # track
+            elif entity == "track":
                 for r in raw_con.execute(
                     "SELECT track_name, artist_name, "
                     "MAX(replace(track_uri, 'spotify:track:', '')) FROM history "
@@ -375,6 +381,11 @@ async def get_bar_race(
             if key_len == 2:
                 item["artist_name"] = f["key"][1]
             data.append(item)
+
+        if entity == "album":
+            covers.attach_album_cover_refs(
+                raw_con, data, name_key="name", artist_key="artist_name"
+            )
 
         _attach_image_urls(raw_con, entity, data)
         return {
@@ -1926,15 +1937,7 @@ def _chart_attach_ids(raw_con, entity, items):
             for it in items:
                 it["id"] = id_map.get(it["key"])
         else:  # album
-            id_map = {
-                (r[0], r[1]): r[2]
-                for r in raw_con.execute(
-                    "SELECT album_name, artist_name, MAX(album_id) FROM track_features "
-                    "WHERE album_id IS NOT NULL GROUP BY album_name, artist_name"
-                ).fetchall()
-            }
-            for it in items:
-                it["id"] = id_map.get((it["name"], it["artist"]))
+            covers.attach_album_cover_refs(raw_con, items)
     except Exception:
         pass
 
@@ -2005,6 +2008,8 @@ async def get_chart(
                     "name": it["name"],
                     "artist": it["artist"],
                     "id": it["id"],
+                    "cover_kind": it.get("cover_kind"),
+                    "cover_id": it.get("cover_id"),
                     "minutes": round(it["ms"] / 60000, 2),
                     "streams": it["streams"],
                     "share": round(it[order_col] / max_val, 4),
