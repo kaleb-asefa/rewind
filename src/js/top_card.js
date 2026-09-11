@@ -66,9 +66,13 @@ function initTopCard(config) {
                     nameEl.textContent = data[`${kind}_name`];
                     if (secondaryEl) secondaryEl.textContent = formatSecondary(data);
                     showContent();
-                    const id = data[`${kind}_id`];
-                    if (id) {
-                        if (imgEl && window.loadCover) window.loadCover(imgEl, kind, id);
+                    // Album art can hang off a track id when the catalog doesn't
+                    // know the album — coverRef picks whichever id carries it.
+                    const ref = window.coverRef
+                        ? window.coverRef({ id: data[`${kind}_id`], cover_kind: data.cover_kind, cover_id: data.cover_id }, kind)
+                        : { kind, id: data[`${kind}_id`] };
+                    if (ref.id) {
+                        if (imgEl && window.loadCover) window.loadCover(imgEl, ref.kind, ref.id);
                     } else if (attempt < 6) {
                         // Cover id not ready yet (enrichment still running) — retry shortly.
                         setTimeout(() => fetchCard(attempt + 1), 3000);

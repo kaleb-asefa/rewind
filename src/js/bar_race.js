@@ -38,6 +38,12 @@
         return GREENS[index % GREENS.length];
     }
 
+    // Names come from an uploaded export — escape before they touch innerHTML.
+    function esc(s) {
+        return String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
     // Module state
     let entity = "artist";
     let months = [];
@@ -146,16 +152,16 @@
                 `position:absolute;left:0;right:0;top:0;height:${LANE}px;opacity:0;` +
                 "transform:translateY(0px);will-change:transform,opacity;";
             const sub = item.artist_name
-                ? ` <span style="opacity:.7;font-weight:400;">· ${item.artist_name}</span>`
+                ? ` <span style="opacity:.7;font-weight:400;">· ${esc(item.artist_name)}</span>`
                 : "";
             const initial = (item.name || "?").trim().charAt(0).toUpperCase() || "?";
             row.innerHTML = `
                 <div class="race-rank" style="position:absolute;left:0;top:0;width:${LEFT_PAD - 6}px;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--axis-label);"></div>
                 <div class="race-bar" style="position:absolute;left:${LEFT_PAD}px;top:${(LANE - BAR_H) / 2}px;height:${BAR_H}px;width:0;border-radius:9999px;background:${greenFor(idx)};box-shadow:var(--bar-shadow);"></div>
-                <div class="race-name" style="position:absolute;left:${LEFT_PAD}px;top:0;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:13px;font-weight:700;color:var(--emphasis);white-space:nowrap;overflow:hidden;text-shadow:var(--text-halo);">${item.name}${sub}</div>
+                <div class="race-name" style="position:absolute;left:${LEFT_PAD}px;top:0;height:${LANE}px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:13px;font-weight:700;color:var(--emphasis);white-space:nowrap;overflow:hidden;text-shadow:var(--text-halo);">${esc(item.name)}${sub}</div>
                 <div class="race-avatar" style="position:absolute;top:${(LANE - AVATAR) / 2}px;width:${AVATAR}px;height:${AVATAR}px;border-radius:9999px;overflow:hidden;border:2px solid var(--card-border);background:linear-gradient(135deg,#2f6b43,#1db954);display:flex;align-items:center;justify-content:center;box-shadow:var(--pill-shadow);">
-                    <span style="font-size:15px;font-weight:800;color:#eafff0;">${initial}</span>
-                    <img class="race-cover cover-img hidden" data-cover-kind="${entity}" data-cover-id="${item.id || ''}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt=""/>
+                    <span style="font-size:15px;font-weight:800;color:#eafff0;">${esc(initial)}</span>
+                    <img class="race-cover cover-img hidden" data-cover-kind="${esc(item.cover.kind)}" data-cover-id="${esc(item.cover.id || '')}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt=""/>
                 </div>
                 <div class="race-value" style="position:absolute;top:0;height:${LANE}px;display:flex;align-items:center;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:rgb(var(--color-on-surface));white-space:nowrap;"></div>`;
             container.appendChild(row);
@@ -169,9 +175,9 @@
             window.loadCoversBatch(container, entity);
         } else if (window.loadCover) {
             items.forEach((item, i) => {
-                if (!item.id) return;
+                if (!item.cover.id) return;
                 const img = rowEls[i].querySelector(".race-cover");
-                window.loadCover(img, entity, item.id);
+                window.loadCover(img, item.cover.kind, item.cover.id);
             });
         }
     }
@@ -312,10 +318,12 @@
             name: d.name || "Unknown",
             artist_name: d.artist_name || null,
             id: d.id || null,
+            // Which id actually carries the art (an album's may be one of its tracks).
+            cover: window.coverRef ? window.coverRef(d, entity) : { kind: entity, id: d.id || null },
             image_url: d.image_url || null,
             cumulative: Array.isArray(d.cumulative_minutes) ? d.cumulative_minutes : [],
         }));
-        if (window.primeCoverUrls) window.primeCoverUrls(entity, items);  // inline covers → skip /api/images
+        if (window.primeCoverUrls) window.primeCoverUrls(entity, res.data.data || []);  // inline covers → skip /api/images
 
         progress = 0;
         isPlaying = false;        // stay paused after data loads

@@ -360,6 +360,23 @@ async function preloadCovers(kind, ids) {
 }
 
 /**
+ * Which Spotify id actually carries an item's art.
+ *
+ * For albums the backend resolves cover identity separately from the album id
+ * (docs/API_CONTRACT.md §3): an album the catalog doesn't know has `id: null`
+ * but still ships `cover_kind: "track"` + `cover_id` pointing at one of its own
+ * tracks — a track's oEmbed thumbnail *is* its album cover, so the art matches.
+ * Keying covers off `id` alone silently drops those. Always resolve art through
+ * this helper; `defaultKind` is the endpoint's own kind.
+ */
+function coverRef(item, defaultKind) {
+    if (!item) return { kind: defaultKind, id: null };
+    const id = item.cover_id || item.id || null;
+    const kind = (item.cover_id && item.cover_kind) || defaultKind;
+    return { kind, id };
+}
+
+/**
  * Seed the cover cache from URLs the backend returned inline on a metric
  * response (item.image_url), so loadCoversBatch / preloadCovers skip the extra
  * /api/images round-trip. Null/absent urls are left uncached for the fallback.
@@ -367,10 +384,10 @@ async function preloadCovers(kind, ids) {
 function primeCoverUrls(kind, items) {
     if (!kind || !Array.isArray(items)) return;
     for (const it of items) {
-        const id = it && it.id;
+        const ref = coverRef(it, kind);
         const url = it && it.image_url;
-        if (id && url && !_coverCache.has(kind + ":" + id)) {
-            _coverCache.set(kind + ":" + id, url);
+        if (ref.id && url && !_coverCache.has(ref.kind + ":" + ref.id)) {
+            _coverCache.set(ref.kind + ":" + ref.id, url);
         }
     }
 }
@@ -398,3 +415,4 @@ window.loadCoversBatch = loadCoversBatch;
 window.preloadCovers = preloadCovers;
 window.primeCoverUrls = primeCoverUrls;
 window.resolveCoverUrls = resolveCoverUrls;
+window.coverRef = coverRef;

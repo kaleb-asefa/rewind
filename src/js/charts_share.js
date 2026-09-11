@@ -571,12 +571,24 @@
 
             // Anything the backend hasn't cached yet costs a cold Spotify
             // lookup (seconds per id), so it is resolved after the deck is
-            // already on screen — never in front of it.
-            const missing = items.filter((it) => !it.img && it.id);
+            // already on screen — never in front of it. An album's art can live
+            // on a track id (coverRef), so resolve per item's own cover kind.
+            const ref = (it) => (window.coverRef ? window.coverRef(it, kind) : { kind, id: it.id });
+            const missing = items.filter((it) => !it.img && ref(it).id);
             if (!missing.length || !window.resolveCoverUrls) return;
-            const map = await window.resolveCoverUrls(kind, missing.map((it) => it.id));
+            const byKind = new Map();
+            for (const it of missing) {
+                const r = ref(it);
+                if (!byKind.has(r.kind)) byKind.set(r.kind, new Set());
+                byKind.get(r.kind).add(r.id);
+            }
+            const maps = new Map();
+            await Promise.all(Array.from(byKind, async ([k, ids]) => {
+                maps.set(k, await window.resolveCoverUrls(k, Array.from(ids)));
+            }));
             await Promise.all(missing.map(async (it) => {
-                const url = map[it.id];
+                const r = ref(it);
+                const url = (maps.get(r.kind) || {})[r.id];
                 if (!url) return;
                 it.image_url = url;
                 it.img = await loadImage(url);

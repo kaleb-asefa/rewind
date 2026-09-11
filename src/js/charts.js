@@ -212,7 +212,15 @@
             if (window.primeCoverUrls) window.primeCoverUrls(cfg.cover, items);  // inline urls → skip /api/images
             if (window.preloadCovers) {
                 const n = Math.min(items.length, Math.max(state.depth, 20), 50);
-                await window.preloadCovers(cfg.cover, items.slice(0, n).map((it) => it.id).filter(Boolean));
+                // Group by cover kind: an album list can carry track-id covers.
+                const byKind = new Map();
+                for (const it of items.slice(0, n)) {
+                    const ref = window.coverRef ? window.coverRef(it, cfg.cover) : { kind: cfg.cover, id: it.id };
+                    if (!ref.id) continue;
+                    if (!byKind.has(ref.kind)) byKind.set(ref.kind, []);
+                    byKind.get(ref.kind).push(ref.id);
+                }
+                for (const [k, ids] of byKind) await window.preloadCovers(k, ids);
             }
         } catch (_) { /* prefetch is best-effort */ }
     }
@@ -239,8 +247,11 @@
                 '<span class="material-symbols-outlined text-primary">category</span></div>';
         }
         const icon = state.entity === "artist" ? "artist" : "music_note";
-        const img = item.id
-            ? '<img class="cover-img hidden absolute inset-0 w-full h-full object-cover ' + shape + '" data-cover-id="' + esc(item.id) + '" alt="">'
+        // Album art can live on a track id (see coverRef) — key the <img> off the
+        // cover reference, not the album id, or catalog-missing albums stay blank.
+        const ref = window.coverRef ? window.coverRef(item, cfg.cover) : { kind: cfg.cover, id: item.id };
+        const img = ref.id
+            ? '<img class="cover-img hidden absolute inset-0 w-full h-full object-cover ' + shape + '" data-cover-kind="' + esc(ref.kind) + '" data-cover-id="' + esc(ref.id) + '" alt="">'
             : "";
         return '<div class="' + size + " " + shape + ' bg-surface-container-high relative overflow-hidden shrink-0">' +
             '<span class="absolute inset-0 flex items-center justify-center text-on-surface-variant opacity-40">' +
@@ -310,7 +321,11 @@
         }
         if (!window.loadCover) return;
         container.querySelectorAll("img.cover-img[data-cover-id]").forEach((img) => {
-            window.loadCover(img, ENTITIES[state.entity].cover, img.getAttribute("data-cover-id"));
+            window.loadCover(
+                img,
+                img.getAttribute("data-cover-kind") || ENTITIES[state.entity].cover,
+                img.getAttribute("data-cover-id"),
+            );
         });
     }
 
