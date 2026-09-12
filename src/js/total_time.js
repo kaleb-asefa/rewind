@@ -11,8 +11,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!card || !valEl) return;
 
     let totalMinutes = null;
-    const units = ["minutes", "hours", "days"];
-    let currentUnitIndex = 0;
     let isFetching = false;
     let lastFetchTime = 0;
 
@@ -40,28 +38,17 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateDisplay() {
         if (totalMinutes === null) return;
 
-        let displayValue;
-        let label;
-        let nextUnit;
+        const mins = Math.round(totalMinutes);
+        const hours = totalMinutes / 60;
+        // Whole hours read as a rounder headline figure, but anything under an
+        // hour would collapse to "0 hours", so keep a decimal while it matters.
+        const hoursText = hours < 10
+            ? hours.toLocaleString(undefined, { maximumFractionDigits: 1 })
+            : Math.round(hours).toLocaleString();
 
-        const mode = units[currentUnitIndex];
-        if (mode === "hours") {
-            displayValue = (totalMinutes / 60).toLocaleString(undefined, { maximumFractionDigits: 2 });
-            label = "Hours";
-            nextUnit = "Days";
-        } else if (mode === "days") {
-            displayValue = (totalMinutes / (60 * 24)).toLocaleString(undefined, { maximumFractionDigits: 2 });
-            label = "Days";
-            nextUnit = "Minutes";
-        } else {
-            displayValue = Number(totalMinutes).toLocaleString(undefined, { maximumFractionDigits: 2 });
-            label = "Minutes";
-            nextUnit = "Hours";
-        }
-
-        valEl.textContent = `${displayValue} ${label}`;
+        valEl.textContent = `${mins.toLocaleString()} ${mins === 1 ? "Minute" : "Minutes"}`;
         if (unitEl) {
-            unitEl.textContent = `Click to switch to ${nextUnit}`;
+            unitEl.textContent = `${hoursText} ${hoursText === "1" ? "hour" : "hours"}`;
         }
     }
 
@@ -111,10 +98,4 @@ document.addEventListener("DOMContentLoaded", () => {
             fetchTotalTime();
         });
     }
-
-    card.addEventListener("click", () => {
-        if (totalMinutes === null) return;
-        currentUnitIndex = (currentUnitIndex + 1) % units.length;
-        updateDisplay();
-    });
 });

@@ -69,7 +69,8 @@
     --scrubber-knob: 252 252 250;
     --hero-glow: rgba(29, 185, 84, 0.10);
     --vinyl-opacity: 0.12;
-    --heatmap-empty: #deddd6;
+    --heatmap-empty: #ffffff;
+    --heatmap-ring: rgba(0, 0, 0, 0.09);
 
     /* Component tokens — every hardcoded colour below lives here so that
        cards, tooltips, hovers and chart chrome follow the active theme.
@@ -191,6 +192,7 @@
     --hero-glow: rgba(30, 215, 96, 0.08);
     --vinyl-opacity: 0.25;
     --heatmap-empty: #1f1f1f;
+    --heatmap-ring: rgba(255, 255, 255, 0.06);
 
     --card-bg: rgba(28, 27, 27, 0.85);
     --card-bg-hover: #1f1f1f;
@@ -348,6 +350,10 @@ body, header, section, footer, .glass-player, .spotify-card {
     aspect-ratio: 1;
     border-radius: 3px;
     background: var(--heatmap-empty);
+    /* Inset rather than a border/outline: it keeps the cell box the same size
+       (so the grid can't reflow) and survives the legend swatches, which set
+       outline:none inline to suppress the hover ring. */
+    box-shadow: inset 0 0 0 1px var(--heatmap-ring);
     cursor: pointer;
     outline: none;
     transition: outline 0.1s ease, transform 0.1s ease;

@@ -37,7 +37,7 @@
 <!-- Top Metric Cards Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
 <!-- Total Time -->
-<div class="glass-card metric-gradient p-5 rounded-lg flex flex-col gap-3 cursor-pointer select-none hover:border-primary/50 transition-all" id="total-time-card" title="Click to toggle unit (Minutes / Hours / Days)">
+<div class="glass-card metric-gradient p-5 rounded-lg flex flex-col gap-3" id="total-time-card">
 <div class="flex justify-between items-start">
 <span class="font-label-bold text-label-bold text-primary uppercase tracking-widest">Total Time</span>
 <span class="material-symbols-outlined text-primary">schedule</span>
@@ -48,10 +48,7 @@
 </div>
 <div id="total-time-content" class="hidden">
 <div class="font-headline-md text-headline-md text-on-surface" id="total-time-value">--</div>
-<div class="font-body-sm text-body-sm text-on-surface-variant mt-1 flex items-center gap-1">
-<span class="text-primary material-symbols-outlined text-[14px]">touch_app</span>
-<span id="total-time-unit">Click to switch unit</span>
-</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1" id="total-time-unit">--</div>
 </div>
 <div id="total-time-error" class="hidden text-body-sm text-error space-y-1">
 <p id="total-time-error-msg" class="text-[12px] opacity-90">Server not responding.</p>
@@ -148,7 +145,7 @@
 </div>
 </div>
 <div class="glass-card rounded-lg p-4 md:p-5">
-<div class="heatmap-wrap" style="--cell-gap: 3px; --heatmap-empty: #1f1f1f;">
+<div class="heatmap-wrap" style="--cell-gap: 3px;">
 <div class="heatmap-scroll">
 <div class="min-w-[650px] w-full">
 <div class="heatmap-months" id="heatmap-months" aria-hidden="true"></div>
