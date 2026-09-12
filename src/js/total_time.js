@@ -36,10 +36,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function updateDisplay() {
-        if (totalMinutes === null) return;
+        const minutes = Number(totalMinutes);
+        // null is the backend's "no data" scalar; undefined/NaN mean the field
+        // was missing or unparseable. Either way, leave the card's "--" alone
+        // rather than rendering "NaN Minutes".
+        if (totalMinutes == null || !Number.isFinite(minutes)) return;
 
-        const mins = Math.round(totalMinutes);
-        const hours = totalMinutes / 60;
+        const mins = Math.round(minutes);
+        const hours = minutes / 60;
         // Whole hours read as a rounder headline figure, but anything under an
         // hour would collapse to "0 hours", so keep a decimal while it matters.
         const hoursText = hours < 10
