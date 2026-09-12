@@ -53,13 +53,6 @@
         <!-- Ambient Decorative Background Glow -->
         <div class="absolute -z-10 blur-[120px] top-1/4 left-10 w-72 h-72 bg-primary/10 rounded-full pointer-events-none"></div>
 
-        <!-- Page Hero -->
-        <div class="max-w-3xl">
-            <span class="text-primary font-label-bold text-label-bold tracking-widest uppercase">The Rankings</span>
-            <h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface tracking-tight">Charts</h1>
-            <p class="font-body-lg text-body-lg text-on-surface-variant opacity-70">Your Top artists, tracks and albums — find anyone's rank.</p>
-        </div>
-
         <!-- Entity tabs + search -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div id="chart-entity-tabs" class="flex items-center p-1 bg-surface-container-high rounded-full border border-hairline self-start w-max">
@@ -135,69 +128,43 @@
             </a>
         </div>
 
-        <!-- Superlatives — "your records" as Top-10 lists, per year or all-time -->
+        <!-- Records — Top-10 lists, per year or all-time -->
         <section id="superlatives" class="pt-8 space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                    <span class="text-primary font-label-bold text-label-bold tracking-widest uppercase">Superlatives</span>
-                    <h2 class="font-headline-md text-headline-md font-bold tracking-tight text-on-surface">Your records</h2>
-                </div>
+            <div class="flex justify-end">
                 <div id="super-range-tabs" class="flex items-center gap-1 p-1 bg-surface-container-high rounded-full overflow-x-auto max-w-full"></div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
                 <div class="glass-card rounded-2xl p-gutter">
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 mb-4">
                         <span class="material-symbols-outlined text-primary">local_fire_department</span>
                         <h3 class="font-headline-md text-headline-md text-on-surface">Obsession of the day</h3>
                     </div>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">The track you played most in a single day.</p>
                     <div id="obsession-list" class="space-y-1"></div>
                 </div>
 
                 <div class="glass-card rounded-2xl p-gutter">
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 mb-4">
                         <span class="material-symbols-outlined text-primary">headphones</span>
                         <h3 class="font-headline-md text-headline-md text-on-surface">Biggest binges</h3>
                     </div>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">Your longest nonstop listening sessions.</p>
                     <div id="binge-list" class="space-y-1"></div>
                 </div>
 
                 <div class="glass-card rounded-2xl p-gutter">
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 mb-4">
                         <span class="material-symbols-outlined text-primary">skip_next</span>
                         <h3 class="font-headline-md text-headline-md text-on-surface">Most skipped</h3>
                     </div>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">The tracks you press next on most.</p>
                     <div id="most-skipped-list" class="space-y-1"></div>
                 </div>
 
                 <div class="glass-card rounded-2xl p-gutter">
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 mb-4">
                         <span class="material-symbols-outlined text-primary">favorite</span>
                         <h3 class="font-headline-md text-headline-md text-on-surface">Never skipped</h3>
                     </div>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">Songs you played on end without ever skipping.</p>
                     <div id="never-skipped-list" class="space-y-1"></div>
-                </div>
-
-                <div class="glass-card rounded-2xl p-gutter">
-                    <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary">timelapse</span>
-                        <h3 class="font-headline-md text-headline-md text-on-surface">Longest songs</h3>
-                    </div>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">The longest tracks you kept coming back to.</p>
-                    <div id="longest-list" class="space-y-1"></div>
-                </div>
-
-                <div class="glass-card rounded-2xl p-gutter">
-                    <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary">bolt</span>
-                        <h3 class="font-headline-md text-headline-md text-on-surface">Shortest songs</h3>
-                    </div>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-4">The shortest songs in your rotation.</p>
-                    <div id="shortest-list" class="space-y-1"></div>
                 </div>
             </div>
         </section>

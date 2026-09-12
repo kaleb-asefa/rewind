@@ -1,8 +1,8 @@
 /**
- * Rewind — Charts superlatives section.
- * "Your records" as Top-N lists, viewable per year or all-time. Its own range
- * selector (independent of the main leaderboard). Currently: Obsession of the
- * Day (the track you played most in a single day). Falls back to SAMPLE data.
+ * Rewind — Charts records section.
+ * Top-N lists viewable per year or all-time, with its own range selector
+ * (independent of the main leaderboard): Obsession of the Day, Biggest Binges,
+ * Most Skipped and Never Skipped. Falls back to SAMPLE data.
  */
 (function () {
     "use strict";
@@ -46,24 +46,6 @@
         { name: "Open Arms", artist: "SZA", id: null, plays: 64 },
     ];
 
-    const SAMPLE_LONGEST = [
-        { name: "Note To Self", artist: "J. Cole", id: null, plays: 8, seconds: 875 },
-        { name: "Runaway", artist: "Kanye West", id: null, plays: 12, seconds: 548 },
-        { name: "Sicko Mode", artist: "Travis Scott", id: null, plays: 20, seconds: 312 },
-        { name: "Pyramids", artist: "Frank Ocean", id: null, plays: 6, seconds: 594 },
-        { name: "good kid", artist: "Kendrick Lamar", id: null, plays: 9, seconds: 214 },
-        { name: "Ghost Town", artist: "Kanye West", id: null, plays: 7, seconds: 275 },
-    ];
-
-    const SAMPLE_SHORTEST = [
-        { name: "Fertilizer", artist: "Frank Ocean", id: null, plays: 6, seconds: 39 },
-        { name: "Good Guy", artist: "Frank Ocean", id: null, plays: 5, seconds: 66 },
-        { name: "Interlude", artist: "SZA", id: null, plays: 9, seconds: 78 },
-        { name: "Be Sweet", artist: "Japanese Breakfast", id: null, plays: 4, seconds: 96 },
-        { name: "Prom", artist: "SZA", id: null, plays: 8, seconds: 102 },
-        { name: "Jhene", artist: "Brent Faiyaz", id: null, plays: 3, seconds: 108 },
-    ];
-
     const state = { range: "all" };
     const cache = {};
     let apiYears = null;
@@ -90,12 +72,6 @@
     }
     function fmtNum(n) {
         return Number(n || 0).toLocaleString();
-    }
-    function fmtDur(sec) {
-        sec = Math.round(sec || 0);
-        const m = Math.floor(sec / 60);
-        const s = sec % 60;
-        return m + ":" + String(s).padStart(2, "0");
     }
     function rankClass(rank) {
         if (rank === 1) return "text-primary";
@@ -145,10 +121,8 @@
                 const bng = Array.isArray(res.data.binges) ? res.data.binges : [];
                 const msk = Array.isArray(res.data.most_skipped) ? res.data.most_skipped : [];
                 const nsk = Array.isArray(res.data.never_skipped) ? res.data.never_skipped : [];
-                const lng = Array.isArray(res.data.longest) ? res.data.longest : [];
-                const sht = Array.isArray(res.data.shortest) ? res.data.shortest : [];
-                if (obs.length || bng.length || msk.length || nsk.length || lng.length || sht.length) {
-                    data = { obsession: obs, binges: bng, most_skipped: msk, never_skipped: nsk, longest: lng, shortest: sht };
+                if (obs.length || bng.length || msk.length || nsk.length) {
+                    data = { obsession: obs, binges: bng, most_skipped: msk, never_skipped: nsk };
                 }
             }
         }
@@ -158,8 +132,6 @@
                 binges: SAMPLE_BINGES.map((o, i) => Object.assign({ rank: i + 1 }, o)),
                 most_skipped: SAMPLE_MOST_SKIPPED.map((o, i) => Object.assign({ rank: i + 1 }, o)),
                 never_skipped: SAMPLE_NEVER_SKIPPED.map((o, i) => Object.assign({ rank: i + 1 }, o)),
-                longest: SAMPLE_LONGEST.map((o, i) => Object.assign({ rank: i + 1 }, o)),
-                shortest: SAMPLE_SHORTEST.map((o, i) => Object.assign({ rank: i + 1 }, o)),
             };
         }
         if (data) cache[range] = data;
@@ -221,8 +193,6 @@
     const skipVal = (it) => it.skip_pct + "%";
     const skipSub = (it) => esc(it.artist || "") + (it.plays ? ' · <span class="opacity-70">' + it.plays + " plays</span>" : "");
     const playsVal = (it) => fmtNum(it.plays);
-    const durVal = (it) => fmtDur(it.seconds);
-    const playsBadge = (it) => fmtNum(it.plays) + " plays";
 
     async function render() {
         const data = await fetchData(state.range);
@@ -233,10 +203,8 @@
         renderList("binge-list", data.binges, { value: (it) => fmtMins(it.minutes), badge: "in one sitting", sub: bingeSub, cover: (it) => artistCover(it.id) });
         renderList("most-skipped-list", data.most_skipped, { value: skipVal, badge: "skipped", sub: skipSub });
         renderList("never-skipped-list", data.never_skipped, { value: playsVal, badge: "never skipped", sub: artistOnly });
-        renderList("longest-list", data.longest, { value: durVal, badge: playsBadge, sub: artistOnly });
-        renderList("shortest-list", data.shortest, { value: durVal, badge: playsBadge, sub: artistOnly });
         // Resolve every list's covers together: one /api/images call per kind for
-        // the whole section instead of six competing cold requests.
+        // the whole section instead of four competing cold requests.
         const section = document.getElementById("superlatives");
         if (section) loadCovers(section);
     }
