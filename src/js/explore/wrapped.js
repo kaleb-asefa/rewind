@@ -19,7 +19,7 @@
         const el = document.getElementById('personality-badges');
         if (!el) return;
         if (!list.length) {
-            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">Your personality appears as you listen.</p>';
+            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant">Your personality appears as you listen.</p>';
             return;
         }
         el.innerHTML = list
@@ -33,7 +33,7 @@
                     '<div class="relative h-1.5 rounded-full bg-surface-container-high mt-4">' +
                     '<div class="absolute top-1/2 w-3 h-3 rounded-full bg-primary border-2 border-surface shadow" style="left:' + pos + '%;transform:translate(-50%,-50%)"></div>' +
                     '</div>' +
-                    '<div class="flex justify-between mt-1.5 text-[10px] text-on-surface-variant opacity-70">' +
+                    '<div class="flex justify-between mt-1.5 text-[10px] text-on-surface-variant">' +
                     '<span>' + esc(item.left) + '</span><span>' + esc(item.right) + '</span></div>' +
                     '</div>';
             })

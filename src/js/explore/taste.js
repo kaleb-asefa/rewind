@@ -96,7 +96,7 @@
         const el = document.getElementById('gem-list');
         if (!el) return;
         if (!gems.length) {
-            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">Your taste leans mainstream — no deep cuts here.</p>';
+            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant">Your taste leans mainstream — no deep cuts here.</p>';
             return;
         }
         el.innerHTML = gems
@@ -104,7 +104,7 @@
                 coverCell(g.id) +
                 '<div class="min-w-0">' +
                 '<div class="font-body-sm text-body-sm text-on-surface truncate">' + esc(g.name) + '</div>' +
-                '<div class="font-body-sm text-[11px] text-on-surface-variant opacity-70 truncate">' + esc(g.artist) + '</div>' +
+                '<div class="font-body-sm text-[11px] text-on-surface-variant truncate">' + esc(g.artist) + '</div>' +
                 '</div></div>')
             .join('');
         loadCovers(el);

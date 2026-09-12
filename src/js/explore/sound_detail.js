@@ -75,7 +75,7 @@
         const el = document.getElementById('dance-list');
         if (!el) return;
         if (!list.length) {
-            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">No danceable tracks yet.</p>';
+            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant">No danceable tracks yet.</p>';
             return;
         }
         el.innerHTML = list.slice(0, 4)
@@ -83,7 +83,7 @@
                 coverCell(item.id, 'track') +
                 '<div class="min-w-0 flex-1">' +
                 '<div class="font-body-sm text-body-sm text-on-surface truncate">' + esc(item.name) + '</div>' +
-                '<div class="font-body-sm text-[11px] text-on-surface-variant opacity-70 truncate">' + esc(item.artist) + '</div>' +
+                '<div class="font-body-sm text-[11px] text-on-surface-variant truncate">' + esc(item.artist) + '</div>' +
                 '</div>' +
                 '<span class="font-mono text-[11px] text-primary shrink-0">' + Math.round((item.danceability || 0) * 100) + '%</span>' +
                 '</div>')

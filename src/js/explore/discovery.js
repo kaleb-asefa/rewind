@@ -40,14 +40,14 @@
         const el = document.getElementById('rediscovery-list');
         if (!el) return;
         if (!items.length) {
-            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">No returning favorites yet.</p>';
+            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant">No returning favorites yet.</p>';
             return;
         }
         el.innerHTML = items.map((item) =>
             '<div class="gem-row flex items-center gap-3 p-2 rounded-lg">' +
             coverCell(item.id) +
             '<div class="min-w-0 flex-1"><div class="font-body-sm text-body-sm text-on-surface truncate">' + esc(item.name) +
-            '</div><div class="font-body-sm text-[11px] text-on-surface-variant opacity-70 truncate">' + esc(item.artist) +
+            '</div><div class="font-body-sm text-[11px] text-on-surface-variant truncate">' + esc(item.artist) +
             '</div></div><span class="font-mono text-[11px] text-primary shrink-0">' + item.plays + ' plays</span></div>'
         ).join('');
         loadCovers(el);

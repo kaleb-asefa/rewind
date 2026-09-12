@@ -213,7 +213,7 @@
             emptyMsg.innerHTML = `
                 <span class="material-symbols-outlined text-3xl text-primary opacity-80">info</span>
                 <span>No listening rank data loaded yet.</span>
-                <span class="text-xs opacity-60">Upload your Spotify listening data export to view rank velocity.</span>
+                <span class="text-xs">Upload your Spotify listening data export to view rank velocity.</span>
             `;
             tipsOverlay.appendChild(emptyMsg);
             return;

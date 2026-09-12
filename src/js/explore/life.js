@@ -34,9 +34,9 @@
         if (!el) return;
         el.innerHTML = peaks.slice(0, 3).map((item, index) =>
             '<div class="life-peak ' + (index ? 'sm:border-l sm:border-white/10 sm:pl-6' : '') + '">' +
-            '<div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Biggest ' + esc(item.label) + '</div>' +
+            '<div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">Biggest ' + esc(item.label) + '</div>' +
             '<div class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-2">' + fmtMins(item.minutes || 0) + '</div>' +
-            '<div class="font-body-sm text-body-sm text-on-surface-variant opacity-75 mt-1 truncate">' + esc(item.period || '') + '</div></div>'
+            '<div class="font-body-sm text-body-sm text-on-surface-variant mt-1 truncate">' + esc(item.period || '') + '</div></div>'
         ).join('');
     }
     function renderSessionPace(minutes, mix) {
@@ -57,7 +57,7 @@
         if (!el) return;
         lifeState.milestones = milestones;
         if (!milestones.length) {
-            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">Milestones appear as you listen.</p>';
+            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant">Milestones appear as you listen.</p>';
             return;
         }
         el.innerHTML = '<div class="relative grid grid-cols-' + milestones.length + ' gap-4 w-full">' +
@@ -67,7 +67,7 @@
                 '<div class="life-milestone-dot w-5 h-5 rounded-full bg-primary border-4 border-surface-container-high shadow mx-auto sm:mx-0"></div>' +
                 '<div class="font-display-lg text-display-lg-mobile text-on-surface leading-tight mt-5 text-center sm:text-left">' + milestoneLabel(item.target || 0) + '</div>' +
                 '<div class="font-label-bold text-label-bold uppercase tracking-wider text-primary mt-1 text-center sm:text-left">plays</div>' +
-                '<div class="font-body-sm text-body-sm text-on-surface-variant opacity-75 mt-2 text-center sm:text-left truncate">' + esc(item.date || '') + '</div></div>'
+                '<div class="font-body-sm text-body-sm text-on-surface-variant mt-2 text-center sm:text-left truncate">' + esc(item.date || '') + '</div></div>'
             ).join('') + '</div>';
     }
     function renderListeningLife(data) {

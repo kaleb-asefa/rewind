@@ -277,7 +277,7 @@
         const cfg = ENTITIES[state.entity];
         const share = maxVal > 0 ? Math.max(3, Math.round((item[state.sort] / maxVal) * 100)) : 0;
         const artistLine = cfg.hasArtist && item.artist
-            ? '<div class="text-[12px] text-on-surface-variant opacity-70 truncate">' + esc(item.artist) + "</div>"
+            ? '<div class="text-[12px] text-on-surface-variant truncate">' + esc(item.artist) + "</div>"
             : "";
         return '<div class="chart-row flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-2.5' +
             (isMatch ? " chart-row--match" : "") + '" data-rank="' + rank + '">' +
@@ -294,7 +294,7 @@
             "</div>" +
             '<div class="text-right shrink-0">' +
                 '<div class="font-semibold text-on-surface tabular-nums">' + statText(item) + "</div>" +
-                '<div class="text-[11px] text-on-surface-variant opacity-70 tabular-nums">' + subStatText(item) + "</div>" +
+                '<div class="text-[11px] text-on-surface-variant tabular-nums">' + subStatText(item) + "</div>" +
             "</div>" +
         "</div>";
     }
@@ -303,7 +303,7 @@
         const cfg = ENTITIES[state.entity];
         const lift = rank === 1 ? " sm:-mt-6 ring-1 ring-primary/40" : "";
         const artistLine = cfg.hasArtist && item.artist
-            ? '<div class="text-[11px] text-on-surface-variant opacity-70 truncate w-full">' + esc(item.artist) + "</div>"
+            ? '<div class="text-[11px] text-on-surface-variant truncate w-full">' + esc(item.artist) + "</div>"
             : "";
         return '<div class="glass-card rounded-2xl p-4 flex flex-col items-center text-center' + lift + '">' +
             '<div class="font-mono text-headline-md font-bold ' + rankClass(rank) + '">' + rank + "</div>" +

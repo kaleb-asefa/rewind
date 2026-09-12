@@ -69,7 +69,7 @@
         const el = document.getElementById('loop-list');
         if (!el) return;
         if (!loops.length) {
-            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">No back-to-back repeats yet.</p>';
+            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant">No back-to-back repeats yet.</p>';
             return;
         }
         el.innerHTML = loops
@@ -77,7 +77,7 @@
                 coverCell(l.id) +
                 '<div class="min-w-0 flex-1">' +
                 '<div class="font-body-sm text-body-sm text-on-surface truncate">' + esc(l.name) + '</div>' +
-                '<div class="font-body-sm text-[11px] text-on-surface-variant opacity-70 truncate">' + esc(l.artist) + '</div>' +
+                '<div class="font-body-sm text-[11px] text-on-surface-variant truncate">' + esc(l.artist) + '</div>' +
                 '</div>' +
                 '<span class="font-mono text-[11px] text-primary shrink-0">×' + l.count + '</span>' +
                 '</div>')

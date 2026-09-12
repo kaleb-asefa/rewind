@@ -42,9 +42,9 @@
         return '<div class="gem-row flex items-center gap-3 p-2 rounded-lg">' +
             coverCell(id, kind) +
             '<div class="min-w-0 flex-1">' +
-            '<div class="font-label-bold text-[10px] uppercase tracking-wider text-on-surface-variant opacity-60">' + esc(label) + '</div>' +
+            '<div class="font-label-bold text-[10px] uppercase tracking-wider text-on-surface-variant">' + esc(label) + '</div>' +
             '<div class="font-body-sm text-body-sm text-on-surface truncate">' + esc(name) + '</div>' +
-            (sub ? '<div class="font-body-sm text-[11px] text-on-surface-variant opacity-70 truncate">' + esc(sub) + '</div>' : '') +
+            (sub ? '<div class="font-body-sm text-[11px] text-on-surface-variant truncate">' + esc(sub) + '</div>' : '') +
             '</div></div>';
     }
     function renderYearHighlights() {
@@ -52,7 +52,7 @@
         if (!el) return;
         const y = state.years.find((item) => item.year === state.activeYear);
         if (!y) {
-            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">No plays this year.</p>';
+            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant">No plays this year.</p>';
             return;
         }
         const artist = y.top_artist || {};
@@ -88,9 +88,9 @@
         return '<div class="gem-row flex items-center gap-3 p-2 rounded-lg">' +
             coverCell(item.id, 'track') +
             '<div class="min-w-0 flex-1">' +
-            '<div class="font-label-bold text-[10px] uppercase tracking-wider text-on-surface-variant opacity-60">' + esc(label) + '</div>' +
+            '<div class="font-label-bold text-[10px] uppercase tracking-wider text-on-surface-variant">' + esc(label) + '</div>' +
             '<div class="font-body-sm text-body-sm text-on-surface truncate">' + esc(item.name || '—') + '</div>' +
-            '<div class="font-body-sm text-[11px] text-on-surface-variant opacity-70 truncate">' + esc(item.artist || '') + '</div>' +
+            '<div class="font-body-sm text-[11px] text-on-surface-variant truncate">' + esc(item.artist || '') + '</div>' +
             '</div><span class="font-mono text-[11px] text-primary shrink-0">' + (item.year || '—') + '</span></div>';
     }
     function renderTimeMachine(machine) {
@@ -99,7 +99,7 @@
         const oldest = machine.oldest;
         const newest = machine.newest;
         if (!oldest && !newest) {
-            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">No release years yet.</p>';
+            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant">No release years yet.</p>';
             return;
         }
         el.innerHTML = (oldest ? machineRow('Oldest', oldest) : '') + (newest ? machineRow('Newest', newest) : '');

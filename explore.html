@@ -230,7 +230,7 @@
                 <h2 id="race-title" class="text-headline-md font-headline-md font-bold tracking-tight text-on-surface">
                     All-Time Bar Race
                 </h2>
-                <p id="race-subtitle" class="font-body-sm text-body-sm text-on-surface-variant opacity-70">
+                <p id="race-subtitle" class="font-body-sm text-body-sm text-on-surface-variant">
                     Cumulative listening time — the final frame is your all-time #1.
                 </p>
             </div>
@@ -295,7 +295,7 @@
                 <div id="race-empty" class="hidden py-16 flex flex-col items-center justify-center text-on-surface-variant text-body-sm font-medium gap-2">
                     <span class="material-symbols-outlined text-3xl text-primary opacity-80">info</span>
                     <span>No listening data loaded yet.</span>
-                    <span class="text-xs opacity-60">Upload your Spotify listening data export to view the bar race.</span>
+                    <span class="text-xs">Upload your Spotify listening data export to view the bar race.</span>
                 </div>
             </div>
 
@@ -316,13 +316,13 @@
                     <div class="relative flex items-center justify-center mt-4">
                         <svg id="clock-svg" viewBox="0 0 300 300" class="w-[300px] max-w-full h-auto"></svg>
                         <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span id="clock-caption" class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface-variant opacity-70">Peak hour</span>
+                            <span id="clock-caption" class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface-variant">Peak hour</span>
                             <span id="clock-peak" class="font-display-lg text-display-lg-mobile text-primary leading-none">—</span>
                         </div>
-                        <span class="absolute top-1 left-1/2 -translate-x-1/2 font-mono text-[10px] text-on-surface-variant opacity-60">12 AM</span>
-                        <span class="absolute right-1 top-1/2 -translate-y-1/2 font-mono text-[10px] text-on-surface-variant opacity-60">6 AM</span>
-                        <span class="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[10px] text-on-surface-variant opacity-60">12 PM</span>
-                        <span class="absolute left-1 top-1/2 -translate-y-1/2 font-mono text-[10px] text-on-surface-variant opacity-60">6 PM</span>
+                        <span class="absolute top-1 left-1/2 -translate-x-1/2 font-mono text-[10px] text-on-surface-variant">12 AM</span>
+                        <span class="absolute right-1 top-1/2 -translate-y-1/2 font-mono text-[10px] text-on-surface-variant">6 AM</span>
+                        <span class="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[10px] text-on-surface-variant">12 PM</span>
+                        <span class="absolute left-1 top-1/2 -translate-y-1/2 font-mono text-[10px] text-on-surface-variant">6 PM</span>
                     </div>
                     <div class="absolute -bottom-16 -right-16 w-72 h-72 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
                 </div>
@@ -331,7 +331,7 @@
                 <div class="flex flex-col gap-gutter">
                     <div class="reveal glass-card rounded-2xl p-5">
                         <div class="flex items-center gap-1.5">
-                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Chronotype</div>
+                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">Chronotype</div>
                             <span class="help">
                                 <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
                                 <div class="help-content">
@@ -349,7 +349,7 @@
                         <div class="relative h-2 rounded-full bg-gradient-to-r from-amber-400/60 via-surface-container-high to-primary">
                             <div id="chrono-marker" class="absolute -top-1.5 w-5 h-5 rounded-full bg-on-surface border-[3px] border-primary shadow -translate-x-1/2 transition-all duration-500" style="left: 50%"></div>
                         </div>
-                        <div class="flex justify-between mt-3 font-mono text-[10px] text-on-surface-variant opacity-60">
+                        <div class="flex justify-between mt-3 font-mono text-[10px] text-on-surface-variant">
                             <span>Early bird</span><span>Night owl</span>
                         </div>
                     </div>
@@ -358,7 +358,7 @@
                             <span class="material-symbols-outlined">event</span>
                         </div>
                         <div class="min-w-0">
-                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Busiest weekday</div>
+                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">Busiest weekday</div>
                             <div id="busiest-weekday" class="font-headline-md text-headline-md text-on-surface truncate">—</div>
                         </div>
                     </div>
@@ -377,7 +377,7 @@
                 <div class="reveal glass-card rounded-2xl p-gutter">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Across the year</h3>
                     <svg id="season-svg" viewBox="0 0 320 110" class="w-full h-auto mt-4"></svg>
-                    <div class="flex justify-between mt-2 font-mono text-[10px] text-on-surface-variant opacity-60">
+                    <div class="flex justify-between mt-2 font-mono text-[10px] text-on-surface-variant">
                         <span>Jan</span><span>Apr</span><span>Jul</span><span>Oct</span><span>Dec</span>
                     </div>
                 </div>
@@ -386,7 +386,7 @@
                 <div class="reveal glass-card rounded-2xl p-gutter flex flex-col justify-between">
                     <div>
                         <h3 class="font-headline-md text-headline-md text-on-surface">Longest streak</h3>
-                        <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">Consecutive days with a play.</p>
+                        <p class="font-body-sm text-body-sm text-on-surface-variant">Consecutive days with a play.</p>
                     </div>
                     <div class="my-4 flex items-end gap-2">
                         <span id="streak-longest" class="font-display-lg text-display-lg text-primary leading-none">—</span>
@@ -394,11 +394,11 @@
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-surface-container rounded-lg p-3">
-                            <div class="font-label-bold text-[10px] uppercase tracking-wider text-on-surface-variant opacity-70">Latest</div>
+                            <div class="font-label-bold text-[10px] uppercase tracking-wider text-on-surface-variant">Latest</div>
                             <div id="streak-current" class="font-body-lg text-on-surface">—</div>
                         </div>
                         <div class="bg-surface-container rounded-lg p-3">
-                            <div class="font-label-bold text-[10px] uppercase tracking-wider text-on-surface-variant opacity-70">Active days</div>
+                            <div class="font-label-bold text-[10px] uppercase tracking-wider text-on-surface-variant">Active days</div>
                             <div id="streak-active" class="font-body-lg text-on-surface">—</div>
                         </div>
                     </div>
@@ -410,7 +410,7 @@
         <section id="sound" class="scroll-mt-32 pt-10 space-y-6">
             <div class="reveal">
                 <h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface tracking-tight">Your Sound</h2>
-                <p id="sound-coverage" class="hidden font-body-sm text-body-sm text-on-surface-variant opacity-60 mt-1"></p>
+                <p id="sound-coverage" class="hidden font-body-sm text-body-sm text-on-surface-variant mt-1"></p>
             </div>
 
             <!-- Hero: mood map + summary -->
@@ -441,13 +441,13 @@
 
                 <div class="flex flex-col gap-gutter">
                     <div class="reveal glass-card rounded-2xl p-5">
-                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Your music in a word</div>
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">Your music in a word</div>
                         <div id="vibe-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
-                        <div id="vibe-phrase" class="font-body-sm text-body-sm text-on-surface-variant opacity-80">—</div>
+                        <div id="vibe-phrase" class="font-body-sm text-body-sm text-on-surface-variant">—</div>
                     </div>
                     <div class="reveal glass-card rounded-2xl p-5">
                         <div class="flex items-center gap-1.5 mb-3">
-                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Bright or moody?</div>
+                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">Bright or moody?</div>
                             <span class="help">
                                 <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
                                 <div class="help-content">
@@ -502,7 +502,7 @@
                 <div class="flex flex-col gap-gutter">
                     <div class="reveal glass-card rounded-2xl p-5">
                         <div class="flex items-center gap-1.5">
-                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">How mainstream</div>
+                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">How mainstream</div>
                             <span class="help">
                                 <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
                                 <div class="help-content">
@@ -526,7 +526,7 @@
                     </div>
                     <div class="reveal glass-card rounded-2xl p-5">
                         <div class="flex items-center gap-1.5">
-                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Taste range</div>
+                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">Taste range</div>
                             <span class="help">
                                 <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
                                 <div class="help-content">
@@ -541,7 +541,7 @@
                             </span>
                         </div>
                         <div id="taste-range-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
-                        <div id="taste-range-sub" class="font-body-sm text-body-sm text-on-surface-variant opacity-80">—</div>
+                        <div id="taste-range-sub" class="font-body-sm text-body-sm text-on-surface-variant">—</div>
                     </div>
                 </div>
             </div>
@@ -556,7 +556,7 @@
 
                 <div class="reveal glass-card rounded-2xl p-gutter">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Hidden gems</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-3">Low-key tracks you play a lot.</p>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">Low-key tracks you play a lot.</p>
                     <div id="gem-list" class="space-y-1.5"></div>
                 </div>
             </div>
@@ -600,7 +600,7 @@
                 <div class="flex flex-col gap-gutter">
                     <div class="reveal glass-card rounded-2xl p-5">
                         <div class="flex items-center gap-1.5">
-                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Restless or locked in?</div>
+                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">Restless or locked in?</div>
                             <span class="help">
                                 <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
                                 <div class="help-content">
@@ -615,12 +615,12 @@
                             </span>
                         </div>
                         <div id="skip-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
-                        <div id="skip-sub" class="font-body-sm text-body-sm text-on-surface-variant opacity-80">—</div>
+                        <div id="skip-sub" class="font-body-sm text-body-sm text-on-surface-variant">—</div>
                     </div>
                     <div class="reveal glass-card rounded-2xl p-5">
-                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">Longest binge</div>
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">Longest binge</div>
                         <div id="binge-value" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
-                        <div class="font-body-sm text-body-sm text-on-surface-variant opacity-80">in one sitting</div>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant">in one sitting</div>
                     </div>
                 </div>
             </div>
@@ -634,7 +634,7 @@
                 </div>
                 <div class="reveal glass-card rounded-2xl p-gutter">
                     <h3 class="font-headline-md text-headline-md text-on-surface">On repeat</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-3">Songs you looped back-to-back.</p>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">Songs you looped back-to-back.</p>
                     <div id="loop-list" class="space-y-1.5"></div>
                 </div>
             </div>
@@ -677,14 +677,14 @@
 
                 <div class="flex flex-col gap-gutter">
                     <div class="reveal glass-card rounded-2xl p-5">
-                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">New artists</div>
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">New artists</div>
                         <div id="new-artists-value" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
-                        <div class="font-body-sm text-body-sm text-on-surface-variant opacity-80">per month</div>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant">per month</div>
                     </div>
                     <div class="reveal glass-card rounded-2xl p-5">
-                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant opacity-70">One-off plays</div>
+                        <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">One-off plays</div>
                         <div id="one-off-value" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
-                        <div class="font-body-sm text-body-sm text-on-surface-variant opacity-80">played once</div>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant">played once</div>
                     </div>
                 </div>
             </div>
@@ -693,7 +693,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
                 <div class="reveal glass-card rounded-2xl p-gutter">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Back in rotation</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-3">Old favorites you returned to.</p>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">Old favorites you returned to.</p>
                     <div id="rediscovery-list" class="space-y-1.5"></div>
                 </div>
                 <div class="reveal glass-card rounded-2xl p-gutter">
@@ -718,7 +718,7 @@
                 <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Session pace</h3>
                     <div id="life-session-value" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-5">—</div>
-                    <div class="font-body-sm text-body-sm text-on-surface-variant opacity-75">typical session</div>
+                    <div class="font-body-sm text-body-sm text-on-surface-variant">typical session</div>
                     <div id="life-session-mix" class="space-y-3 mt-auto pt-7"></div>
                 </div>
             </div>
@@ -752,14 +752,14 @@
                         <span><span id="age-fresh-pct">—</span>% new releases</span>
                         <span><span id="age-catalog-pct">—</span>% catalog</span>
                     </div>
-                    <div class="mt-auto pt-7 font-body-sm text-body-sm text-on-surface-variant opacity-80">Average release year <span id="age-avg-year" class="text-on-surface font-semibold">—</span></div>
+                    <div class="mt-auto pt-7 font-body-sm text-body-sm text-on-surface-variant">Average release year <span id="age-avg-year" class="text-on-surface font-semibold">—</span></div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
                 <div class="reveal glass-card rounded-2xl p-gutter">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Time machine</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-3">The oldest and newest songs you played.</p>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">The oldest and newest songs you played.</p>
                     <div id="time-machine-list" class="space-y-1.5"></div>
                 </div>
                 <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
@@ -788,7 +788,7 @@
                 <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Mood drift</h3>
                     <div id="mood-drift-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-5">—</div>
-                    <div class="font-body-sm text-body-sm text-on-surface-variant opacity-75">positivity over time</div>
+                    <div class="font-body-sm text-body-sm text-on-surface-variant">positivity over time</div>
                     <svg id="mood-drift-svg" viewBox="0 0 200 72" class="w-full h-auto mt-auto pt-6"></svg>
                 </div>
             </div>
@@ -796,7 +796,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
                 <div class="reveal glass-card rounded-2xl p-gutter">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Day vs night</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">How your sound changes by hour.</p>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant">How your sound changes by hour.</p>
                     <div id="day-night" class="flex gap-4 mt-5"></div>
                 </div>
                 <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
@@ -819,7 +819,7 @@
                 <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter min-h-[280px] flex flex-col">
                     <h3 class="font-headline-md text-headline-md text-on-surface">How fast you listen</h3>
                     <div id="tempo-bars" class="flex items-end gap-2 h-44 mt-6"></div>
-                    <div id="tempo-caption" class="font-body-sm text-body-sm text-on-surface-variant opacity-75 mt-4">—</div>
+                    <div id="tempo-caption" class="font-body-sm text-body-sm text-on-surface-variant mt-4">—</div>
                 </div>
 
                 <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
@@ -850,7 +850,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
                 <div class="reveal glass-card rounded-2xl p-gutter">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Most danceable</h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant opacity-70 mb-3">Your grooviest songs.</p>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">Your grooviest songs.</p>
                     <div id="dance-list" class="space-y-1.5"></div>
                 </div>
                 <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
@@ -875,7 +875,7 @@
                 <div class="reveal lg:col-span-2 glass-card rounded-2xl p-gutter min-h-[240px] flex flex-col">
                     <h3 class="font-headline-md text-headline-md text-on-surface">Your inner circle</h3>
                     <div id="concentration-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-5">—</div>
-                    <div class="font-body-sm text-body-sm text-on-surface-variant opacity-80 mt-1">Top 10 artists = <span id="concentration-pct" class="text-on-surface font-semibold">—</span>% of all plays</div>
+                    <div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Top 10 artists = <span id="concentration-pct" class="text-on-surface font-semibold">—</span>% of all plays</div>
                     <div id="concentration-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-auto"></div>
                     <div class="flex justify-between mt-2 text-[11px] text-on-surface-variant"><span>Top 10 artists</span><span>Everyone else</span></div>
                 </div>
@@ -946,7 +946,7 @@
                     <span class="material-symbols-outlined text-sm">auto_graph</span>
                     Rewind Analytics
                 </div>
-                <p class="font-body-sm text-body-sm text-on-surface-variant opacity-60">© 2024 Rewind Analytics. All rights reserved.</p>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">© 2024 Rewind Analytics. All rights reserved.</p>
             </div>
         </div>
     </footer>

@@ -614,7 +614,7 @@ html { scroll-behavior: smooth; }
     transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 .chapter-pill:hover { color: rgb(var(--color-on-surface)); }
-.chapter-pill .num { font-variant-numeric: tabular-nums; opacity: 0.55; }
+.chapter-pill .num { font-variant-numeric: tabular-nums; opacity: 0.82; }
 .chapter-pill--active {
     background: rgb(var(--color-primary));
     color: rgb(var(--color-on-primary));

@@ -52,19 +52,19 @@
             coverCell(item.id, 'track') +
             '<div class="min-w-0">' +
             '<div class="font-body-sm text-body-sm text-on-surface truncate">' + esc(item.name || '—') + '</div>' +
-            '<div class="font-body-sm text-[11px] text-on-surface-variant opacity-70 truncate">' + esc(item.artist || '') + '</div>' +
+            '<div class="font-body-sm text-[11px] text-on-surface-variant truncate">' + esc(item.artist || '') + '</div>' +
             '</div></div>';
     }
     function renderTopDayTrack(item) {
         const el = document.getElementById('day-track');
         if (!el) return;
         if (!item || !item.name) {
-            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">No single-day binges yet.</p>';
+            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant">No single-day binges yet.</p>';
             return;
         }
         el.innerHTML =
             '<div class="font-display-lg text-display-lg-mobile text-primary leading-tight">×' + (item.count || 0) + '</div>' +
-            '<div class="font-body-sm text-body-sm text-on-surface-variant opacity-75 mb-4">in one day · ' + esc(item.date || '') + '</div>' +
+            '<div class="font-body-sm text-body-sm text-on-surface-variant mb-4">in one day · ' + esc(item.date || '') + '</div>' +
             trackRow(item);
         loadCovers(el);
     }
@@ -72,12 +72,12 @@
         const el = document.getElementById('noskip');
         if (!el) return;
         if (!item || !item.name) {
-            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">Not enough plays yet.</p>';
+            el.innerHTML = '<p class="font-body-sm text-body-sm text-on-surface-variant">Not enough plays yet.</p>';
             return;
         }
         el.innerHTML =
             '<div class="font-display-lg text-display-lg-mobile text-primary leading-tight">' + Math.round((item.skip_rate || 0) * 100) + '%</div>' +
-            '<div class="font-body-sm text-body-sm text-on-surface-variant opacity-75 mb-4">skip rate · ' + (item.plays || 0) + ' plays</div>' +
+            '<div class="font-body-sm text-body-sm text-on-surface-variant mb-4">skip rate · ' + (item.plays || 0) + ' plays</div>' +
             trackRow(item);
         loadCovers(el);
     }

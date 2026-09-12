@@ -179,7 +179,7 @@
                     "</div>" +
                     '<div class="text-right shrink-0">' +
                         '<div class="text-primary font-bold tabular-nums leading-none">' + opts.value(it) + "</div>" +
-                        '<div class="text-[10px] text-on-surface-variant opacity-60 mt-0.5">' + badgeOf(it) + "</div>" +
+                        '<div class="text-[10px] text-on-surface-variant mt-0.5">' + badgeOf(it) + "</div>" +
                     "</div>" +
                 "</div>";
             })
