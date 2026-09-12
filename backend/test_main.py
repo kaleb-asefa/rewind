@@ -1307,12 +1307,10 @@ def test_wrapped_empty_when_no_history():
             "status": "ok",
             "year": None,
             "personality": [],
-            "longest_track": {},
-            "shortest_track": {},
         }
 
 
-def test_wrapped_returns_personality_and_extremes(tmp_path, monkeypatch):
+def test_wrapped_returns_personality(tmp_path, monkeypatch):
     with TestClient(app) as client:
         sample_json_path = os.path.join(
             os.path.dirname(__file__), "..", "data", "Streaming_History_Audio_2022-2025_0.json"
@@ -1366,13 +1364,6 @@ def test_wrapped_returns_personality_and_extremes(tmp_path, monkeypatch):
         data = client.get("/api/metrics/wrapped").json()
         assert any(t["right"] == "Mainstream" for t in data["personality"])
 
-        longest = data["longest_track"]
-        shortest = data["shortest_track"]
-        assert longest["name"] and longest["id"] and len(longest["id"]) == 22
-        assert shortest["name"] and shortest["id"]
-        assert shortest["seconds"] >= 30
-        assert longest["seconds"] >= shortest["seconds"]
-
 
 # ── Explore year filter ───────────────────────────────────────────────────────
 _EXPLORE_ENDPOINTS = (
@@ -1403,7 +1394,6 @@ def test_years_lists_history_years_newest_first():
         assert [y["year"] for y in years] == sorted((y["year"] for y in years), reverse=True)
         for y in years:
             assert isinstance(y["year"], int)
-            assert y["streams"] > 0 and y["minutes"] > 0
 
 
 def test_year_filter_partitions_history():
@@ -1431,7 +1421,6 @@ def test_year_filter_partitions_history():
             assert scoped["year"] == y["year"]
             # A single year can never hold more plays than the whole history.
             assert 0 < scoped["total_streams"] < all_time["total_streams"]
-            assert scoped["total_streams"] == y["streams"]
             per_year[y["year"]] = scoped["total_streams"]
 
         assert sum(per_year.values()) == all_time["total_streams"]
@@ -1875,28 +1864,6 @@ def test_superlative_skip_charts():
     assert never[0]["plays"] == 12
 
 
-def test_superlative_duration_charts():
-    from routers.explore import _superlative_longest, _superlative_shortest
-
-    # (id, name, artist, plays, duration_seconds)
-    dur_rows = [
-        ("a", "Epic", "A", 5, 875),      # long, plenty of plays
-        ("b", "Short One", "B", 4, 45),  # short real song
-        ("c", "Skit", "C", 3, 12),       # under the 30s floor
-        ("d", "OneOff", "D", 1, 900),    # longest but only 1 play → excluded
-        ("e", "Mid", "E", 2, 200),
-    ]
-    longest = _superlative_longest(dur_rows, 10)
-    assert [x["name"] for x in longest] == ["Epic", "Mid", "Short One", "Skit"]
-    assert longest[0]["seconds"] == 875
-    assert all(x["name"] != "OneOff" for x in longest)   # min-2-plays floor
-
-    shortest = _superlative_shortest(dur_rows, 10)
-    assert shortest[0]["name"] == "Short One"            # 45s, shortest >=30s
-    assert all(x["name"] != "Skit" for x in shortest)    # 12s under the 30s floor
-    assert all(x["name"] != "OneOff" for x in shortest)
-
-
 def test_superlatives_endpoint():
     with TestClient(app) as client:
         empty = client.get("/api/metrics/superlatives").json()
@@ -1941,9 +1908,6 @@ def test_superlatives_endpoint():
             assert never[0]["plays"] >= 10
             npl = [n["plays"] for n in never]
             assert all(npl[i] >= npl[i + 1] for i in range(len(npl) - 1))
-
-        assert isinstance(data["longest"], list)   # empty unless enriched
-        assert isinstance(data["shortest"], list)
 
         assert client.get("/api/metrics/superlatives?range=bogus").status_code == 400
 

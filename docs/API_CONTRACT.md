@@ -89,7 +89,7 @@ neither needs to read the other's code.
 
 | Endpoint | Params | Key response fields |
 |---|---|---|
-| `/api/metrics/years` | — | `years[{year,streams,minutes}]` (newest first; `[]` before any upload) |
+| `/api/metrics/years` | — | `years[{year}]` (newest first; `[]` before any upload) |
 | `/api/metrics/artist-rank` | `limit`, `year?` | `months[]` (weekly keys), `data[{name,monthly_ranks[],image_url}]` |
 | `/api/metrics/track-rank` | `limit`, `year?` | `months[]`, `data[{name,monthly_ranks[],image_url}]` |
 | `/api/metrics/bar-race` | `entity`, `limit`, `year?` | `months[]`, `featured[{name,id,cumulative_minutes[],image_url}]` |
@@ -103,9 +103,9 @@ neither needs to read the other's code.
 | `/api/metrics/evolution` | `year?` | `genre_evolution{periods,genres}`, `mood_trend[]`, `day_night`, `mainstream_trend[]` (periods → months when filtered) |
 | `/api/metrics/sound-detail` | `year?` | `tempo{buckets[]}`, `key{major_share}`, `danceable[]`, `energy_split{workout,wind_down}` |
 | `/api/metrics/deep-cuts` | `year?` | `concentration{top10_share}`, `album_commitment{deep_share}`, `top_day_track`, `no_skip` |
-| `/api/metrics/wrapped` | `year?` | `personality[]`, `longest_track`, `shortest_track` |
+| `/api/metrics/wrapped` | `year?` | `personality[]` |
 | `/api/metrics/chart` | `entity=artist\|track\|album\|genre`, `sort=minutes\|streams`, `limit`, `range=all\|YYYY\|4w\|6m` | `items[{rank,name,artist,id,cover_kind,cover_id,minutes,streams,share,prev_rank,image_url}]`, `years[]` |
-| `/api/metrics/superlatives` | `range`, `limit` | `obsession[]`, `binges[]`, `most_skipped[]`, `never_skipped[]`, `longest[]`, `shortest[]`, `years[]` |
+| `/api/metrics/superlatives` | `range`, `limit` | `obsession[]`, `binges[]`, `most_skipped[]`, `never_skipped[]`, `years[]` |
 
 > **Album cover ids (`cover_kind` / `cover_id`, additive).** Album items (`top-album`,
 > `chart?entity=album`, `bar-race?entity=album`) carry them alongside `id`. `id` still means

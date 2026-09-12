@@ -71,24 +71,15 @@ def _period_label(value: int, year) -> str:
 
 
 def _available_years(raw_con, off: int):
-    """Years this session has plays in, newest first, with their volume so the
-    filter can show how much data each year holds."""
+    """Years this session has plays in, newest first."""
     try:
         rows = raw_con.execute(
-            f"SELECT EXTRACT(year FROM ts + to_minutes({int(off)}))::INTEGER AS y, "
-            "COUNT(*) AS streams, SUM(COALESCE(ms_played, 0)) AS ms "
-            "FROM history WHERE ts IS NOT NULL GROUP BY y ORDER BY y DESC"
+            f"SELECT DISTINCT EXTRACT(year FROM ts + to_minutes({int(off)}))::INTEGER AS y "
+            "FROM history WHERE ts IS NOT NULL ORDER BY y DESC"
         ).fetchall()
     except Exception:
         return []
-    return [
-        {
-            "year": int(r[0]),
-            "streams": int(r[1]),
-            "minutes": round((r[2] or 0) / 60000, 2),
-        }
-        for r in rows
-    ]
+    return [{"year": int(r[0])} for r in rows]
 
 
 @router.get("/api/metrics/years")
@@ -1665,9 +1656,8 @@ async def get_deep_cuts(year: str = "all", conn: Connection = Depends(get_db)):
 
 @router.get("/api/metrics/wrapped")
 async def get_wrapped(year: str = "all", conn: Connection = Depends(get_db)):
-    """Finale personality synthesis + song-length extremes. Personality traits
-    come from history (loyalty, chronotype, skip, shuffle) plus one catalog trait
-    (mainstream); longest/shortest song need the track_features duration.
+    """Finale personality synthesis: traits from history (loyalty, chronotype,
+    skip, shuffle) plus one catalog trait (mainstream, from track_features).
     """
     yr = _parse_year(year)
 
@@ -1777,39 +1767,11 @@ async def get_wrapped(year: str = "all", conn: Connection = Depends(get_db)):
                 "position": round(avg_pop, 3), "icon": "trending_up",
             })
 
-        # Longest / shortest song (>= 30s to skip fragments), from catalog duration.
-        def extreme(order):
-            try:
-                r = raw_con.execute(
-                    f"SELECT split_part(h.track_uri, ':', 3) AS id, any_value(h.track_name), "
-                    f"any_value(h.artist_name), CAST(any_value(f.duration) AS INTEGER) AS secs "
-                    f"FROM history h JOIN track_features f "
-                    f"ON split_part(h.track_uri, ':', 3) = f.track_id "
-                    f"WHERE h.track_uri LIKE 'spotify:track:%' AND h.track_name IS NOT NULL "
-                    f"AND f.duration IS NOT NULL AND f.duration >= 30{hclause} "
-                    f"GROUP BY id ORDER BY secs {order} LIMIT 1"
-                ).fetchone()
-            except Exception:
-                return {}
-            if not r:
-                return {}
-            return {"name": r[1], "artist": r[2] or "", "id": r[0], "seconds": int(r[3])}
-
-        return {
-            "personality": personality,
-            "longest_track": extreme("DESC"),
-            "shortest_track": extreme("ASC"),
-        }
+        return {"personality": personality}
 
     res = await run_in_threadpool(query)
     if not res:
-        return {
-            "status": "ok",
-            "year": yr,
-            "personality": [],
-            "longest_track": {},
-            "shortest_track": {},
-        }
+        return {"status": "ok", "year": yr, "personality": []}
     return {"status": "ok", "year": yr, **res}
 
 
@@ -2155,44 +2117,6 @@ def _superlative_never_skipped(skip_rows, limit):
     ]
 
 
-def _duration_stats(raw_con, clause):
-    """Per-track play count + duration (seconds) for tracks in the catalog.
-    Needs the enriched track_features slice; empty when unenriched.
-    """
-    try:
-        return raw_con.execute(
-            "SELECT f.track_id AS id, any_value(h.track_name) AS name, "
-            "any_value(h.artist_name) AS artist, COUNT(*) AS plays, "
-            "any_value(f.duration) AS dur "
-            "FROM history h JOIN track_features f "
-            "ON split_part(h.track_uri, ':', 3) = f.track_id "
-            "WHERE h.track_uri LIKE 'spotify:track:%' AND h.track_name IS NOT NULL "
-            "AND f.duration IS NOT NULL" + clause + " GROUP BY f.track_id"
-        ).fetchall()
-    except Exception:
-        return []
-
-
-def _superlative_longest(dur_rows, limit):
-    """Longest tracks you actually played (min 2 plays), by duration."""
-    cand = [r for r in dur_rows if r[3] >= 2 and r[4]]
-    cand.sort(key=lambda r: r[4], reverse=True)
-    return [
-        {"rank": i, "name": r[1], "artist": r[2], "id": r[0], "plays": int(r[3]), "seconds": int(r[4])}
-        for i, r in enumerate(cand[:limit], start=1)
-    ]
-
-
-def _superlative_shortest(dur_rows, limit):
-    """Shortest real songs you played (min 2 plays, >=30s to skip junk)."""
-    cand = [r for r in dur_rows if r[3] >= 2 and r[4] and r[4] >= 30]
-    cand.sort(key=lambda r: r[4])
-    return [
-        {"rank": i, "name": r[1], "artist": r[2], "id": r[0], "plays": int(r[3]), "seconds": int(r[4])}
-        for i, r in enumerate(cand[:limit], start=1)
-    ]
-
-
 @router.get("/api/metrics/superlatives")
 async def get_superlatives(
     range: str = "all",
@@ -2200,7 +2124,7 @@ async def get_superlatives(
     conn: Connection = Depends(get_db),
 ):
     """History-only "records" for the Charts superlatives section, viewable
-    per year or all-time: obsession, binges, most/never skipped, longest/shortest."""
+    per year or all-time: obsession, binges, most/never skipped."""
     rng = range.lower()
     if rng not in ("all", "4w", "6m") and not (rng.isdigit() and len(rng) == 4):
         raise HTTPException(status_code=400, detail="Invalid range for superlatives.")
@@ -2211,14 +2135,11 @@ async def get_superlatives(
         off = _tz_offset_minutes(raw_con)
         clause = _chart_range_clause(rng, off)
         skip_rows = _skip_stats(raw_con, clause)
-        dur_rows = _duration_stats(raw_con, clause)
         return {
             "obsession": _superlative_obsession(raw_con, off, clause, limit),
             "binges": _superlative_binges(raw_con, off, clause, limit),
             "most_skipped": _superlative_most_skipped(skip_rows, limit),
             "never_skipped": _superlative_never_skipped(skip_rows, limit),
-            "longest": _superlative_longest(dur_rows, limit),
-            "shortest": _superlative_shortest(dur_rows, limit),
             "years": _chart_years(raw_con, off),
         }
 

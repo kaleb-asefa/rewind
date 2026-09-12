@@ -70,7 +70,7 @@ functions and gaps-and-islands queries they need have no clean Core expression.
   inlined as literals so the expression stays byte-identical in `SELECT`/`GROUP BY`
   (a `?` placeholder there breaks DuckDB's group-by expression matching). Year boundaries use
   the same per-user local-time shift as the rest of the app. `GET /api/metrics/years` lists the
-  years the session has plays in, with `streams`/`minutes` per year, for the filter control.
+  years the session has plays in, for the filter control.
 - **Charts** (`/api/metrics/chart`, `/api/metrics/superlatives`) keep their own
   `range=all|YYYY|4w|6m` param instead — they are not part of the year filter.
 

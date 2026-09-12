@@ -51,9 +51,9 @@ Populates the filter. Newest first, one entry per year the session has plays in.
 {
   "status": "ok",
   "years": [
-    { "year": 2026, "streams": 5632,  "minutes": 18840.28 },
-    { "year": 2025, "streams": 2899,  "minutes": 8545.79 },
-    { "year": 2024, "streams": 11734, "minutes": 27700.4 }
+    { "year": 2026 },
+    { "year": 2025 },
+    { "year": 2024 }
   ]
 }
 ```
@@ -92,7 +92,7 @@ Response **shapes never change** — only the numbers, and in two places the per
 | Taste Changes (`#evolution`) | `evolution` | **`genre_evolution.periods`, `mood_trend[].period`, `mainstream_trend[].period` switch from years to `"Jan"…"Dec"`** — same shape, month granularity, so a one-year view still draws a real trend |
 | The Detail (`#sound-detail`) | `sound-detail` | Tempo spread, major/minor, danceable picks for that year |
 | Deep Cuts (`#deep-cuts`) | `deep-cuts` | Concentration, album commitment, binged track, never-skipped favourite for that year |
-| Wrapped (`#wrapped`) | `wrapped` | Personality traits + longest/shortest song for that year — i.e. an actual per-year "wrapped" |
+| Wrapped (`#wrapped`) | `wrapped` | Personality traits for that year — i.e. an actual per-year "wrapped" |
 
 Two consequences worth designing for:
 
@@ -111,7 +111,7 @@ Two consequences worth designing for:
 
 - One filter for the **whole Explore page** — a pill + dropdown (`#year-filter`,
   `#year-filter-btn`, `#year-filter-label`, `#year-filter-menu`) in the sticky chapter rail.
-  "All time" first, then each year from `/api/metrics/years` with its play count as a subtitle.
+  "All time" first, then each year from `/api/metrics/years`.
 - The control stays **hidden until `/api/metrics/years` returns a year to pick**, and it
   initialises before the scroll-spy so a rail hiccup can't leave the page unfilterable.
 - Styling follows the chapter pills (`.year-pill--active`, `.year-option--active` in

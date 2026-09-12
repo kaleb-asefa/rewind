@@ -83,7 +83,7 @@ These take the one-off superlatives already scattered in Explore and make them *
 | **Biggest Binges** ✅ | longest single-sitting sessions (gap > 30 min) + the artist that dominated | [H] | "the night you couldn't stop". **Built** (session clustering, ≥20-min floor, dominant artist + their session share %). |
 | **Most Skipped** ✅ | tracks you press next on most (`reason_end='fwdbtn'`), by skip rate (min 5 plays) | [H] | the honest "most hated" as a chart. **Built**. |
 | **Never Skipped** ✅ | most-played tracks you never once skipped (min 10 plays, 0 skips) | [H] | "songs you always let ride". **Built** (history-only, not completion-based). |
-| **Longest / Shortest** ✅ | longest and shortest tracks you actually played (min 2 plays; shortest ≥30s) | [C] | fun extremes. **Built** (two cards, mm:ss, catalog duration). |
+| **Longest / Shortest** ❌ | longest and shortest tracks you actually played (min 2 plays; shortest ≥30s) | [C] | fun extremes. **Removed** — dropped from the UI, so the endpoint no longer computes them. |
 
 ### 3.3 Time-anchored charts — all [H]
 
@@ -178,7 +178,7 @@ Frontend: one `charts.js` (or `charts/` namespace mirroring `explore/`) with a s
 1. ~~**Core rankings** — Top Artists / Tracks / Albums numbered lists + depth + sort toggles (§3.1).~~ **Done.**
 2. ~~**Find-your-rank search** (§2).~~ **Done.**
 3. ~~**Per-year time selector** (`range` param).~~ **Done** (all-time + real years; 4w/6m supported by the endpoint, not yet surfaced in the UI).
-4. **Superlative charts** (§3.2): ~~**Obsession of the Day**~~ + ~~**Biggest Binges**~~ + ~~**Most Skipped**~~ + ~~**Never Skipped**~~ + ~~**Longest / Shortest**~~ — **§3.2 complete** (6 cards in the "Superlatives" section, independent year selector). *(On Repeat was built then removed — too redundant with Obsession of the Day.)*
+4. **Superlative charts** (§3.2): ~~**Obsession of the Day**~~ + ~~**Biggest Binges**~~ + ~~**Most Skipped**~~ + ~~**Never Skipped**~~ — **§3.2 complete** (4 cards in the "Superlatives" section, independent year selector). *(On Repeat and Longest / Shortest were built then removed — On Repeat was too redundant with Obsession of the Day, and the track-length extremes didn't earn their space.)*
 5. Podium ~~+ ▲▼ movement~~ (**done**), expandable rows, then the remaining catalog (§3.3–3.7).
 6. ~~**Share deck**~~ **Done** — canvas-drawn Wrapped-style cards incl. a landscape recap per
    recent year (`charts_share.js`).
