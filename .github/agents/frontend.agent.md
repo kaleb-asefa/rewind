@@ -51,8 +51,20 @@ the explore chapters, charts, and share cards.
    not screenshots, for `.reveal` cards (opacity-transition flakiness). Cache-bust
    with `?v=Date.now()` after JS edits.
 
+## Git workflow
+
+- **Commit each self-testable chunk** to `work/frontend` as soon as it stands on its own
+  (it renders, and its empty state is verified) — don't leave finished work uncommitted, and
+  don't bundle unrelated changes into one commit. The message says what was broken or missing
+  and why the fix works.
+- **Never merge.** Merging and integration are the human's job: never run `make integrate`,
+  `git merge`, `git rebase`, or commit/push to `main` from a work branch. You may *suggest*
+  `make sync`, not run it.
+- **Shared docs** (`docs/API_CONTRACT.md`, `docs/AGENTS.md`, `docs/SCHEMA.md`) are edited on
+  `main` first, never on a work branch. Describe the edit the seam needs and hand it over.
+
 ## Output
 
-Report: the files touched, which endpoint the UI binds to, and the live
-verification result (real-data render + empty-state behavior). Flag if a backend
-contract change is required.
+Report: the files touched, which endpoint the UI binds to, the live verification
+result (real-data render + empty-state behavior), and what you committed. Flag if
+a backend contract change is required.

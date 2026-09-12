@@ -49,7 +49,22 @@ Your job is to build and fix the JSON API that the frontend consumes.
 5. If a live check is wanted, run the single server (DuckDB is single-writer,
    `fuser -k 8000/tcp` first) and `curl` the endpoint.
 
+## Git workflow
+
+- **Commit each self-testable chunk** to `work/backend` as soon as it stands on its own
+  (compiles, its pytest passes) — don't leave finished work uncommitted, and don't bundle
+  unrelated changes into one commit. The message says what was broken or missing and why
+  the fix works.
+- **Never merge.** Merging and integration are the human's job: never run `make integrate`,
+  `git merge`, `git rebase`, or commit/push to `main` from a work branch. You may *suggest*
+  `make sync`, not run it.
+- **Shared docs** (`docs/API_CONTRACT.md`, `docs/AGENTS.md`, `docs/SCHEMA.md`) are edited on
+  `main` first, never on a work branch. Describe the edit the seam needs and hand it over;
+  if the frontend needs a heads-up before that lands, write a new doc instead of editing a
+  shared one.
+
 ## Output
 
 Report: the endpoint(s) changed, the exact response shape, whether the contract
-doc needed an update, and the passing test count. Flag any breaking change loudly.
+doc needed an update, the passing test count, and what you committed. Flag any
+breaking change loudly.
