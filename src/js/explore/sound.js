@@ -1,16 +1,15 @@
 // Chapter 03 — Your Sound: mood map (valence × energy), vibe sliders, pace gauge.
-// computeVibe / renderMoodMix / renderPlainWords are retained but unused (their
-// DOM was removed in the declutter pass); kept for when mood-mix may be rewired.
+// computeVibe / renderMoodMix are retained but unused (their DOM was removed in
+// the declutter pass); kept for when mood-mix may be rewired.
 (function (E) {
     'use strict';
-    const { pct, setText, showTip, moveTip, hideTip, attr } = E;
+    const { setText, showTip, moveTip, hideTip, attr } = E;
 
     const soundState = { tracks: [], mix: [] };
 
     const SAMPLE_SOUND = {
         avg: { energy: 0.5, valence: 0.55, danceability: 0.68, acousticness: 0.3, vocal: 0.9 },
         tempo_avg: 118,
-        mode: { major: 0.57 },
         tracks: [
             { name: 'Snooze', valence: 0.42, energy: 0.45, plays: 120 },
             { name: 'Kill Bill', valence: 0.55, energy: 0.52, plays: 150 },
@@ -154,23 +153,6 @@
             '<text x="' + (cx + R) + '" y="' + (cy + 18) + '" fill="var(--axis-label)" font-size="9" text-anchor="middle">Fast</text>';
     }
 
-    function renderPlainWords(avg, mode) {
-        const el = document.getElementById('plain-words');
-        if (!el) return;
-        const hi = (t) => '<b class="text-primary">' + t + '</b>';
-        const items = [
-            { icon: 'bolt', text: avg.energy < 0.5 ? 'You keep it more ' + hi('chilled-out') + ' than hyped.' : 'You lean more ' + hi('energetic') + ' than laid-back.' },
-            { icon: mode.major >= 0.5 ? 'wb_sunny' : 'cloud', text: mode.major >= 0.5 ? 'Your music leans ' + hi('bright and uplifting') + '.' : 'Your music leans ' + hi('moody and emotional') + '.' },
-            { icon: 'mic', text: avg.vocal >= 0.6 ? "It's " + hi('lyrics-first') + ' — vocals over instrumentals.' : 'You lean ' + hi('instrumental') + ' over vocals.' },
-            { icon: 'graphic_eq', text: 'About ' + hi(pct(avg.acousticness) + '% acoustic') + ', the rest produced.' },
-        ];
-        el.innerHTML = items
-            .map((it) => '<li class="flex items-start gap-2.5">' +
-                '<span class="material-symbols-outlined text-primary text-lg shrink-0">' + it.icon + '</span>' +
-                '<span class="font-body-sm text-body-sm text-on-surface">' + it.text + '</span></li>')
-            .join('');
-    }
-
     const VIBE_SWEET = { Chill: 'Chill & feel-good', Pumped: 'Upbeat & energetic', Moody: 'Mellow & moody', Intense: 'Dark & intense' };
     const VIBE_WORD = { Chill: 'Feel-good', Pumped: 'Upbeat', Moody: 'Moody', Intense: 'Intense' };
     const VIBE_PHRASE = {
@@ -225,11 +207,6 @@
         setText('vibe-word', VIBE_WORD[zone]);
         setText('vibe-phrase', 'Most of your music is ' + VIBE_PHRASE[zone] + '.');
         setText('pace-word', paceWord(s.tempo_avg));
-        const maj = pct(s.mode.major), min = 100 - maj;
-        setText('mode-major', maj);
-        setText('mode-minor', min);
-        const mb = document.getElementById('mode-major-bar'); if (mb) mb.style.width = maj + '%';
-        const nb = document.getElementById('mode-minor-bar'); if (nb) nb.style.width = min + '%';
     }
 
     /* ---- Hover (mood map + mood mix) ---- */

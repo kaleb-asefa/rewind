@@ -53,9 +53,9 @@
         setText('tempo-caption', 'Mostly ' + String(buckets[big].label).toLowerCase());
     }
 
-    /* ---- Bright or moody (major vs minor) ---- */
+    /* ---- Major vs. minor keys ---- */
     function keyWord(share) {
-        return share >= 0.55 ? 'Bright' : share >= 0.45 ? 'Balanced' : 'Moody';
+        return share >= 0.55 ? 'Mostly major' : share >= 0.45 ? 'Even split' : 'Mostly minor';
     }
     function renderKey(share) {
         const major = Math.round(Math.max(0, Math.min(1, share)) * 100);
