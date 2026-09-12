@@ -513,7 +513,11 @@ async def get_audio(
             agg = raw_con.execute(
                 "SELECT AVG(" + _ADJ_E + "), AVG(f.valence), AVG(f.danceability), "
                 "AVG(f.acousticness), AVG(f.instrumentalness), AVG(f.tempo), "
-                "AVG(CASE WHEN f.mode = 1 THEN 1.0 ELSE 0.0 END), COUNT(*) " + join
+                # Same definition as /api/metrics/sound-detail's key.major_share —
+                # both chapters show this number, so a NULL mode must be skipped
+                # here too, not silently folded in as "minor".
+                "AVG(CASE WHEN f.mode = 1 THEN 1.0 ELSE 0.0 END) "
+                "FILTER (WHERE f.mode IS NOT NULL), COUNT(*) " + join
             ).fetchone()
         except Exception:
             return None
