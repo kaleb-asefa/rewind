@@ -49,7 +49,7 @@
             track: { name: track, artist },
             album: { name: album, artist },
             genre: { name: genre, streams: 1946 },
-            skipped: { name: "Baby Shark", artist: "Pinkfong", skip_pct: 98 },
+            loyal: { name: "Snooze", artist: "SZA", plays: 176 },
         };
     }
 
@@ -530,18 +530,21 @@
             const gridH = heat.days ? heatGrid(LP, gridY, LW - LP * 2, heat) : 0;
             if (gridH) heatLegend(LW - LP, gridY + gridH + 34);
 
-            const skip = r.skipped;
+            const loyal = r.loyal;
             [
                 { label: "MINUTES", value: num(heat.total_minutes), sub: fmtInt((heat.total_minutes || 0) / 60) + " hours", accent: true },
                 { label: "STREAMS", value: num(heat.total_streams), sub: "songs played" },
                 { label: "ACTIVE DAYS", value: num(heat.active_days), sub: "of " + daysInYear(r.year) },
-                // The rate rides in the label so the sub-line stays the artist,
-                // like the other tiles — together they never fit on one line.
+                // The play count rides in the label so the sub-line stays the
+                // artist, like the other tiles — together they never fit on one
+                // line.
                 {
-                    label: skip && skip.skip_pct != null ? "MOST SKIPPED \u00b7 " + skip.skip_pct + "%" : "MOST SKIPPED",
-                    value: skip ? skip.name : "\u2014",
-                    sub: (skip && skip.artist) || "",
-                    img: (skip && skip.img) || null,
+                    label: loyal && loyal.plays != null
+                        ? "NEVER SKIPPED \u00b7 " + fmtInt(loyal.plays) + " plays"
+                        : "NEVER SKIPPED",
+                    value: loyal ? loyal.name : "\u2014",
+                    sub: (loyal && loyal.artist) || "",
+                    img: (loyal && loyal.img) || null,
                 },
             ].forEach((t, i) => tile(LP + i * (tw + gap), 768, tw, th, t));
         }
@@ -603,7 +606,7 @@
             const from = (key) => recaps.map((r) => r[key]).filter(Boolean);
             return Promise.all([
                 attachCovers("artist", d.artists.concat(from("artist")), onUpdate),
-                attachCovers("track", d.tracks.concat(from("track"), from("skipped")), onUpdate),
+                attachCovers("track", d.tracks.concat(from("track"), from("loyal")), onUpdate),
                 attachCovers("album", d.albums.concat(from("album")), onUpdate),
             ]);
         }
@@ -623,16 +626,16 @@
                     return (res.ok && res.data && res.data.items && res.data.items[0]) || null;
                 } catch (_e) { return null; }
             };
-            const worst = async () => {
+            const mostPlayedThrough = async () => {
                 try {
                     const res = await f("/api/metrics/superlatives?range=" + year + "&limit=1");
-                    return (res.ok && res.data && res.data.most_skipped && res.data.most_skipped[0]) || null;
+                    return (res.ok && res.data && res.data.never_skipped && res.data.never_skipped[0]) || null;
                 } catch (_e) { return null; }
             };
-            const [artist, track, album, genre, skipped] = await Promise.all([
-                top("artist"), top("track"), top("album"), top("genre"), worst(),
+            const [artist, track, album, genre, loyal] = await Promise.all([
+                top("artist"), top("track"), top("album"), top("genre"), mostPlayedThrough(),
             ]);
-            return { year, heat, artist, track, album, genre, skipped };
+            return { year, heat, artist, track, album, genre, loyal };
         }
 
         // One recap per recent year. The heatmap endpoint defaults to the
