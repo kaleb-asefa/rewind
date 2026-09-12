@@ -440,30 +440,10 @@
                 </div>
 
                 <div class="flex flex-col gap-gutter">
-                    <div class="reveal glass-card rounded-2xl p-5">
+                    <div class="reveal glass-card rounded-2xl p-5 flex-1 flex flex-col justify-center">
                         <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">Your music in a word</div>
                         <div id="vibe-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-1">—</div>
                         <div id="vibe-phrase" class="font-body-sm text-body-sm text-on-surface-variant">—</div>
-                    </div>
-                    <div class="reveal glass-card rounded-2xl p-5">
-                        <div class="flex items-center gap-1.5 mb-3">
-                            <div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">Bright or moody?</div>
-                            <span class="help">
-                                <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
-                                <div class="help-content">
-                                    <p class="help-title">Bright vs. moody</p>
-                                    <p>Based on the musical key of the tracks you play — <b>major</b> keys sound bright and upbeat, <b>minor</b> keys sound moody and emotional. The bar shows the share played in major keys.</p>
-                                </div>
-                            </span>
-                        </div>
-                        <div class="flex h-3 rounded-full overflow-hidden bg-surface-container-high">
-                            <div id="mode-major-bar" class="bg-primary transition-all duration-500" style="width:0%"></div>
-                            <div id="mode-minor-bar" class="bg-primary/25 transition-all duration-500" style="width:0%"></div>
-                        </div>
-                        <div class="flex justify-between mt-2 text-[11px]">
-                            <span class="text-primary font-bold"><span id="mode-major">—</span>% bright</span>
-                            <span class="text-on-surface-variant"><span id="mode-minor">—</span>% moody</span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -824,16 +804,16 @@
 
                 <div class="reveal glass-card rounded-2xl p-gutter flex flex-col">
                     <div class="flex items-center gap-1.5">
-                        <h3 class="font-headline-md text-headline-md text-on-surface">Bright or moody</h3>
+                        <h3 class="font-headline-md text-headline-md text-on-surface">Major or minor</h3>
                         <span class="help">
                             <button type="button" class="help-btn" aria-label="How this is worked out" aria-expanded="false"><span class="material-symbols-outlined">help</span></button>
                             <div class="help-content">
-                                <p class="help-title">Bright vs. moody</p>
-                                <p>From the musical key of your tracks — major keys sound bright, minor keys sound moody. We take the share played in major keys.</p>
+                                <p class="help-title">Major vs. minor keys</p>
+                                <p>Major keys sound brighter, minor keys darker. We take the share of plays in major keys.</p>
                                 <ul class="help-list">
-                                    <li><b>Bright</b> — 55% or more in major keys</li>
-                                    <li><b>Balanced</b> — between 45% and 55%</li>
-                                    <li><b>Moody</b> — under 45% major</li>
+                                    <li><b>Mostly major</b> — 55% or more in major keys</li>
+                                    <li><b>Even split</b> — between 45% and 55%</li>
+                                    <li><b>Mostly minor</b> — under 45% major</li>
                                 </ul>
                             </div>
                         </span>
@@ -841,8 +821,8 @@
                     <div id="key-word" class="font-display-lg text-display-lg-mobile text-primary leading-tight mt-5">—</div>
                     <div id="key-bar" class="flex h-4 rounded-full overflow-hidden bg-surface-container-high mt-5"></div>
                     <div class="flex justify-between mt-2 text-[11px] text-on-surface-variant">
-                        <span><span id="key-major-pct">—</span>% bright</span>
-                        <span><span id="key-minor-pct">—</span>% moody</span>
+                        <span><span id="key-major-pct">—</span>% major</span>
+                        <span><span id="key-minor-pct">—</span>% minor</span>
                     </div>
                 </div>
             </div>
