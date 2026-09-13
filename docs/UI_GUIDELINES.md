@@ -36,6 +36,9 @@ tiny labels, one idea per card, almost no paragraph copy.
 9. **Meaningful styling only.** Color, weight, and icons must encode information; no decoration
    for its own sake.
 10. **Reuse patterns.** Consistent card anatomy and known layouts lower the learning cost.
+11. **One word, one meaning.** Don't reuse an adjective another metric already owns — if "moody"
+    means low valence + low energy on the mood map, the key card says "Mostly minor", not
+    "moody". Name the thing measured; put the nuance in the helper line.
 
 ## Copy budgets (hard limits)
 

@@ -107,6 +107,12 @@ neither needs to read the other's code.
 | `/api/metrics/chart` | `entity=artist\|track\|album\|genre`, `sort=minutes\|streams`, `limit`, `range=all\|YYYY\|4w\|6m` | `items[{rank,name,artist,id,cover_kind,cover_id,minutes,streams,share,prev_rank,image_url}]`, `years[]` |
 | `/api/metrics/superlatives` | `range`, `limit` | `obsession[]`, `binges[]`, `most_skipped[]`, `never_skipped[]`, `years[]` |
 
+> **Major-key share is one statistic with two homes.** `audio.mode.major` and
+> `sound-detail.key.major_share` are computed identically — the share of matched plays whose
+> track is in a major key, with `mode IS NULL` rows **excluded** from both (a missing mode is
+> unknown, not minor). Keep them in lockstep if either query changes. On the page only the
+> Detail chapter renders it ("Major or minor"); Your Sound owns feeling, not key.
+
 > **Album cover ids (`cover_kind` / `cover_id`, additive).** Album items (`top-album`,
 > `chart?entity=album`, `bar-race?entity=album`) carry them alongside `id`. `id` still means
 > the real Spotify **album** id and is now resolved by identity
