@@ -384,7 +384,8 @@
         if (E && E.chapterBusy) E.chapterBusy('climb', true, 'velocity');
 
         const fetcher = window.fetchWithTimeout || (async (ep) => {
-            const res = await fetch(`http://127.0.0.1:8000${ep}`);
+            const base = location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8000";
+            const res = await fetch(`${base}${ep}`);
             const data = await res.json();
             return { ok: res.ok, data };
         });

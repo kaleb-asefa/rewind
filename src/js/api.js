@@ -34,12 +34,19 @@ async function fetchWithTimeout(endpoint, options = {}, timeoutMs = 5000) {
     let response;
     let timedOut = false;
 
+    const base = typeof window !== "undefined" && window.API_BASE !== undefined
+        ? window.API_BASE
+        : (typeof location !== "undefined" && location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8000");
+
     try {
         try {
-            response = await fetch(`http://127.0.0.1:8000${endpoint}`, fetchOptions);
+            response = await fetch(`${base}${endpoint}`, fetchOptions);
         } catch (err) {
             if (err.name === "AbortError") {
                 timedOut = true;
+                throw err;
+            }
+            if (base === "") {
                 throw err;
             }
             // Fallback to localhost if 127.0.0.1 fails immediately

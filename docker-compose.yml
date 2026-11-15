@@ -1,0 +1,19 @@
+services:
+  rewind:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rewind
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persists guest uploaded session databases across container restarts
+      - ./data/sessions:/app/data/sessions
+      # Optional: mount catalog parquet file for audio feature enrichment
+      - ./data/metadata:/app/data/metadata:ro
+    environment:
+      - REWIND_ALLOWED_ORIGINS=*
+      - REWIND_DUCKDB_MEMORY_LIMIT=2GB
+      - REWIND_CATALOG_PATH=/app/data/metadata/catalog_sorted.parquet
+    restart: unless-stopped
+

@@ -193,13 +193,17 @@ document.addEventListener("DOMContentLoaded", () => {
           localStorage.setItem("rewind_session", t);
         }
         const headers = { "X-Rewind-Session": t };
+        const base = typeof window !== "undefined" && window.API_BASE !== undefined
+          ? window.API_BASE
+          : (typeof location !== "undefined" && location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8000");
         try {
-          response = await fetch("http://127.0.0.1:8000/api/upload", {
+          response = await fetch(`${base}/api/upload`, {
             method: "POST",
             headers,
             body: formData,
           });
         } catch (err) {
+          if (base === "") throw err;
           response = await fetch("http://localhost:8000/api/upload", {
             method: "POST",
             headers,
@@ -222,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (err) {
         console.error("Network error uploading files:", err);
         showStatus(
-          "Upload failed. Please ensure the backend server is running on http://127.0.0.1:8000 and try again.",
+          "Upload failed. Please ensure the backend server is reachable and try again.",
           "error",
         );
         uploadAllBtn.classList.remove("pointer-events-none", "opacity-75");

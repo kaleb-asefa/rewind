@@ -1,0 +1,22 @@
+# Git and IDE configs
+.git
+.gitignore
+.vscode
+.claude
+
+# Virtual environments and caches
+.venv
+.venv*
+backend/.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+
+# Large data files (mounted as volumes at runtime)
+data/metadata/*.parquet
+data/sessions/*.duckdb
+data/sessions/*.duckdb.wal
+
+# Research notebooks and temporary outputs
+notebooks/
+
