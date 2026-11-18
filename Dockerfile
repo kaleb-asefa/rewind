@@ -1,7 +1,7 @@
 FROM python:3.13-slim
 
 # Install uv directly from the official image
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+RUN pip install --no-cache-dir uv
 
 # Environment settings
 ENV PYTHONUNBUFFERED=1 \
