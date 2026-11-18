@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: rewind
     ports:
-      - "8000:8000"
+      - "80:8000"
     volumes:
       # Persists guest uploaded session databases across container restarts
       - ./data/sessions:/app/data/sessions
