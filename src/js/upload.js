@@ -185,21 +185,19 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         let response;
         // Direct fetch (not fetchWithTimeout) since uploads need a long/no
-        // timeout for enrichment; still must carry the session ticket so the
-        // upload lands in this browser's own per-session DuckDB file.
-        let t = localStorage.getItem("rewind_session");
-        if (!t) {
-          if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-            t = crypto.randomUUID();
-          } else {
-            t = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-              const r = (Math.random() * 16) | 0;
-              const v = c === "x" ? r : (r & 0x3) | 0x8;
-              return v.toString(16);
-            });
-          }
-          localStorage.setItem("rewind_session", t);
+        // timeout for enrichment; always generate a fresh ticket per upload batch
+        // so new datasets never merge into or duplicate previous listening history.
+        let t;
+        if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+          t = crypto.randomUUID();
+        } else {
+          t = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+            const r = (Math.random() * 16) | 0;
+            const v = c === "x" ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+          });
         }
+        localStorage.setItem("rewind_session", t);
         const headers = { "X-Rewind-Session": t };
         const base = typeof window !== "undefined" && window.API_BASE !== undefined
           ? window.API_BASE
@@ -240,6 +238,17 @@ document.addEventListener("DOMContentLoaded", () => {
         uploadAllBtn.classList.remove("pointer-events-none", "opacity-75");
         uploadAllBtn.textContent = "Analyze All Files";
       }
+    });
+  }
+
+  const resetSessionBtn = document.getElementById("reset-session-btn");
+  if (resetSessionBtn) {
+    resetSessionBtn.addEventListener("click", () => {
+      localStorage.removeItem("rewind_session");
+      showStatus("Session cleared! Your browser now has a fresh slate.", "success");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     });
   }
 });
