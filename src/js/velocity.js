@@ -353,16 +353,24 @@
     // don't flood the server (best-effort, cached + warmed server-side).
     let coversFetched = { tracks: false, artists: false };
 
-    async function prefetchCovers(list, kind) {
+    async function prefetchCovers(list, defaultKind) {
         // Only fetch covers the backend didn't already return inline (image_url).
         const targets = list.filter((it) => it.spotifyId && !it.image_url);
         if (!targets.length || !window.resolveCoverUrls) return;
-        const ids = Array.from(new Set(targets.map((t) => t.spotifyId)));
-        // Shared cover cache: ids another component already resolved cost nothing,
-        // and cold ones are chunked so one slow lookup can't sink the rest.
-        const map = await window.resolveCoverUrls(kind, ids);
+        const byKind = new Map();
         for (const item of targets) {
-            if (map[item.spotifyId]) { item.image = map[item.spotifyId]; item.image_url = map[item.spotifyId]; }
+            const kind = item.coverKind || defaultKind;
+            if (!byKind.has(kind)) byKind.set(kind, new Set());
+            byKind.get(kind).add(item.spotifyId);
+        }
+        for (const [kind, idsSet] of byKind) {
+            const map = await window.resolveCoverUrls(kind, Array.from(idsSet));
+            for (const item of targets) {
+                if ((item.coverKind || defaultKind) === kind && map[item.spotifyId]) {
+                    item.image = map[item.spotifyId];
+                    item.image_url = map[item.spotifyId];
+                }
+            }
         }
         renderChart();
     }
@@ -428,32 +436,40 @@
             }
 
             if (tracksOk && Array.isArray(tracksRes.data.data)) {
-                const mappedTracks = tracksRes.data.data.map((item, idx) => ({
-                    id: `track-${idx + 1}`,
-                    title: item.track_name || 'Unknown Track',
-                    subtitle: item.artist_name || 'Unknown Artist',
-                    image: item.image_url || MUSIC_NOTE_AVATAR,
-                    image_url: item.image_url || null,
-                    spotifyId: item.id || null,
-                    color: LINE_COLOR,
-                    ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
-                    plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
-                }));
+                const mappedTracks = tracksRes.data.data.map((item, idx) => {
+                    const ref = window.coverRef ? window.coverRef(item, 'track') : { kind: 'track', id: item.id };
+                    return {
+                        id: `track-${idx + 1}`,
+                        title: item.track_name || 'Unknown Track',
+                        subtitle: item.artist_name || 'Unknown Artist',
+                        image: item.image_url || MUSIC_NOTE_AVATAR,
+                        image_url: item.image_url || null,
+                        coverKind: ref.kind,
+                        spotifyId: ref.id,
+                        color: LINE_COLOR,
+                        ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
+                        plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
+                    };
+                });
                 TRACKS_DATA.splice(0, TRACKS_DATA.length, ...mappedTracks);
             }
 
             if (artistsOk && Array.isArray(artistsRes.data.data)) {
-                const mappedArtists = artistsRes.data.data.map((item, idx) => ({
-                    id: `artist-${idx + 1}`,
-                    title: item.artist_name || 'Unknown Artist',
-                    subtitle: `${item.total_streams || 0} streams`,
-                    image: item.image_url || ARTIST_AVATAR,
-                    image_url: item.image_url || null,
-                    spotifyId: item.id || null,
-                    color: LINE_COLOR,
-                    ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
-                    plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
-                }));
+                const mappedArtists = artistsRes.data.data.map((item, idx) => {
+                    const ref = window.coverRef ? window.coverRef(item, 'artist') : { kind: 'artist', id: item.id };
+                    return {
+                        id: `artist-${idx + 1}`,
+                        title: item.artist_name || 'Unknown Artist',
+                        subtitle: `${item.total_streams || 0} streams`,
+                        image: item.image_url || ARTIST_AVATAR,
+                        image_url: item.image_url || null,
+                        coverKind: ref.kind,
+                        spotifyId: ref.id,
+                        color: LINE_COLOR,
+                        ranks: Array.isArray(item.monthly_ranks) ? item.monthly_ranks : [],
+                        plays: Array(dynamicMonthsList.length).fill(item.total_streams || 0)
+                    };
+                });
                 ARTISTS_DATA.splice(0, ARTISTS_DATA.length, ...mappedArtists);
             }
 

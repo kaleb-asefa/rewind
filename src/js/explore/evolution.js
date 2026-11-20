@@ -189,7 +189,7 @@
         if (E.stale(tok)) return;  // a newer year is already in flight
         if (!data) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('evolution', false); renderEvolution(SAMPLE_EVOLUTION); return; }
-            E.chapterEmpty('evolution', true);
+            E.chapterEmpty('evolution', true, 'Taste evolution requires metadata catalog enrichment (<span class="font-mono text-xs bg-surface-container px-1 py-0.5 rounded">catalog_sorted.parquet</span> not present on server).');
             return;
         }
         E.chapterEmpty('evolution', false);

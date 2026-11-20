@@ -166,12 +166,16 @@
         if (!document.getElementById('mood-svg')) return;
         let s = null;
         let coverage = null;
+        let lastRes = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout(E.withYear('/api/metrics/audio'));
-                if (res && res.ok && res.data && res.data.avg && res.data.tracks && res.data.tracks.length) {
-                    s = res.data;
-                    coverage = typeof res.data.coverage === 'number' ? res.data.coverage : null;
+                if (res && res.ok && res.data) {
+                    lastRes = res.data;
+                    if (res.data.avg && res.data.tracks && res.data.tracks.length) {
+                        s = res.data;
+                        coverage = typeof res.data.coverage === 'number' ? res.data.coverage : null;
+                    }
                 }
             } catch (_e) {
                 /* no data */
@@ -180,7 +184,10 @@
         if (E.stale(tok)) return;  // a newer year is already in flight
         if (!s) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('sound', false); renderSound(SAMPLE_SOUND); setCoverageNote(null); return; }
-            E.chapterEmpty('sound', true);
+            const reason = (lastRes && (lastRes.catalog_missing || lastRes.has_history))
+                ? 'Audio features require metadata catalog enrichment (<span class="font-mono text-xs bg-surface-container px-1 py-0.5 rounded">catalog_sorted.parquet</span> was not found on server).'
+                : null;
+            E.chapterEmpty('sound', true, reason);
             return;
         }
         E.chapterEmpty('sound', false);

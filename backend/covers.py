@@ -15,17 +15,20 @@ disagreement silently yielded a NULL id, so no cover was ever requested.
 
 Resolution here is identity-based instead, in two tiers:
 
-1. ``history.track_uri`` -> ``track_features.track_id`` -> ``album_id``. An exact
-   key join, so names never enter into it. Where a title maps to several catalog
-   albums, the most-played one wins (the edition actually listened to) rather than
-   an arbitrary ``MAX()``.
-2. When the catalog has no row for any of the album's tracks — a release newer
-   than the catalog snapshot — fall back to a representative ``track_id`` from the
-   album. A track's oEmbed thumbnail *is* its album cover, so the artwork is still
-   correct; only the id kind differs. This tier needs no catalog at all.
+1. ``history.track_uri`` -> ``track_features.track_id`` -> ``album_id`` / ``artist_id``.
+   An exact key join, so names never enter into it. Where a title maps to several
+   catalog entities, the most-played one wins (the edition actually listened to)
+   rather than an arbitrary ``MAX()``.
+2. When the catalog has no row for any of the entity's tracks — a release newer
+   than the catalog snapshot, or when running unenriched without catalog parquet —
+   fall back to a representative ``track_id``. A track's oEmbed thumbnail *is*
+   its album cover (and represents the artist's signature art); only the id kind
+   differs. This tier needs no catalog at all.
 
-Callers therefore get ``(kind, spotify_id)``, not a bare album id.
+Callers therefore get ``(kind, spotify_id)``, not a bare album or artist id.
 """
+
+import unicodedata
 
 # Tier 1 + tier 2 in one pass. ``plays`` collapses history to one row per
 # (album, artist, track); ``by_album`` re-weights catalog album ids by the
@@ -140,3 +143,126 @@ def album_fallback_track_ids(raw_con, limit: int = 50) -> list[str]:
     return [cover_id for album_id, kind, cover_id in refs.values() if kind == "track"][
         :limit
     ]
+
+
+# ── Artist Cover Identity ──────────────────────────────────────────────────
+_ARTIST_REFS_SQL = """
+WITH plays AS (
+    SELECT artist_name,
+           split_part(track_uri, ':', 3) AS track_id,
+           SUM(ms_played) AS ms
+    FROM history
+    WHERE artist_name IS NOT NULL AND track_uri LIKE 'spotify:track:%'
+    GROUP BY artist_name, track_id
+),
+joined AS (
+    SELECT p.artist_name, p.track_id, p.ms, f.artist_id
+    FROM plays p
+    LEFT JOIN track_features f ON f.track_id = p.track_id
+),
+by_artist AS (
+    SELECT strip_accents(upper(trim(artist_name))) AS akey,
+           artist_id, SUM(ms) AS ms
+    FROM joined
+    WHERE artist_id IS NOT NULL
+    GROUP BY akey, artist_id
+),
+best_artist AS (
+    SELECT akey, arg_max(artist_id, ms) AS artist_id
+    FROM by_artist
+    GROUP BY akey
+),
+rep_track AS (
+    SELECT strip_accents(upper(trim(artist_name))) AS akey,
+           arg_max(track_id, ms) AS track_id, SUM(ms) AS ms
+    FROM joined
+    GROUP BY akey
+)
+SELECT r.akey, a.artist_id, r.track_id
+FROM rep_track r
+LEFT JOIN best_artist a ON a.akey = r.akey
+ORDER BY r.ms DESC
+"""
+
+_ARTIST_REFS_FALLBACK_SQL = """
+SELECT strip_accents(upper(trim(artist_name))) AS akey,
+       NULL AS artist_id,
+       arg_max(track_id, ms) AS track_id
+FROM (
+    SELECT artist_name,
+           split_part(track_uri, ':', 3) AS track_id,
+           SUM(ms_played) AS ms
+    FROM history
+    WHERE artist_name IS NOT NULL AND track_uri LIKE 'spotify:track:%'
+    GROUP BY artist_name, track_id
+)
+GROUP BY akey
+ORDER BY SUM(ms) DESC
+"""
+
+
+def _norm_artist_key(name: str | None) -> str:
+    if not name:
+        return ""
+    return (
+        unicodedata.normalize("NFKD", str(name).strip())
+        .encode("ASCII", "ignore")
+        .decode()
+        .upper()
+    )
+
+
+def artist_cover_refs(raw_con) -> dict[str, tuple[str | None, str, str]]:
+    """``{canonical_artist_key: (artist_id, cover_kind, cover_id)}``.
+
+    ``artist_id`` is the real Spotify artist id, or None when the catalog has no
+    row for any of the artist's tracks. ``cover_kind``/``cover_id`` are what to
+    hand to :mod:`images` — the artist id when known, otherwise a representative
+    track id whose thumbnail is the artist's top album artwork.
+    """
+    try:
+        rows = raw_con.execute(_ARTIST_REFS_SQL).fetchall()
+    except Exception:
+        try:
+            rows = raw_con.execute(_ARTIST_REFS_FALLBACK_SQL).fetchall()
+        except Exception:
+            return {}
+
+    refs: dict[str, tuple[str | None, str, str]] = {}
+    for akey, artist_id, track_id in rows:
+        if not akey:
+            continue
+        if artist_id:
+            refs[akey] = (artist_id, "artist", artist_id)
+        elif track_id:
+            refs[akey] = (None, "track", track_id)
+    return refs
+
+
+def attach_artist_cover_refs(raw_con, items, name_key="name"):
+    """Set ``id`` / ``cover_kind`` / ``cover_id`` on artist items in place.
+
+    ``id`` stays the true artist id (None when unknown) so existing consumers keep
+    their meaning; ``cover_id`` is the id that actually resolves to artwork.
+    """
+    refs = artist_cover_refs(raw_con)
+    for it in items:
+        name = it.get(name_key) or ""
+        norm_key = _norm_artist_key(name)
+        artist_id, kind, cover_id = refs.get(norm_key, (None, None, None))
+        if not kind and not cover_id:
+            artist_id, kind, cover_id = refs.get(name.strip().upper(), (None, None, None))
+        it["id"] = artist_id or it.get("id")
+        it["cover_kind"] = kind
+        it["cover_id"] = cover_id
+
+
+def artist_fallback_track_ids(raw_con, limit: int = 50) -> list[str]:
+    """Representative track ids for the most-played artists that have no catalog
+    ``artist_id`` — the tier-2 covers worth pre-warming alongside the artist ids.
+    """
+    refs = artist_cover_refs(raw_con)
+    return [cover_id for artist_id, kind, cover_id in refs.values() if kind == "track"][
+        :limit
+    ]
+

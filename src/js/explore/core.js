@@ -162,7 +162,7 @@
     // unreachable, or the selected year simply has no plays — hide its content
     // and show one small "no data" card instead of inventing sample numbers the
     // user might mistake for their own.
-    function chapterEmpty(sectionId, isEmpty) {
+    function chapterEmpty(sectionId, isEmpty, customReason) {
         const section = document.getElementById(sectionId);
         if (!section) return;
         const children = Array.from(section.children);
@@ -177,7 +177,7 @@
                 msg.className = 'chapter-empty glass-card rounded-2xl p-8 text-center';
                 section.appendChild(msg);
             }
-            msg.innerHTML = emptyMarkup();
+            msg.innerHTML = emptyMarkup(customReason);
             msg.classList.remove('hidden');
         } else {
             if (msg) msg.classList.add('hidden');
@@ -190,7 +190,11 @@
 
     // A filtered year with nothing in it isn't an error and isn't an empty
     // account — say so, and offer the way back to all time.
-    function emptyMarkup() {
+    function emptyMarkup(customReason) {
+        if (customReason) {
+            return '<span class="material-symbols-outlined text-3xl text-primary opacity-60">database</span>' +
+                '<p class="font-body-lg text-body-lg text-on-surface-variant mt-2 max-w-lg mx-auto">' + customReason + '</p>';
+        }
         if (E.year) {
             return '<span class="material-symbols-outlined text-3xl text-on-surface-variant opacity-40">calendar_month</span>' +
                 '<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">No listening in ' + esc(E.year) + ' — ' +

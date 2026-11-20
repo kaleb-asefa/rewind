@@ -208,9 +208,11 @@ def _collect_prewarm_sets(conn: Connection) -> dict[str, list[str]]:
         except Exception:
             sets[kind] = []  # track_features missing (no catalog) — skip this kind
 
-    # Tier-2 album covers: a top album released after the catalog snapshot has no
-    # album_id, so its art is warmed through one of its own tracks instead.
-    fallbacks = covers.album_fallback_track_ids(raw_con, _PREWARM_LIMIT)
+    # Tier-2 covers: top albums and artists released after the catalog snapshot (or without catalog)
+    # have their art warmed through representative tracks instead.
+    album_fallbacks = covers.album_fallback_track_ids(raw_con, _PREWARM_LIMIT)
+    artist_fallbacks = covers.artist_fallback_track_ids(raw_con, _PREWARM_LIMIT)
+    fallbacks = album_fallbacks + artist_fallbacks
     if fallbacks:
         sets["track"] = list(dict.fromkeys(sets["track"] + fallbacks))
 

@@ -68,16 +68,21 @@ async def get_top_artist(
         )
         row = conn.execute(stmt).first()
         artist_id = None
+        cover_kind = "artist"
+        cover_id = None
         if row and row.artist_name:
-            artist_id = _lookup_scalar(
-                conn,
-                "SELECT artist_id FROM track_features "
-                "WHERE artist_name = ? AND artist_id IS NOT NULL LIMIT 1",
-                [row.artist_name],
-            )
-        return row, artist_id
+            raw_con = conn.connection.driver_connection
+            refs = covers.artist_cover_refs(raw_con)
+            norm_key = covers._norm_artist_key(row.artist_name)
+            aid, ckind, cid = refs.get(norm_key, (None, None, None))
+            if not ckind:
+                aid, ckind, cid = refs.get(row.artist_name.strip().upper(), (None, "artist", None))
+            artist_id = aid
+            cover_kind = ckind or "artist"
+            cover_id = cid or aid
+        return row, artist_id, cover_kind, cover_id
 
-    row, artist_id = await run_in_threadpool(query)
+    row, artist_id, cover_kind, cover_id = await run_in_threadpool(query)
 
     if not row:
         return {
@@ -86,6 +91,8 @@ async def get_top_artist(
             "total_streams": 0,
             "total_minutes": 0,
             "artist_id": None,
+            "cover_kind": None,
+            "cover_id": None,
         }
 
     return {
@@ -94,6 +101,8 @@ async def get_top_artist(
         "total_streams": row.total_streams,
         "total_minutes": round(row.total_ms / (1000 * 60), 2),
         "artist_id": artist_id,
+        "cover_kind": cover_kind,
+        "cover_id": cover_id,
     }
 
 

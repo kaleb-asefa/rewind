@@ -6,9 +6,11 @@ every play ever, or a 4-digit year); `/api/metrics/years` lists the years a
 session actually has data for.
 """
 
+import os
 import unicodedata
 from datetime import timedelta
 
+import catalog
 import covers
 import images
 from database import get_db
@@ -130,17 +132,23 @@ def _canonical_artist_rows(raw_con, period_trunc, year=None, off=0):
     ).fetchall()
 
 
+def _ensure_track_features(raw_con):
+    """If track_features does not exist, but catalog is present, enrich session on-the-fly."""
+    try:
+        exists = raw_con.execute(
+            "SELECT 1 FROM information_schema.tables WHERE table_name = 'track_features'"
+        ).fetchone()
+        if not exists and os.path.exists(catalog.CATALOG_PATH):
+            catalog.enrich_session(raw_con)
+    except Exception:
+        pass
+
+
 def _canonical_artist_id_map(raw_con):
     """``{canonical akey: artist_id}`` for cover lookups on merged artist names."""
     try:
-        return {
-            r[0]: r[1]
-            for r in raw_con.execute(
-                "SELECT strip_accents(upper(trim(artist_name))) AS akey, arg_max(artist_id, c) "
-                "FROM (SELECT artist_name, artist_id, COUNT(*) AS c FROM track_features "
-                "WHERE artist_id IS NOT NULL GROUP BY artist_name, artist_id) GROUP BY akey"
-            ).fetchall()
-        }
+        refs = covers.artist_cover_refs(raw_con)
+        return {akey: info[0] for akey, info in refs.items() if info[0]}
     except Exception:
         return {}
 
@@ -177,6 +185,7 @@ async def get_artist_rank(
 
     def query():
         raw_con = conn.connection.driver_connection
+        _ensure_track_features(raw_con)
         off = _tz_offset_minutes(raw_con) if yr is not None else 0
         try:
             monthly_data = _canonical_artist_rows(raw_con, "week", yr, off)
@@ -186,18 +195,18 @@ async def get_artist_rank(
         full_months, featured = _smoothed_rank_frames(
             monthly_data, key_len=1, limit=limit
         )
-        id_map = _canonical_artist_id_map(raw_con)
         data = [
             {
                 "rank": idx,
                 "artist_name": f["key"][0],
-                "id": id_map.get(_norm_artist_key(f["key"][0])),
+                "id": None,
                 "total_streams": f["total_streams"],
                 "total_minutes": round(f["total_ms"] / 60000, 2),
                 "monthly_ranks": f["monthly_ranks"],
             }
             for idx, f in enumerate(featured, start=1)
         ]
+        covers.attach_artist_cover_refs(raw_con, data, name_key="artist_name")
         _attach_image_urls(raw_con, "artist", data)
         return {
             "start_month": full_months[0] if full_months else None,
@@ -230,6 +239,7 @@ async def get_track_rank(
 
     def query():
         raw_con = conn.connection.driver_connection
+        _ensure_track_features(raw_con)
         off = _tz_offset_minutes(raw_con) if yr is not None else 0
         clause = _year_clause(yr, off)
         try:
@@ -317,6 +327,7 @@ async def get_bar_race(
 
     def query():
         raw_con = conn.connection.driver_connection
+        _ensure_track_features(raw_con)
         off = _tz_offset_minutes(raw_con) if yr is not None else 0
         try:
             if entity == "artist":
@@ -377,6 +388,8 @@ async def get_bar_race(
             covers.attach_album_cover_refs(
                 raw_con, data, name_key="name", artist_key="artist_name"
             )
+        elif entity == "artist":
+            covers.attach_artist_cover_refs(raw_con, data, name_key="name")
 
         _attach_image_urls(raw_con, entity, data)
         return {
@@ -507,6 +520,7 @@ async def get_audio(
 
     def query():
         raw_con = conn.connection.driver_connection
+        _ensure_track_features(raw_con)
         off = _tz_offset_minutes(raw_con) if yr is not None else 0
         join = _JOIN + _year_clause(yr, off, "h.")
         try:
@@ -569,6 +583,15 @@ async def get_audio(
 
     res = await run_in_threadpool(query)
     if not res:
+        has_history = False
+        try:
+            has_history = bool(
+                conn.connection.driver_connection.execute(
+                    "SELECT 1 FROM history WHERE ms_played > 0 LIMIT 1"
+                ).fetchone()
+            )
+        except Exception:
+            pass
         return {
             "status": "ok",
             "year": yr,
@@ -577,6 +600,8 @@ async def get_audio(
             "coverage": 0.0,
             "matched": 0,
             "total": 0,
+            "catalog_missing": not os.path.exists(catalog.CATALOG_PATH),
+            "has_history": has_history,
         }
     total = res["total"]
     res["coverage"] = round(res["matched"] / total, 4) if total else 0.0
@@ -599,6 +624,7 @@ async def get_taste(year: str = "all", conn: Connection = Depends(get_db)):
 
     def query():
         raw_con = conn.connection.driver_connection
+        _ensure_track_features(raw_con)
         off = _tz_offset_minutes(raw_con) if yr is not None else 0
         join = _JOIN + _year_clause(yr, off, "h.")
 
@@ -675,6 +701,15 @@ async def get_taste(year: str = "all", conn: Connection = Depends(get_db)):
 
     res = await run_in_threadpool(query)
     if not res:
+        has_history = False
+        try:
+            has_history = bool(
+                conn.connection.driver_connection.execute(
+                    "SELECT 1 FROM history WHERE ms_played > 0 LIMIT 1"
+                ).fetchone()
+            )
+        except Exception:
+            pass
         return {
             "status": "ok",
             "year": yr,
@@ -684,6 +719,8 @@ async def get_taste(year: str = "all", conn: Connection = Depends(get_db)):
             "eras": [],
             "avg_year": None,
             "gems": [],
+            "catalog_missing": not os.path.exists(catalog.CATALOG_PATH),
+            "has_history": has_history,
         }
     return {"status": "ok", "year": yr, **res}
 
@@ -703,6 +740,7 @@ async def get_behavior(year: str = "all", conn: Connection = Depends(get_db)):
 
     def query():
         raw_con = conn.connection.driver_connection
+        _ensure_track_features(raw_con)
         off = _tz_offset_minutes(raw_con) if yr is not None else 0
         clause = _year_clause(yr, off)
 
@@ -803,6 +841,7 @@ async def get_discovery(year: str = "all", conn: Connection = Depends(get_db)):
 
     def query():
         raw_con = conn.connection.driver_connection
+        _ensure_track_features(raw_con)
         off = _tz_offset_minutes(raw_con) if yr is not None else 0
         clause = _year_clause(yr, off)
         hclause = _year_clause(yr, off, "h.")
@@ -1446,6 +1485,7 @@ async def get_sound_detail(year: str = "all", conn: Connection = Depends(get_db)
 
     def query():
         raw_con = conn.connection.driver_connection
+        _ensure_track_features(raw_con)
         off = _tz_offset_minutes(raw_con) if yr is not None else 0
         join = _JOIN + _year_clause(yr, off, "h.")
 
@@ -1887,21 +1927,12 @@ def _chart_years(raw_con, off):
 
 
 def _chart_attach_ids(raw_con, entity, items):
-    """Fill artist_id / album_id from track_features so covers can lazy-load."""
+    """Fill artist_id / album_id from track_features or fallback so covers can lazy-load."""
     if entity in ("track", "genre"):
         return
     try:
         if entity == "artist":
-            id_map = {
-                r[0]: r[1]
-                for r in raw_con.execute(
-                    "SELECT strip_accents(upper(trim(artist_name))) AS akey, arg_max(artist_id, c) "
-                    "FROM (SELECT artist_name, artist_id, COUNT(*) AS c FROM track_features "
-                    "WHERE artist_id IS NOT NULL GROUP BY artist_name, artist_id) GROUP BY akey"
-                ).fetchall()
-            }
-            for it in items:
-                it["id"] = id_map.get(it["key"])
+            covers.attach_artist_cover_refs(raw_con, items, name_key="name")
         else:  # album
             covers.attach_album_cover_refs(raw_con, items)
     except Exception:

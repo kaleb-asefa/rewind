@@ -122,11 +122,15 @@
         const tok = E.token();  // year at request time
         if (!document.getElementById('genre-bars')) return;
         let t = null;
+        let lastRes = null;
         if (window.fetchWithTimeout) {
             try {
                 const res = await window.fetchWithTimeout(E.withYear('/api/metrics/taste'));
-                if (res && res.ok && res.data && Array.isArray(res.data.genres) && res.data.genres.length) {
-                    t = res.data;
+                if (res && res.ok && res.data) {
+                    lastRes = res.data;
+                    if (Array.isArray(res.data.genres) && res.data.genres.length) {
+                        t = res.data;
+                    }
                 }
             } catch (_e) {
                 /* no data */
@@ -135,7 +139,10 @@
         if (E.stale(tok)) return;  // a newer year is already in flight
         if (!t) {
             if (window.REWIND_ALLOW_SAMPLE) { E.chapterEmpty('taste', false); renderTaste(SAMPLE_TASTE); return; }
-            E.chapterEmpty('taste', true);
+            const reason = (lastRes && (lastRes.catalog_missing || lastRes.has_history))
+                ? 'Genre classification requires metadata catalog enrichment (<span class="font-mono text-xs bg-surface-container px-1 py-0.5 rounded">catalog_sorted.parquet</span> was not found on server).'
+                : null;
+            E.chapterEmpty('taste', true, reason);
             return;
         }
         E.chapterEmpty('taste', false);
